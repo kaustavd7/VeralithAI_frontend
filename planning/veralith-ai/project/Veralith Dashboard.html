@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Veralith — Overview</title>
+<meta name="viewport" content="width=1440" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root {
+  /* surfaces */
+  --bg:           #0b0c0e;
+  --panel:        #111316;
+  --panel-2:      #15181c;
+  --line:         #23262b;
+  --line-2:       #2c3037;
+  --hover:        #181b1f;
+
+  /* text */
+  --fg:           #e9ebee;
+  --fg-2:         #b6bac1;
+  --fg-3:         #7c828c;
+  --fg-4:         #555b66;
+
+  /* accent — calm warm cyan, original to Veralith */
+  --accent:       #6fd6c4;
+  --accent-dim:   #2b4f4a;
+
+  /* failure cells (semantic) */
+  --cell-cg:      #4ea872;   /* complete_grounded     — healthy */
+  --cell-cu:      #e25c5c;   /* complete_ungrounded   — hallucinated */
+  --cell-ig:      #e0a14a;   /* incomplete_grounded   — retrieval gap */
+  --cell-iu:      #b53636;   /* incomplete_ungrounded — worst case */
+  --cell-eg:      #d4c84a;   /* extra_grounded        — padded */
+  --cell-eu:      #e25c5c;   /* extra_ungrounded      — off-topic invention */
+
+  --radius:       10px;
+  --radius-sm:    6px;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 13px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+/* ---------- App shell ---------- */
+.app {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  min-height: 100vh;
+}
+
+/* ---------- Sidebar ---------- */
+.side {
+  border-right: 1px solid var(--line);
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+}
+.side-brand {
+  padding: 18px 18px 14px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.brand-mark {
+  width: 22px; height: 22px;
+  position: relative;
+  display: inline-block;
+}
+.brand-mark svg { display: block; }
+.brand-name {
+  font-weight: 600; letter-spacing: -0.01em; font-size: 14px;
+}
+.brand-env {
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--fg-3);
+  padding: 2px 6px; border: 1px solid var(--line); border-radius: 4px;
+}
+.side-search {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.side-search input {
+  width: 100%; background: var(--panel); border: 1px solid var(--line);
+  color: var(--fg); padding: 8px 10px; border-radius: 6px;
+  font-family: inherit; font-size: 12px; outline: none;
+}
+.side-search input::placeholder { color: var(--fg-4); }
+.side-search .kbd {
+  float: right; margin-top: -25px; margin-right: 6px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  color: var(--fg-4); background: var(--bg); padding: 1px 5px;
+  border: 1px solid var(--line); border-radius: 3px;
+  position: relative;
+}
+
+.side-nav { padding: 8px 8px; flex: 1; overflow: auto; }
+.side-group-label {
+  font-size: 10px; letter-spacing: 0.08em; color: var(--fg-4);
+  text-transform: uppercase; padding: 14px 12px 6px;
+}
+.side-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: 6px;
+  color: var(--fg-2); font-size: 13px;
+  cursor: pointer; user-select: none;
+}
+.side-item:hover { background: var(--hover); color: var(--fg); }
+.side-item.active { background: var(--panel-2); color: var(--fg); }
+.side-item .ic {
+  width: 14px; height: 14px; color: var(--fg-3); flex: none;
+}
+.side-item.active .ic { color: var(--accent); }
+.side-item .count {
+  margin-left: auto; font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--fg-4);
+}
+.side-item .dot {
+  margin-left: auto;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--cell-cu);
+}
+
+/* status footer */
+.side-foot {
+  border-top: 1px solid var(--line);
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px; color: var(--fg-2);
+}
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 var(--accent);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(111, 214, 196, 0.45); }
+  70%  { box-shadow: 0 0 0 8px rgba(111, 214, 196, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(111, 214, 196, 0); }
+}
+.side-foot .lbl { color: var(--fg); font-weight: 500; }
+.side-foot .sub { color: var(--fg-4); margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 10px;}
+
+/* ---------- Main ---------- */
+.main { display: flex; flex-direction: column; }
+
+.topbar {
+  display: flex; align-items: center;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--line);
+  gap: 16px;
+}
+.crumbs { display: flex; align-items: center; gap: 8px; color: var(--fg-3); font-size: 13px;}
+.crumbs .here { color: var(--fg); }
+.crumbs .sep { color: var(--fg-4); }
+
+.top-actions { margin-left: auto; display: flex; gap: 8px; align-items: center;}
+
+.btn {
+  background: var(--panel); border: 1px solid var(--line);
+  color: var(--fg); padding: 6px 10px; border-radius: 6px;
+  font-family: inherit; font-size: 12px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:hover { background: var(--panel-2); border-color: var(--line-2); }
+.btn-primary {
+  background: var(--accent); color: #08221d; border-color: var(--accent);
+  font-weight: 600;
+}
+.btn-primary:hover { background: #82e0d0; }
+.btn-ghost { background: transparent; }
+
+.filterbar {
+  padding: 16px 28px;
+  display: flex; align-items: center; gap: 10px;
+}
+.select {
+  background: var(--panel); border: 1px solid var(--line);
+  padding: 6px 10px; border-radius: 6px; font-size: 12px;
+  color: var(--fg); display: inline-flex; align-items: center; gap: 6px;
+  cursor: pointer;
+}
+.select .chev { color: var(--fg-3); }
+.spacer { flex: 1; }
+
+/* diagnosis banner */
+.banner {
+  margin: 4px 28px 0;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 14px;
+}
+.banner-glyph {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: var(--accent-dim); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px;
+  flex: none;
+}
+.banner-text { font-size: 13px; color: var(--fg-2); }
+.banner-text b { color: var(--fg); font-weight: 600; }
+.banner-meta {
+  margin-left: auto; display: flex; gap: 18px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: var(--fg-3);
+}
+.banner-meta b { color: var(--fg); font-weight: 600;}
+.banner { transition: border-color 0.16s ease; }
+.banner:hover { border-color: var(--line-2); }
+
+/* ---------- Grid ---------- */
+.grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  padding: 16px 28px;
+}
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 18px 14px;
+  display: flex; flex-direction: column;
+  min-height: 280px;
+}
+.card-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+}
+.card-title { font-size: 14px; font-weight: 600; color: var(--fg); letter-spacing: -0.005em;}
+.card-sub { color: var(--fg-3); font-size: 11px; margin-left: 6px; }
+.card-link { margin-left: auto; color: var(--fg-3); font-size: 12px; cursor: pointer; }
+.card-link:hover { color: var(--fg); }
+.card-legend {
+  display: flex; gap: 14px; margin: 4px 0 12px;
+  font-size: 11px; color: var(--fg-2);
+}
+.card-legend .ch {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.card-legend .sw {
+  width: 8px; height: 8px; border-radius: 2px;
+}
+.card-body { flex: 1; position: relative; }
+
+/* ---------- Cell distribution ---------- */
+.dist-rows { display: flex; flex-direction: column; gap: 10px; padding-top: 4px;}
+.dist-row { display: grid; grid-template-columns: 180px 1fr 64px; align-items: center; gap: 12px; cursor: pointer; padding: 4px 6px; margin: -4px -6px; border-radius: 4px;}
+.dist-row:hover { background: var(--hover); }
+.dist-name { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fg-2); display: flex; align-items: center; gap: 8px;}
+.dist-name .sw { width: 8px; height: 8px; border-radius: 2px; flex: none;}
+.dist-bar { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+.dist-bar > i { display: block; height: 100%; border-radius: 4px;}
+.dist-count { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fg-2); text-align: right;}
+.dist-count .pct { color: var(--fg-4); margin-left: 6px; }
+
+/* totals header strip */
+.totals {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--panel);
+  margin: 0 28px;
+  overflow: hidden;
+}
+.tot {
+  padding: 14px 18px;
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 4px;
+  cursor: pointer; position: relative;
+  transition: background 0.12s ease;
+}
+.tot:last-child { border-right: none;}
+.tot:hover { background: var(--hover); }
+.tot:hover .arrow { opacity: 1; transform: translateX(0); }
+.tot .arrow {
+  position: absolute; top: 14px; right: 14px;
+  color: var(--fg-3); font-size: 12px;
+  opacity: 0; transform: translateX(-3px);
+  transition: all 0.16s ease;
+}
+.tot .lbl { font-size: 11px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.06em;}
+.tot .val { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 500; color: var(--fg); letter-spacing: -0.01em;}
+.tot .delta { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+.tot .delta.up { color: var(--cell-cg);}
+.tot .delta.down { color: var(--cell-cu);}
+.tot .delta.flat { color: var(--fg-4);}
+
+/* ---------- Chart axis common ---------- */
+.chart { width: 100%; height: 200px; display: block;}
+.axis-y, .axis-x { font-family: 'IBM Plex Mono', monospace; font-size: 10px; fill: var(--fg-4);}
+.grid-line { stroke: var(--line); stroke-dasharray: 2 3;}
+
+/* ---------- Live trace stream ---------- */
+.stream { display: flex; flex-direction: column; gap: 0; max-height: 240px; overflow: hidden;}
+.stream-row {
+  display: grid; grid-template-columns: 110px 1fr 80px 60px;
+  align-items: center; gap: 12px;
+  padding: 8px 0; border-bottom: 1px dashed var(--line);
+  font-size: 12px;
+}
+.stream-row:last-child { border-bottom: none; }
+.stream-row.new {
+  background: linear-gradient(90deg, rgba(111,214,196,0.10), transparent 70%);
+  animation: fadeArrival 2.4s ease-out forwards;
+}
+@keyframes fadeArrival {
+  0%   { background: rgba(111,214,196,0.18); }
+  100% { background: transparent; }
+}
+.stream-row .cell {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  padding: 2px 6px; border-radius: 3px; display: inline-block;
+  color: #0a0a0a; font-weight: 600; letter-spacing: 0.02em;
+  width: fit-content;
+}
+.stream-row .q {
+  font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+  color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.stream-row .met { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fg-3);}
+.stream-row .ago { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fg-4); text-align: right;}
+
+/* ---------- Trace list table (full width) ---------- */
+.tracebox {
+  margin: 0 28px 32px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--panel); overflow: hidden;
+}
+.tracebox-head {
+  padding: 14px 16px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 12px;
+}
+.tracebox-head h3 { margin: 0; font-size: 14px; font-weight: 600;}
+.chip {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--accent-dim); color: var(--accent);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.chip .ld { width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  animation: pulse 2s infinite;}
+
+.table {
+  width: 100%; border-collapse: collapse;
+}
+.table th, .table td {
+  text-align: left; padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.table th {
+  font-weight: 500; color: var(--fg-3);
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+  background: var(--panel-2);
+}
+.table td { color: var(--fg-2); }
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: var(--hover); cursor: pointer; }
+.table tr.fresh td { background: rgba(111,214,196,0.06); }
+
+.cell-chip {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  padding: 3px 7px; border-radius: 3px;
+  color: #0a0a0a; font-weight: 600;
+  display: inline-block; line-height: 1.1;
+}
+.cell-chip.muted {
+  background: transparent;
+  color: var(--fg-2);
+  border: 1px solid var(--line-2);
+  padding: 2px 7px;
+}
+
+.query-cell { font-family: 'IBM Plex Mono', monospace; color: var(--fg); }
+.metric-cell { font-family: 'IBM Plex Mono', monospace; color: var(--fg-2); }
+.metric-cell .bad { color: var(--cell-cu);}
+.id-cell { font-family: 'IBM Plex Mono', monospace; color: var(--fg-4); font-size: 11px;}
+
+/* misc */
+.btn-icon {
+  width: 28px; height: 28px; padding: 0; justify-content: center;
+}
+
+.toolbar-divider {
+  width: 1px; height: 16px; background: var(--line); margin: 0 4px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="side">
+    <div class="side-brand">
+      <span class="brand-mark">
+        <!-- Original Veralith mark: a refracting prism -->
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <path d="M11 2 L20 18 L2 18 Z" stroke="#6fd6c4" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+          <path d="M11 2 L11 18" stroke="#6fd6c4" stroke-width="1.4" stroke-opacity="0.45"/>
+          <path d="M6.5 12 L15.5 12" stroke="#6fd6c4" stroke-width="1.4" stroke-opacity="0.45"/>
+        </svg>
+      </span>
+      <span class="brand-name">veralith</span>
+      <span class="brand-env">local</span>
+    </div>
+
+    <div class="side-search">
+      <input type="text" placeholder="Find trace, claim…" />
+      <span class="kbd">⌘K</span>
+    </div>
+
+    <nav class="side-nav">
+      <div class="side-group-label">Workspace</div>
+      <div class="side-item active">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+        Overview
+      </div>
+      <div class="side-item">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Traces
+        <span class="count">1,247</span>
+      </div>
+      <div class="side-item">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><path d="M3 13V7l5-4 5 4v6" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" fill="none"/><path d="M6 13v-3h4v3" stroke="currentColor" stroke-width="1.3"/></svg>
+        Claims
+      </div>
+      <div class="side-item">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 4v4l2.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Live stream
+        <span class="dot" style="background: var(--accent)"></span>
+      </div>
+
+      <div class="side-group-label">Diagnostics</div>
+      <div class="side-item">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><path d="M2 13l3-6 3 3 3-7 3 5" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/></svg>
+        Stats &amp; trends
+      </div>
+      <div class="side-item">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><path d="M3 8h2l2-5 2 10 2-5h2" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/></svg>
+        Failure cells
+      </div>
+      <div class="side-item">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><path d="M3 11.5l5-7 5 7" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><circle cx="8" cy="11.5" r="0.8" fill="currentColor"/></svg>
+        Calibration
+        <span class="count mono">0.85</span>
+      </div>
+
+      <div class="side-group-label">Pipeline</div>
+      <div class="side-item">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="4" r="1.5" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="4" r="1.5" stroke="currentColor" stroke-width="1.3"/><circle cx="4" cy="12" r="1.5" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="12" r="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5.2 5.2L10.8 10.8M10.8 5.2L5.2 10.8" stroke="currentColor" stroke-width="1.1"/></svg>
+        Judges
+      </div>
+      <div class="side-item">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="3" rx="0.5" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="7" width="12" height="3" rx="0.5" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="11" width="12" height="3" rx="0.5" stroke="currentColor" stroke-width="1.3"/></svg>
+        Retrieval chunks
+      </div>
+      <div class="side-item">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><path d="M3 3h10v10H3z M3 6h10 M6 6v7" stroke="currentColor" stroke-width="1.3" fill="none"/></svg>
+        Worker queue
+        <span class="count mono">3</span>
+      </div>
+    </nav>
+
+    <div class="side-foot">
+      <span class="live-dot"></span>
+      <span><span class="lbl">Connected</span><br><span style="color: var(--fg-4); font-size: 11px;" class="mono">SSE · /api/events</span></span>
+      <span class="sub">↑ 12m</span>
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <main class="main">
+
+    <div class="topbar">
+      <div class="crumbs">
+        <span>workspace</span><span class="sep">/</span>
+        <span>rule-of-72-rag</span><span class="sep">/</span>
+        <span class="here">overview</span>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn btn-ghost btn-icon" title="Docs">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 3h7l3 3v7H3z" stroke="currentColor" stroke-width="1.3"/><path d="M10 3v3h3" stroke="currentColor" stroke-width="1.3"/></svg>
+        </button>
+        <button class="btn">Export JSONL</button>
+        <button class="btn btn-primary">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          New trace
+        </button>
+      </div>
+    </div>
+
+    <div class="filterbar">
+      <button class="select">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--cell-cg);display:inline-block;"></span>
+        production
+        <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 4l3 3 3-3" stroke="currentColor" fill="none" stroke-width="1.3"/></svg>
+      </button>
+      <div class="toolbar-divider"></div>
+      <button class="select">All cells <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 4l3 3 3-3" stroke="currentColor" fill="none" stroke-width="1.3"/></svg></button>
+      <button class="select">Sufficiency: any <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 4l3 3 3-3" stroke="currentColor" fill="none" stroke-width="1.3"/></svg></button>
+      <span class="spacer"></span>
+      <button class="select">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1.5" y="2.5" width="9" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 5h9 M4 1.5v2 M8 1.5v2" stroke="currentColor" stroke-width="1.2"/></svg>
+        Last 24 hours
+        <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 4l3 3 3-3" stroke="currentColor" fill="none" stroke-width="1.3"/></svg>
+      </button>
+    </div>
+
+    <!-- Totals strip -->
+    <div class="totals">
+      <div class="tot" data-jump="#recent-traces" data-filter="all">
+        <span class="lbl">Total traces</span>
+        <span class="val">1,247</span>
+        <span class="delta up">↑ 156 in last 24h</span>
+        <span class="arrow">→</span>
+      </div>
+      <div class="tot" data-jump="#recent-traces" data-filter="complete_grounded">
+        <span class="lbl">Healthy rate</span>
+        <span class="val">86.9<span style="font-size:13px;color:var(--fg-3)">%</span></span>
+        <span class="delta up">↑ 1.2 pts vs yesterday</span>
+        <span class="arrow">→</span>
+      </div>
+      <div class="tot" data-jump="#sf-card">
+        <span class="lbl">Avg sufficiency</span>
+        <span class="val">0.94</span>
+        <span class="delta flat">→ stable</span>
+        <span class="arrow">→</span>
+      </div>
+      <div class="tot" data-jump="#sf-card">
+        <span class="lbl">Avg faithfulness</span>
+        <span class="val">0.97</span>
+        <span class="delta down">↓ 0.02 vs yesterday</span>
+        <span class="arrow">→</span>
+      </div>
+    </div>
+
+    <!-- Diagnosis banner -->
+    <div class="banner" style="margin-top:16px;">
+      <div class="banner-glyph">!</div>
+      <div class="banner-text">
+        <b>5 traces</b> landed in <span class="mono" style="color:#e25c5c;">incomplete_ungrounded</span> in the last hour — the highest density we've seen this week.
+        Likely a <b>retrieval gap</b> on queries about <span class="mono">compound interest</span>.
+      </div>
+      <div class="banner-meta">
+        <span><b>+5</b> critical</span>
+        <span><b>0.85</b> threshold</span>
+        <span><b>$6.23</b> cost / 24h</span>
+        <button class="btn" style="margin-left:14px;">Investigate</button>
+      </div>
+    </div>
+
+    <!-- ============ 2x2 GRID (matches your reference layout) ============ -->
+    <div class="grid">
+
+      <!-- (1) Cell distribution -->
+      <div class="card" id="dist-card">
+        <div class="card-head">
+          <div class="card-title">Failure cell distribution</div>
+          <div class="card-sub">last 24h · 1,247 traces</div>
+          <div class="card-link">View all →</div>
+        </div>
+        <div class="card-body">
+          <div class="dist-rows" style="margin-top:8px;">
+            <div class="dist-row">
+              <div class="dist-name"><span class="sw" style="background:var(--cell-cg);"></span>complete_grounded</div>
+              <div class="dist-bar"><i style="width:86.9%;background:var(--cell-cg);"></i></div>
+              <div class="dist-count">1,083 <span class="pct">86.9%</span></div>
+            </div>
+            <div class="dist-row">
+              <div class="dist-name"><span class="sw" style="background:var(--cell-ig);"></span>incomplete_grounded</div>
+              <div class="dist-bar"><i style="width:7.0%;background:var(--cell-ig);"></i></div>
+              <div class="dist-count">87 <span class="pct">7.0%</span></div>
+            </div>
+            <div class="dist-row">
+              <div class="dist-name"><span class="sw" style="background:var(--cell-eg);"></span>extra_grounded</div>
+              <div class="dist-bar"><i style="width:3.3%;background:var(--cell-eg);"></i></div>
+              <div class="dist-count">41 <span class="pct">3.3%</span></div>
+            </div>
+            <div class="dist-row">
+              <div class="dist-name"><span class="sw" style="background:var(--cell-cu);"></span>complete_ungrounded</div>
+              <div class="dist-bar"><i style="width:1.9%;background:var(--cell-cu);"></i></div>
+              <div class="dist-count">24 <span class="pct">1.9%</span></div>
+            </div>
+            <div class="dist-row">
+              <div class="dist-name"><span class="sw" style="background:var(--cell-eu);"></span>extra_ungrounded</div>
+              <div class="dist-bar"><i style="width:0.6%;background:var(--cell-eu);"></i></div>
+              <div class="dist-count">7 <span class="pct">0.6%</span></div>
+            </div>
+            <div class="dist-row">
+              <div class="dist-name"><span class="sw" style="background:var(--cell-iu);"></span>incomplete_ungrounded</div>
+              <div class="dist-bar"><i style="width:0.4%;background:var(--cell-iu);"></i></div>
+              <div class="dist-count">5 <span class="pct">0.4%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- (2) Trace volume -->
+      <div class="card" id="vol-card">
+        <div class="card-head">
+          <div class="card-title">Trace volume</div>
+          <div class="card-sub">hourly · last 24h</div>
+          <div class="card-link">Open chart →</div>
+        </div>
+        <div class="card-legend">
+          <span class="ch"><span class="sw" style="background:var(--accent);"></span>completed</span>
+          <span class="ch"><span class="sw" style="background:var(--cell-cu);"></span>failed</span>
+          <span class="ch" style="margin-left:auto;color:var(--fg-3)" class="mono">peak 156 / hr</span>
+        </div>
+        <div class="card-body">
+          <svg class="chart" viewBox="0 0 600 200" preserveAspectRatio="none" id="volChart"></svg>
+        </div>
+      </div>
+
+      <!-- (3) Sufficiency vs Faithfulness -->
+      <div class="card" id="sf-card">
+        <div class="card-head">
+          <div class="card-title">Sufficiency vs Faithfulness</div>
+          <div class="card-sub">avg per hour · last 24h</div>
+          <div class="card-link">Compare →</div>
+        </div>
+        <div class="card-legend">
+          <span class="ch"><span class="sw" style="background:#6fd6c4;"></span>Sufficiency 0.94</span>
+          <span class="ch"><span class="sw" style="background:#d4c84a;"></span>Faithfulness 0.97</span>
+          <span class="ch" style="margin-left:auto;color:var(--fg-3)">divergence: 0.03</span>
+        </div>
+        <div class="card-body">
+          <svg class="chart" viewBox="0 0 600 200" preserveAspectRatio="none" id="sfChart"></svg>
+        </div>
+      </div>
+
+      <!-- (4) Live trace stream -->
+      <div class="card" id="live-card">
+        <div class="card-head">
+          <div class="card-title">Live trace stream</div>
+          <span class="chip"><span class="ld"></span>live</span>
+          <div class="card-link">Pause →</div>
+        </div>
+        <div class="card-body" style="margin-top:8px;">
+          <div class="stream" id="liveStream"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =================== Trace list table =================== -->
+    <div class="tracebox" id="recent-traces">
+      <div class="tracebox-head">
+        <h3>Recent traces</h3>
+        <span class="chip"><span class="ld"></span>live</span>
+        <span id="filterBadge" style="display:none;" class="chip">
+          filter: <span class="f-name mono"></span>
+          <span style="cursor:pointer;color:var(--fg);margin-left:4px;" onclick="activeCellFilter=null;applyFilter();event.stopPropagation();">×</span>
+        </span>
+        <span style="color:var(--fg-4); font-size:12px;" class="mono">sort: newest · page 1 / 25</span>
+        <span style="margin-left:auto;"></span>
+        <button class="btn">Columns</button>
+        <button class="btn">Filters</button>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:46px;">#</th>
+            <th>Query</th>
+            <th style="width:180px;">Failure cell</th>
+            <th style="width:80px;">S</th>
+            <th style="width:80px;">F</th>
+            <th style="width:80px;">Claims</th>
+            <th style="width:90px;">Latency</th>
+            <th style="width:80px;">Cost</th>
+            <th style="width:80px;">Time</th>
+          </tr>
+        </thead>
+        <tbody id="traceTable"></tbody>
+      </table>
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+/* ============================================================
+   Data
+============================================================ */
+
+const cellMeta = {
+  complete_grounded:    { label: 'complete_grounded',    color: '#4ea872', short: 'CG' },
+  complete_ungrounded:  { label: 'complete_ungrounded',  color: '#e25c5c', short: 'CU' },
+  incomplete_grounded:  { label: 'incomplete_grounded',  color: '#e0a14a', short: 'IG' },
+  incomplete_ungrounded:{ label: 'incomplete_ungrounded',color: '#b53636', short: 'IU' },
+  extra_grounded:       { label: 'extra_grounded',       color: '#d4c84a', short: 'EG' },
+  extra_ungrounded:     { label: 'extra_ungrounded',     color: '#e25c5c', short: 'EU' },
+};
+
+const sampleTraces = [
+  { id: 1247, q: "What is the Rule of 72 and how does it apply to inflation?", cell: 'complete_grounded',    s: 1.00, f: 1.00, claims: 5,  ms: 8245,  cost: 0.0048, ago: 'just now', fresh: true },
+  { id: 1246, q: "Explain compounding frequency tradeoffs for monthly vs annual",  cell: 'incomplete_ungrounded',s: 0.50, f: 0.40, claims: 7,  ms: 11422, cost: 0.0062, ago: '12s ago' },
+  { id: 1245, q: "How do bond yields relate to inflation expectations?",          cell: 'complete_grounded',    s: 1.00, f: 1.00, claims: 4,  ms: 7340,  cost: 0.0041, ago: '38s ago' },
+  { id: 1244, q: "What is duration in fixed income?",                              cell: 'extra_grounded',       s: 1.00, f: 1.00, claims: 6,  ms: 8120,  cost: 0.0049, ago: '1m ago' },
+  { id: 1243, q: "Compute the doubling time at 6% annual return",                  cell: 'complete_grounded',    s: 1.00, f: 1.00, claims: 3,  ms: 6890,  cost: 0.0037, ago: '2m ago' },
+  { id: 1242, q: "What does APR vs APY mean? Give a worked example",               cell: 'complete_ungrounded',  s: 1.00, f: 0.67, claims: 6,  ms: 9128,  cost: 0.0051, ago: '3m ago' },
+  { id: 1241, q: "How would I model continuous compounding in Python?",            cell: 'incomplete_grounded',  s: 0.66, f: 1.00, claims: 4,  ms: 7950,  cost: 0.0044, ago: '5m ago' },
+  { id: 1240, q: "Define Sharpe ratio and its assumptions",                        cell: 'complete_grounded',    s: 1.00, f: 1.00, claims: 5,  ms: 8033,  cost: 0.0047, ago: '6m ago' },
+  { id: 1239, q: "Tail risk in normal-distribution models",                        cell: 'extra_ungrounded',     s: 1.00, f: 0.50, claims: 5,  ms: 9412,  cost: 0.0055, ago: '8m ago' },
+  { id: 1238, q: "Walk me through duration matching for an insurance liability",   cell: 'incomplete_grounded',  s: 0.66, f: 1.00, claims: 8,  ms: 10250, cost: 0.0058, ago: '11m ago' },
+  { id: 1237, q: "Why do central banks raise rates to fight inflation?",           cell: 'complete_grounded',    s: 1.00, f: 1.00, claims: 4,  ms: 7400,  cost: 0.0042, ago: '14m ago' },
+];
+
+/* ============================================================
+   Navigation wiring
+============================================================ */
+// Sidebar nav: toggle active state
+document.querySelectorAll('.side-item').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.side-item.active').forEach(a => a.classList.remove('active'));
+    el.classList.add('active');
+    const label = el.textContent.trim().split('\n')[0].trim();
+    if (label === 'Traces' || label === 'Live stream') {
+      document.getElementById('recent-traces').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (label === 'Stats & trends') {
+      document.getElementById('sf-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (label === 'Failure cells') {
+      document.getElementById('dist-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (label === 'Overview') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
+});
+
+// Totals strip: scroll to target + optionally filter
+let activeCellFilter = null;
+document.querySelectorAll('.tot[data-jump]').forEach(el => {
+  el.addEventListener('click', () => {
+    const target = document.querySelector(el.dataset.jump);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const filter = el.dataset.filter;
+    if (filter) {
+      activeCellFilter = (filter === 'all') ? null : filter;
+      applyFilter();
+    }
+  });
+});
+
+function applyFilter() {
+  const rows = document.querySelectorAll('#traceTable tr');
+  rows.forEach(r => {
+    if (!activeCellFilter) { r.style.display = ''; return; }
+    const chip = r.querySelector('.cell-chip');
+    r.style.display = (chip && chip.textContent.trim() === activeCellFilter) ? '' : 'none';
+  });
+  const badge = document.getElementById('filterBadge');
+  if (activeCellFilter) {
+    badge.style.display = 'inline-flex';
+    badge.querySelector('.f-name').textContent = activeCellFilter;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+/* ============================================================
+   Trace list table
+============================================================ */
+const tbody = document.getElementById('traceTable');
+sampleTraces.forEach(t => {
+  const meta = cellMeta[t.cell];
+  const row = document.createElement('tr');
+  if (t.fresh) row.classList.add('fresh');
+  row.innerHTML = `
+    <td class="id-cell">#${t.id}</td>
+    <td class="query-cell">${t.q}</td>
+    <td><span class="cell-chip" style="background:${meta.color};">${meta.label}</span></td>
+    <td class="metric-cell"><span class="${t.s < 0.8 ? 'bad' : ''}">${t.s.toFixed(2)}</span></td>
+    <td class="metric-cell"><span class="${t.f < 0.8 ? 'bad' : ''}">${t.f.toFixed(2)}</span></td>
+    <td class="metric-cell">${t.claims}</td>
+    <td class="metric-cell">${(t.ms/1000).toFixed(2)}s</td>
+    <td class="metric-cell">$${t.cost.toFixed(4)}</td>
+    <td class="metric-cell" style="color:var(--fg-4)">${t.ago}</td>
+  `;
+  row.addEventListener('click', () => {
+    window.location.href = `Veralith Trace Detail.html?id=${t.id}`;
+  });
+  tbody.appendChild(row);
+});
+
+// Distribution rows: filter trace table
+document.querySelectorAll('.dist-row').forEach(row => {
+  row.addEventListener('click', () => {
+    const name = row.querySelector('.dist-name').textContent.trim();
+    activeCellFilter = name;
+    applyFilter();
+    document.getElementById('recent-traces').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+
+// Banner Investigate button → worst trace
+document.querySelector('.banner .btn').addEventListener('click', () => {
+  window.location.href = `Veralith Trace Detail.html?id=1246`;
+});
+
+/* ============================================================
+   Live trace stream (card #4)
+============================================================ */
+const stream = document.getElementById('liveStream');
+
+// Live stream rows clickable too
+stream.addEventListener('click', (e) => {
+  const r = e.target.closest('.stream-row');
+  if (!r) return;
+  window.location.href = `Veralith Trace Detail.html?id=1246`;
+});
+stream.style.cursor = 'pointer';
+
+sampleTraces.slice(0, 6).forEach((t, i) => {
+  const meta = cellMeta[t.cell];
+  const row = document.createElement('div');
+  row.className = 'stream-row' + (t.fresh ? ' new' : '');
+  row.innerHTML = `
+    <span class="cell" style="background:${meta.color};">${meta.label}</span>
+    <span class="q">${t.q}</span>
+    <span class="met">S ${t.s.toFixed(2)} · F ${t.f.toFixed(2)}</span>
+    <span class="ago">${t.ago}</span>
+  `;
+  stream.appendChild(row);
+});
+
+/* ============================================================
+   Smooth curve helper (catmull-rom → cubic bezier)
+============================================================ */
+function smoothPath(points) {
+  if (points.length < 2) return '';
+  let d = `M ${points[0][0]} ${points[0][1]}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] || points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] || p2;
+    const t = 0.18; // tension; lower = looser curve
+    const cp1x = p1[0] + (p2[0] - p0[0]) * t;
+    const cp1y = p1[1] + (p2[1] - p0[1]) * t;
+    const cp2x = p2[0] - (p3[0] - p1[0]) * t;
+    const cp2y = p2[1] - (p3[1] - p1[1]) * t;
+    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2[0]} ${p2[1]}`;
+  }
+  return d;
+}
+function smoothArea(points, baselineY) {
+  if (points.length < 2) return '';
+  const linePath = smoothPath(points);
+  return linePath + ` L ${points[points.length-1][0]} ${baselineY} L ${points[0][0]} ${baselineY} Z`;
+}
+
+/* ============================================================
+   Volume chart  (stacked area-ish)
+============================================================ */
+(function drawVolume(){
+  const svg = document.getElementById('volChart');
+  const W = 600, H = 200, padL = 32, padR = 8, padT = 14, padB = 24;
+  const data = [
+    {h:'00', ok: 32, bad: 2},{h:'02', ok: 28, bad: 1},{h:'04', ok: 22, bad: 0},
+    {h:'06', ok: 41, bad: 3},{h:'08', ok: 72, bad: 5},{h:'10', ok: 98, bad: 7},
+    {h:'12', ok:124, bad: 9},{h:'14', ok:142, bad:11},{h:'16', ok:156, bad:14},
+    {h:'18', ok:132, bad: 8},{h:'20', ok: 96, bad: 4},{h:'22', ok: 60, bad: 3},
+    {h:'now',ok: 42, bad: 1},
+  ];
+  const maxV = 180;
+  const xStep = (W - padL - padR) / (data.length - 1);
+  const yScale = v => H - padB - (v / maxV) * (H - padB - padT);
+
+  let out = '';
+  // grid + y axis
+  for (let i=0; i<=3; i++) {
+    const v = (maxV/3) * i;
+    const y = yScale(v);
+    out += `<line class="grid-line" x1="${padL}" x2="${W-padR}" y1="${y}" y2="${y}" />`;
+    out += `<text class="axis-y" x="${padL-6}" y="${y+3}" text-anchor="end">${Math.round(v)}</text>`;
+  }
+  // x labels
+  data.forEach((d, i) => {
+    if (i % 2 === 0) {
+      const x = padL + xStep*i;
+      out += `<text class="axis-x" x="${x}" y="${H-6}" text-anchor="middle">${d.h}</text>`;
+    }
+  });
+
+  // area path (completed)
+  const okPts = data.map((d, i) => [padL + xStep*i, yScale(d.ok)]);
+  out += `<path d="${smoothArea(okPts, yScale(0))}" fill="rgba(111,214,196,0.16)" />`;
+
+  // ok line
+  out += `<path d="${smoothPath(okPts)}" stroke="#6fd6c4" stroke-width="1.8" fill="none" stroke-linejoin="round" stroke-linecap="round" />`;
+
+  // failed bars (small)
+  data.forEach((d, i) => {
+    const x = padL + xStep*i;
+    const h = (d.bad / maxV) * (H - padB - padT);
+    out += `<rect x="${x-2}" y="${H-padB-h}" width="4" height="${h}" fill="#e25c5c" rx="1" />`;
+  });
+
+  // points
+  data.forEach((d, i) => {
+    const x = padL + xStep*i;
+    out += `<circle cx="${x}" cy="${yScale(d.ok)}" r="2" fill="#6fd6c4" />`;
+  });
+
+  // current marker
+  const lastX = padL + xStep*(data.length-1);
+  out += `<line x1="${lastX}" x2="${lastX}" y1="${padT}" y2="${H-padB}" stroke="#6fd6c4" stroke-dasharray="2 3" stroke-opacity="0.5"/>`;
+
+  svg.innerHTML = out;
+})();
+
+/* ============================================================
+   S vs F chart
+============================================================ */
+(function drawSF(){
+  const svg = document.getElementById('sfChart');
+  const W = 600, H = 200, padL = 32, padR = 8, padT = 14, padB = 24;
+  const s = [.96,.95,.94,.93,.95,.94,.92,.91,.89,.90,.92,.94,.93,.94];
+  const f = [.97,.98,.97,.97,.96,.97,.98,.97,.96,.94,.96,.97,.96,.97];
+  const min = 0.80, max = 1.00;
+  const xStep = (W - padL - padR) / (s.length - 1);
+  const yScale = v => H - padB - ((v - min) / (max - min)) * (H - padB - padT);
+
+  let out = '';
+  for (let i=0; i<=4; i++) {
+    const v = min + ((max-min)/4) * i;
+    const y = yScale(v);
+    out += `<line class="grid-line" x1="${padL}" x2="${W-padR}" y1="${y}" y2="${y}" />`;
+    out += `<text class="axis-y" x="${padL-6}" y="${y+3}" text-anchor="end">${v.toFixed(2)}</text>`;
+  }
+  ['-24h','-18h','-12h','-6h','now'].forEach((lbl,i) => {
+    const x = padL + (i/(4)) * (W - padL - padR);
+    out += `<text class="axis-x" x="${x}" y="${H-6}" text-anchor="middle">${lbl}</text>`;
+  });
+
+  function lineFor(arr, color, fill){
+    const pts = arr.map((v, i) => [padL + xStep*i, yScale(v)]);
+    if (fill) {
+      out += `<path d="${smoothArea(pts, yScale(min))}" fill="${fill}" />`;
+    }
+    out += `<path d="${smoothPath(pts)}" stroke="${color}" stroke-width="1.8" fill="none" stroke-linejoin="round" stroke-linecap="round" />`;
+    pts.forEach(p => {
+      out += `<circle cx="${p[0]}" cy="${p[1]}" r="1.8" fill="${color}" />`;
+    });
+  }
+  lineFor(s, '#6fd6c4', 'rgba(111,214,196,0.10)');
+  lineFor(f, '#d4c84a', null);
+
+  // calibration threshold line at 0.85
+  const yT = yScale(0.85);
+  out += `<line x1="${padL}" x2="${W-padR}" y1="${yT}" y2="${yT}" stroke="#7c828c" stroke-dasharray="3 3" stroke-opacity="0.6"/>`;
+  out += `<text class="axis-y" x="${W-padR}" y="${yT-4}" text-anchor="end" style="fill:#7c828c">threshold 0.85</text>`;
+
+  svg.innerHTML = out;
+})();
+
+/* ============================================================
+   Simulated live arrival — adds a new stream row every 9s
+============================================================ */
+const liveQueries = [
+  { q: "Real return vs nominal — does the Rule of 72 hold?",    cell: 'complete_grounded',    s: 1.00, f: 1.00 },
+  { q: "Continuous vs discrete compounding for crypto staking", cell: 'incomplete_grounded',  s: 0.66, f: 1.00 },
+  { q: "What is the formula for present value of an annuity?",  cell: 'complete_grounded',    s: 1.00, f: 1.00 },
+  { q: "Are floating-rate notes immune to duration risk?",      cell: 'complete_ungrounded',  s: 1.00, f: 0.50 },
+];
+let liveIx = 0, liveId = 1248;
+setInterval(() => {
+  const t = liveQueries[liveIx % liveQueries.length];
+  const meta = cellMeta[t.cell];
+  const row = document.createElement('div');
+  row.className = 'stream-row new';
+  row.innerHTML = `
+    <span class="cell" style="background:${meta.color};">${meta.label}</span>
+    <span class="q">${t.q}</span>
+    <span class="met">S ${t.s.toFixed(2)} · F ${t.f.toFixed(2)}</span>
+    <span class="ago">just now</span>
+  `;
+  stream.prepend(row);
+  while (stream.children.length > 7) stream.removeChild(stream.lastChild);
+
+  // shift "just now" labels down
+  [...stream.children].forEach((r, i) => {
+    if (i === 0) return;
+    const ago = r.querySelector('.ago');
+    const cur = ago.textContent;
+    if (cur === 'just now')   ago.textContent = '9s ago';
+    else if (cur === '9s ago')  ago.textContent = '18s ago';
+    else if (cur === '18s ago') ago.textContent = '27s ago';
+  });
+  liveIx++; liveId++;
+}, 9000);
+</script>
+
+</body>
+</html>

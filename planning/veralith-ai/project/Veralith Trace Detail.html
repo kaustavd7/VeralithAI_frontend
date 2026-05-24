@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Veralith — Trace #1246</title>
+<meta name="viewport" content="width=1440" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg:           #0b0c0e;
+  --panel:        #111316;
+  --panel-2:      #15181c;
+  --panel-3:      #1a1e23;
+  --line:         #23262b;
+  --line-2:       #2c3037;
+  --hover:        #181b1f;
+  --fg:           #e9ebee;
+  --fg-2:         #b6bac1;
+  --fg-3:         #7c828c;
+  --fg-4:         #555b66;
+  --accent:       #6fd6c4;
+  --accent-dim:   #2b4f4a;
+
+  --cell-cg:      #4ea872;
+  --cell-cu:      #e25c5c;
+  --cell-ig:      #e0a14a;
+  --cell-iu:      #b53636;
+  --cell-eg:      #d4c84a;
+  --cell-eu:      #e25c5c;
+
+  --hl-green:     rgba(78, 168, 114, 0.22);
+  --hl-green-b:   rgba(78, 168, 114, 0.55);
+  --hl-red:       rgba(226, 92, 92, 0.20);
+  --hl-red-b:     rgba(226, 92, 92, 0.65);
+
+  --radius: 10px;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 13px; line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+/* ----- shell (sidebar same as overview) ----- */
+.app { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+.side {
+  border-right: 1px solid var(--line); background: var(--bg);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+}
+.side-brand { padding: 18px 18px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line);}
+.brand-name { font-weight: 600; letter-spacing: -0.01em; font-size: 14px;}
+.brand-env { margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--fg-3); padding: 2px 6px; border: 1px solid var(--line); border-radius: 4px;}
+.side-search { padding: 12px 14px; border-bottom: 1px solid var(--line);}
+.side-search input {
+  width: 100%; background: var(--panel); border: 1px solid var(--line);
+  color: var(--fg); padding: 8px 10px; border-radius: 6px;
+  font-family: inherit; font-size: 12px; outline: none;
+}
+.side-search input::placeholder { color: var(--fg-4); }
+.side-search .kbd { float: right; margin-top: -25px; margin-right: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--fg-4); background: var(--bg); padding: 1px 5px; border: 1px solid var(--line); border-radius: 3px; position: relative;}
+.side-nav { padding: 8px 8px; flex: 1; overflow: auto; }
+.side-group-label { font-size: 10px; letter-spacing: 0.08em; color: var(--fg-4); text-transform: uppercase; padding: 14px 12px 6px;}
+.side-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px; color: var(--fg-2); font-size: 13px; cursor: pointer; text-decoration: none;}
+.side-item:hover { background: var(--hover); color: var(--fg); }
+.side-item.active { background: var(--panel-2); color: var(--fg); }
+.side-item .ic { width: 14px; height: 14px; color: var(--fg-3); flex: none; }
+.side-item.active .ic { color: var(--accent); }
+.side-item .count { margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--fg-4);}
+.side-foot { border-top: 1px solid var(--line); padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--fg-2);}
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite;}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(111, 214, 196, 0.45); }
+  70%  { box-shadow: 0 0 0 8px rgba(111, 214, 196, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(111, 214, 196, 0); }
+}
+.side-foot .lbl { color: var(--fg); font-weight: 500; }
+.side-foot .sub { color: var(--fg-4); margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 10px;}
+
+/* ----- main ----- */
+.main { display: flex; flex-direction: column; }
+.topbar { display: flex; align-items: center; padding: 14px 28px; border-bottom: 1px solid var(--line); gap: 16px; }
+.crumbs { display: flex; align-items: center; gap: 8px; color: var(--fg-3); font-size: 13px;}
+.crumbs a { color: var(--fg-3); text-decoration: none;}
+.crumbs a:hover { color: var(--fg); }
+.crumbs .here { color: var(--fg); font-family: 'IBM Plex Mono', monospace;}
+.crumbs .sep { color: var(--fg-4); }
+.top-actions { margin-left: auto; display: flex; gap: 8px; align-items: center;}
+.btn {
+  background: var(--panel); border: 1px solid var(--line);
+  color: var(--fg); padding: 6px 10px; border-radius: 6px;
+  font-family: inherit; font-size: 12px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  text-decoration: none;
+}
+.btn:hover { background: var(--panel-2); border-color: var(--line-2); }
+.btn-primary { background: var(--accent); color: #08221d; border-color: var(--accent); font-weight: 600;}
+.btn-primary:hover { background: #82e0d0; }
+.btn-ghost { background: transparent; }
+.btn-icon { width: 28px; height: 28px; padding: 0; justify-content: center;}
+
+/* ----- diagnosis banner ----- */
+.diag {
+  margin: 22px 28px 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+}
+.diag-left {
+  padding: 22px 24px;
+  background: linear-gradient(180deg, rgba(181,54,54,0.12), rgba(181,54,54,0.04));
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 14px;
+}
+.cell-pill {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  background: var(--cell-iu); color: #fff;
+  padding: 4px 10px; border-radius: 4px; width: fit-content;
+  letter-spacing: 0.02em; font-weight: 600;
+}
+.cell-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 24px; font-weight: 600; color: var(--fg);
+  letter-spacing: -0.01em; line-height: 1.15;
+}
+.cell-meaning { color: var(--fg-2); font-size: 12.5px;}
+.sf-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto;}
+.sf-pair .box { background: rgba(0,0,0,0.25); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px;}
+.sf-pair .box .l { font-size: 10px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.06em;}
+.sf-pair .box .v { font-family: 'IBM Plex Mono', monospace; font-size: 20px; color: var(--fg); margin-top: 2px;}
+.sf-pair .box .v.bad { color: var(--cell-cu);}
+.sf-pair .box .v.warn { color: var(--cell-ig);}
+.sf-pair .box .sub { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--fg-4); margin-top: 1px;}
+
+.diag-right { padding: 22px 24px; display: flex; flex-direction: column; gap: 12px;}
+.diag-title { font-size: 17px; font-weight: 600; color: var(--fg); letter-spacing: -0.01em; }
+.diag-body { color: var(--fg-2); font-size: 13.5px; max-width: 64ch;}
+.actions {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 14px 16px; margin-top: 4px;
+}
+.actions-head {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; text-transform: uppercase; color: var(--fg-3); letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+.actions-head .copy {
+  margin-left: auto; color: var(--fg-2); cursor: pointer; font-size: 11px;
+  display: inline-flex; align-items: center; gap: 5px; text-transform: none; letter-spacing: 0;
+}
+.actions-head .copy:hover { color: var(--fg); }
+.actions ol { margin: 0; padding-left: 18px;}
+.actions li { color: var(--fg); padding: 4px 0; font-size: 13px;}
+.actions li code {
+  font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+  background: rgba(111,214,196,0.10); color: var(--accent);
+  padding: 1px 6px; border-radius: 3px;
+}
+
+/* ----- section title ----- */
+.section { margin: 28px 28px 0; }
+.section-head {
+  display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;
+}
+.section-head h2 {
+  margin: 0; font-size: 13px; font-weight: 600;
+  color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.08em;
+}
+.section-head .sub { color: var(--fg-4); font-size: 11px; font-family: 'IBM Plex Mono', monospace;}
+.section-head .right { margin-left: auto; }
+
+/* ----- Q / R columns ----- */
+.qr {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+.qr .pane {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 16px 18px 18px;
+}
+.pane-h {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.pane-h .tag {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  padding: 2px 6px; border-radius: 3px; background: var(--panel-3); color: var(--fg-2);
+}
+.pane-h h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.pane-h .meta { margin-left: auto; color: var(--fg-4); font-size: 11px; font-family: 'IBM Plex Mono', monospace;}
+
+.q-text { font-family: 'IBM Plex Mono', monospace; color: var(--fg); font-size: 13.5px; line-height: 1.6;}
+.q-sub {
+  margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.q-sub-h { color: var(--fg-3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;}
+.subq {
+  display: grid; grid-template-columns: 28px 1fr auto; gap: 10px;
+  align-items: flex-start; padding: 8px 10px; border-radius: 6px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  font-size: 12px;
+}
+.subq.fail { background: rgba(226,92,92,0.05); border-color: rgba(226,92,92,0.30);}
+.subq.pass { background: rgba(78,168,114,0.04); border-color: rgba(78,168,114,0.22);}
+.subq .ix { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fg-4); padding-top: 1px;}
+.subq .body .t { font-family: 'IBM Plex Mono', monospace; color: var(--fg); font-size: 12.5px;}
+.subq .body .r { color: var(--fg-3); font-size: 11.5px; margin-top: 2px;}
+.subq .body .r b { color: var(--fg-2); font-family: 'IBM Plex Mono', monospace; font-weight: 500;}
+.verdict {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  padding: 3px 7px; border-radius: 3px; font-weight: 600;
+  background: var(--cell-cg); color: #fff;
+  align-self: flex-start;
+}
+.verdict.no { background: var(--cell-cu); }
+.verdict.missing { background: var(--cell-iu); }
+
+/* ----- claim highlights ----- */
+.r-text { font-size: 14px; line-height: 1.75; color: var(--fg); }
+.claim {
+  position: relative;
+  padding: 1px 4px; margin: 0 -2px; border-radius: 3px;
+  cursor: help;
+  border-bottom: 1.5px solid transparent;
+}
+.claim.ok    { background: var(--hl-green); border-bottom-color: var(--hl-green-b); }
+.claim.bad   { background: var(--hl-red);   border-bottom-color: var(--hl-red-b); }
+.claim:hover { filter: brightness(1.25); }
+.claim .badge {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9.5px;
+  background: var(--bg); color: var(--fg-3); padding: 0 4px; border-radius: 2px;
+  margin: 0 4px 0 2px; vertical-align: 1px; border: 1px solid var(--line);
+}
+.claim.bad .badge { color: var(--cell-cu); border-color: rgba(226,92,92,0.3);}
+.claim.ok  .badge { color: var(--cell-cg); border-color: rgba(78,168,114,0.3);}
+
+/* tooltip */
+.tip {
+  position: absolute; bottom: calc(100% + 8px); left: 0;
+  background: #0a0b0d; border: 1px solid var(--line-2); border-radius: 8px;
+  padding: 10px 12px; width: 320px; z-index: 20;
+  font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; color: var(--fg-2);
+  line-height: 1.5;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.5);
+  opacity: 0; pointer-events: none; transform: translateY(4px);
+  transition: opacity 0.12s, transform 0.12s;
+}
+.tip-head {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  color: var(--fg-4); text-transform: uppercase; letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.tip-head .v { padding: 2px 6px; border-radius: 3px; color: #fff; font-weight: 600;}
+.tip-head .v.no { background: var(--cell-cu);}
+.tip-head .v.ok { background: var(--cell-cg);}
+.tip .chunk-ref { color: var(--fg-3); margin-left: auto; }
+.tip code { font-family: 'IBM Plex Mono', monospace; color: var(--accent); }
+.claim:hover .tip { opacity: 1; transform: translateY(0); }
+
+.legend-row {
+  display: flex; gap: 14px; padding: 8px 0 14px;
+  font-size: 11px; color: var(--fg-3); font-family: 'IBM Plex Mono', monospace;
+}
+.legend-row .sw { display: inline-block; width: 14px; height: 8px; border-radius: 2px; vertical-align: -1px; margin-right: 6px;}
+
+/* ----- chunks ----- */
+.chunks { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px;}
+.chunk {
+  padding: 12px 0; border-top: 1px dashed var(--line);
+  display: grid; grid-template-columns: 50px 1fr; gap: 14px; align-items: flex-start;
+}
+.chunks .chunk:first-of-type { border-top: none; padding-top: 4px;}
+.chunk .rank {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fg-3);
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 4px; padding: 4px 0; text-align: center;
+  position: sticky; top: 14px;
+}
+.chunk .rank.cited { border-color: var(--accent); color: var(--accent);}
+.chunk-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fg-3);
+}
+.chunk-head .src { color: var(--fg-2); }
+.chunk-head .score { margin-left: auto; }
+.chunk-head .pill {
+  font-size: 10px; padding: 1px 6px; border-radius: 3px;
+  background: rgba(111,214,196,0.10); color: var(--accent);
+}
+.chunk-head .pill.miss { background: rgba(226,92,92,0.10); color: var(--cell-cu);}
+.chunk-text { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--fg-2); line-height: 1.6; }
+
+/* ----- per-claim table ----- */
+.claim-list { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;}
+.claim-row {
+  display: grid;
+  grid-template-columns: 50px 1fr 110px 100px;
+  gap: 14px; padding: 12px 18px; border-bottom: 1px solid var(--line);
+  align-items: flex-start;
+}
+.claim-row:last-child { border-bottom: none; }
+.claim-row .ix { font-family: 'IBM Plex Mono', monospace; color: var(--fg-4); font-size: 11px; padding-top: 2px;}
+.claim-row .ct { font-family: 'IBM Plex Mono', monospace; color: var(--fg); font-size: 12.5px; line-height: 1.5;}
+.claim-row .ct .why { color: var(--fg-3); font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; margin-top: 4px; display: block;}
+.claim-row .grounding { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fg-3);}
+.claim-row .grounding b { color: var(--fg); }
+.claim-row .v { align-self: flex-start; }
+
+/* ----- footer (latency + cost) ----- */
+.foot {
+  margin: 28px 28px 32px; padding: 16px 18px;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
+  display: grid; grid-template-columns: 2fr 1fr; gap: 24px;
+}
+.lat { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; align-items: end;}
+.lat .ph { display: flex; flex-direction: column; gap: 4px; font-size: 10px; color: var(--fg-4); font-family: 'IBM Plex Mono', monospace;}
+.lat .bar { background: var(--accent-dim); border-radius: 2px 2px 0 0; position: relative;}
+.lat .bar i { display: block; height: 100%; background: var(--accent); border-radius: 2px 2px 0 0;}
+.lat .ph .ms { color: var(--fg-2); }
+.lat .ph .nm { margin-top: 4px;}
+.cost {
+  display: flex; flex-direction: column; gap: 4px;
+  border-left: 1px solid var(--line); padding-left: 24px;
+}
+.cost .row { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fg-3);}
+.cost .row b { color: var(--fg); font-weight: 500;}
+.cost .total { color: var(--fg); font-size: 16px; margin-top: 4px;}
+
+/* ----- collapsible ----- */
+details summary { list-style: none; cursor: pointer; }
+details summary::-webkit-details-marker { display: none; }
+.coll-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px; background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); user-select: none;
+}
+details[open] .coll-head { border-radius: var(--radius) var(--radius) 0 0; border-bottom: none;}
+.coll-head .chev { color: var(--fg-3); transition: transform 0.16s;}
+details[open] .coll-head .chev { transform: rotate(90deg); }
+.coll-head h3 { margin: 0; font-size: 14px; font-weight: 600;}
+.coll-head .meta { margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fg-3);}
+.coll-body { border: 1px solid var(--line); border-top: none; border-radius: 0 0 var(--radius) var(--radius); background: var(--panel);}
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px);
+  background: #0a0b0d; border: 1px solid var(--accent); color: var(--fg);
+  padding: 10px 16px; border-radius: 8px; font-size: 13px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.5);
+  opacity: 0; pointer-events: none; transition: all 0.18s;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="side">
+    <div class="side-brand">
+      <span class="brand-mark">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <path d="M11 2 L20 18 L2 18 Z" stroke="#6fd6c4" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+          <path d="M11 2 L11 18" stroke="#6fd6c4" stroke-width="1.4" stroke-opacity="0.45"/>
+          <path d="M6.5 12 L15.5 12" stroke="#6fd6c4" stroke-width="1.4" stroke-opacity="0.45"/>
+        </svg>
+      </span>
+      <span class="brand-name">veralith</span>
+      <span class="brand-env">local</span>
+    </div>
+
+    <div class="side-search">
+      <input type="text" placeholder="Find trace, claim…" />
+      <span class="kbd">⌘K</span>
+    </div>
+
+    <nav class="side-nav">
+      <div class="side-group-label">Workspace</div>
+      <a class="side-item" href="Veralith Dashboard.html">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+        Overview
+      </a>
+      <a class="side-item active" href="Veralith Dashboard.html#recent-traces">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Traces
+        <span class="count">1,247</span>
+      </a>
+      <a class="side-item" href="Veralith Dashboard.html#dist-card">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><path d="M3 13V7l5-4 5 4v6" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" fill="none"/><path d="M6 13v-3h4v3" stroke="currentColor" stroke-width="1.3"/></svg>
+        Claims
+      </a>
+      <a class="side-item" href="Veralith Dashboard.html#live-card">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 4v4l2.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Live stream
+      </a>
+
+      <div class="side-group-label">Diagnostics</div>
+      <a class="side-item" href="Veralith Dashboard.html#sf-card">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><path d="M2 13l3-6 3 3 3-7 3 5" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/></svg>
+        Stats &amp; trends
+      </a>
+      <a class="side-item" href="Veralith Dashboard.html#dist-card">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><path d="M3 8h2l2-5 2 10 2-5h2" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/></svg>
+        Failure cells
+      </a>
+      <div class="side-item">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><path d="M3 11.5l5-7 5 7" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><circle cx="8" cy="11.5" r="0.8" fill="currentColor"/></svg>
+        Calibration
+        <span class="count mono">0.85</span>
+      </div>
+
+      <div class="side-group-label">Pipeline</div>
+      <div class="side-item">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="4" r="1.5" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="4" r="1.5" stroke="currentColor" stroke-width="1.3"/><circle cx="4" cy="12" r="1.5" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="12" r="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5.2 5.2L10.8 10.8M10.8 5.2L5.2 10.8" stroke="currentColor" stroke-width="1.1"/></svg>
+        Judges
+      </div>
+      <div class="side-item">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="3" rx="0.5" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="7" width="12" height="3" rx="0.5" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="11" width="12" height="3" rx="0.5" stroke="currentColor" stroke-width="1.3"/></svg>
+        Retrieval chunks
+      </div>
+      <div class="side-item">
+        <svg class="ic" viewBox="0 0 16 16" fill="none"><path d="M3 3h10v10H3z M3 6h10 M6 6v7" stroke="currentColor" stroke-width="1.3" fill="none"/></svg>
+        Worker queue
+        <span class="count mono">3</span>
+      </div>
+    </nav>
+
+    <div class="side-foot">
+      <span class="live-dot"></span>
+      <span><span class="lbl">Connected</span><br><span style="color: var(--fg-4); font-size: 11px;" class="mono">SSE · /api/events</span></span>
+      <span class="sub">↑ 12m</span>
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <main class="main">
+
+    <div class="topbar">
+      <div class="crumbs">
+        <a href="Veralith Dashboard.html">workspace</a><span class="sep">/</span>
+        <a href="Veralith Dashboard.html">rule-of-72-rag</a><span class="sep">/</span>
+        <a href="Veralith Dashboard.html#recent-traces">traces</a><span class="sep">/</span>
+        <span class="here">#1246</span>
+      </div>
+      <div class="top-actions">
+        <a class="btn btn-ghost" href="Veralith Dashboard.html">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7 2L3 6l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Back
+        </a>
+        <button class="btn">Re-evaluate</button>
+        <button class="btn">Flag false positive</button>
+        <button class="btn btn-primary">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3v6h6M3 9l5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Open raw JSON
+        </button>
+      </div>
+    </div>
+
+    <!-- ============== Diagnosis banner ============== -->
+    <div class="diag">
+      <div class="diag-left">
+        <span class="cell-pill">CRITICAL · worst-case</span>
+        <div class="cell-name">incomplete_<wbr>ungrounded</div>
+        <div class="cell-meaning">
+          The response missed parts of the question, <i>and</i> fabricated facts within what it did answer.
+          This is the worst-case cell — both retrieval and generation failed at once.
+        </div>
+        <div class="sf-pair">
+          <div class="box">
+            <div class="l">Sufficiency</div>
+            <div class="v warn">0.50</div>
+            <div class="sub">1 / 2 sub-questions · level LOW</div>
+          </div>
+          <div class="box">
+            <div class="l">Faithfulness</div>
+            <div class="v bad">0.40</div>
+            <div class="sub">2 / 5 claims grounded</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="diag-right">
+        <div class="diag-title">Retrieval gap, plus the generator hallucinated to fill the gap</div>
+        <div class="diag-body">
+          Only 1 of 2 sub-questions had supporting context in retrieval. The generator answered both anyway — and the un-grounded half is where the fabricated claims live. Fixing retrieval will likely fix both metrics together.
+        </div>
+        <div class="actions">
+          <div class="actions-head">
+            <span>Suggested actions</span>
+            <span class="copy" id="copyActions">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="3" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M5 3V2a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H9" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+              Copy as Markdown
+            </span>
+          </div>
+          <ol>
+            <li>Inspect the retriever for queries about <code>compounding frequency</code> — the chunk-store appears to be missing coverage on monthly vs annual tradeoffs.</li>
+            <li>Re-rank with <code>top_k = 8</code> (currently 4) on this query class and verify Q1 gets supporting context.</li>
+            <li>Lower generator temperature to <code>0.2</code> until retrieval is patched — this reduces willingness to fabricate when context is thin.</li>
+            <li>Consider a <code>refuse_when_insufficient</code> guardrail keyed off the Sufficiency judge's verdict.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============== Q / R ============== -->
+    <div class="section">
+      <div class="section-head">
+        <h2>Query &amp; Response</h2>
+        <span class="sub">claims highlighted by judge verdict · hover any claim for reasoning</span>
+        <div class="right">
+          <span class="legend-row" style="padding:0;">
+            <span><span class="sw" style="background:var(--hl-green);border-bottom:1.5px solid var(--hl-green-b);"></span>grounded claim</span>
+            <span><span class="sw" style="background:var(--hl-red);border-bottom:1.5px solid var(--hl-red-b);"></span>ungrounded claim</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="qr">
+        <div class="pane">
+          <div class="pane-h">
+            <span class="tag">Q</span>
+            <h3>Query</h3>
+            <span class="meta">2 sub-questions · 78 chars</span>
+          </div>
+          <p class="q-text">Explain compounding frequency tradeoffs for monthly vs annual, and how this changes the doubling time under the Rule of 72.</p>
+
+          <div class="q-sub">
+            <div class="q-sub-h">Sub-questions (decomposed by judge)</div>
+
+            <div class="subq pass">
+              <span class="ix">Q0</span>
+              <div class="body">
+                <div class="t">How does the Rule of 72 estimate doubling time?</div>
+                <div class="r"><b>Judge:</b> Directly defined in chunk #0 (similarity 0.82). Sufficient context to answer.</div>
+                <div class="r"><b>Supporting:</b> chunks #0, #2</div>
+              </div>
+              <span class="verdict">PASS</span>
+            </div>
+
+            <div class="subq fail">
+              <span class="ix">Q1</span>
+              <div class="body">
+                <div class="t">What are the tradeoffs of monthly vs annual compounding?</div>
+                <div class="r"><b>Judge:</b> No retrieved chunk discusses compounding frequency tradeoffs. All chunks cover the Rule of 72 itself, not periodic compounding.</div>
+                <div class="r"><b>Supporting:</b> none</div>
+              </div>
+              <span class="verdict missing">UNCOVERED</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pane">
+          <div class="pane-h">
+            <span class="tag">R</span>
+            <h3>Response</h3>
+            <span class="meta">5 claims · 2 grounded · 3 ungrounded</span>
+          </div>
+          <p class="r-text">
+            <span class="claim ok">The Rule of 72 estimates doubling time by dividing 72 by the annual interest rate.<span class="badge">R0</span>
+              <span class="tip">
+                <span class="tip-head"><span class="v ok">Y</span> Faithfulness <span class="chunk-ref">→ chunk #0</span></span>
+                Stated almost verbatim in chunk #0: "Divide 72 by the rate of return…". Direct lift, no fabrication.
+              </span>
+            </span>
+            <span class="claim ok">At a 6% return, the formula gives roughly 12 years to double.<span class="badge">R1</span>
+              <span class="tip">
+                <span class="tip-head"><span class="v ok">Y</span> Faithfulness <span class="chunk-ref">→ chunk #0, #2</span></span>
+                Both chunks include the 6% / 12-year worked example. Numerically grounded.
+              </span>
+            </span>
+            <span class="claim bad">Monthly compounding produces a doubling time of about 11.6 years at the same nominal rate.<span class="badge">R2</span>
+              <span class="tip">
+                <span class="tip-head"><span class="v no">N</span> Faithfulness <span class="chunk-ref">→ no chunk</span></span>
+                No retrieved chunk discusses monthly vs annual compounding outcomes. The 11.6-year figure has no source in retrieval — fabricated.
+              </span>
+            </span>
+            <span class="claim bad">Banks generally prefer annual compounding because it reduces operational overhead.<span class="badge">R3</span>
+              <span class="tip">
+                <span class="tip-head"><span class="v no">N</span> Faithfulness <span class="chunk-ref">→ no chunk</span></span>
+                Asserted without support. No chunk discusses bank preferences or operational considerations.
+              </span>
+            </span>
+            <span class="claim bad">Daily compounding offers diminishing returns above 12 periods per year.<span class="badge">R4</span>
+              <span class="tip">
+                <span class="tip-head"><span class="v no">N</span> Faithfulness <span class="chunk-ref">→ no chunk</span></span>
+                Plausible-sounding finance lore, but invented. Not present in any retrieved context.
+              </span>
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============== Retrieved chunks ============== -->
+    <div class="section">
+      <details open>
+        <summary>
+          <div class="coll-head">
+            <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M3 2l4 3-4 3" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <h3>Retrieved context</h3>
+            <span class="meta">4 chunks · top_k = 4 · best similarity 0.82 · worst 0.31</span>
+          </div>
+        </summary>
+        <div class="coll-body chunks">
+
+          <div class="chunk">
+            <div class="rank cited">#0</div>
+            <div>
+              <div class="chunk-head">
+                <span class="src">compound_interest.md</span>
+                <span class="pill">cited by R0, R1</span>
+                <span class="score">similarity 0.82</span>
+              </div>
+              <div class="chunk-text">The Rule of 72 is a mental shortcut for estimating how long an investment takes to double. Divide 72 by the annual rate of return to get the approximate number of years. For example, at a 6% annual return, doubling takes ~12 years.</div>
+            </div>
+          </div>
+
+          <div class="chunk">
+            <div class="rank">#1</div>
+            <div>
+              <div class="chunk-head">
+                <span class="src">interest_basics.md</span>
+                <span class="pill miss">not cited</span>
+                <span class="score">similarity 0.54</span>
+              </div>
+              <div class="chunk-text">Interest is the price of money over time. Simple interest accrues linearly on the principal, while compound interest accrues on principal plus prior interest.</div>
+            </div>
+          </div>
+
+          <div class="chunk">
+            <div class="rank cited">#2</div>
+            <div>
+              <div class="chunk-head">
+                <span class="src">rule_of_72_examples.md</span>
+                <span class="pill">cited by R1</span>
+                <span class="score">similarity 0.49</span>
+              </div>
+              <div class="chunk-text">Worked examples of the Rule of 72: at 4% it takes 18 years to double, at 6% about 12 years, at 9% about 8 years. The approximation drifts at very low or very high rates.</div>
+            </div>
+          </div>
+
+          <div class="chunk">
+            <div class="rank">#3</div>
+            <div>
+              <div class="chunk-head">
+                <span class="src">time_value_intro.md</span>
+                <span class="pill miss">not cited</span>
+                <span class="score">similarity 0.31</span>
+              </div>
+              <div class="chunk-text">Time value of money: a dollar today is worth more than a dollar tomorrow. Discount rates capture this preference numerically.</div>
+            </div>
+          </div>
+
+        </div>
+      </details>
+    </div>
+
+    <!-- ============== Per-claim breakdown ============== -->
+    <div class="section">
+      <div class="section-head">
+        <h2>Per-claim breakdown</h2>
+        <span class="sub">5 claims · ranked by judge order</span>
+      </div>
+
+      <div class="claim-list">
+        <div class="claim-row">
+          <div class="ix">R0</div>
+          <div class="ct">The Rule of 72 estimates doubling time by dividing 72 by the annual interest rate.
+            <span class="why">Stated almost verbatim in chunk #0: "Divide 72 by the rate of return…". Direct lift, no fabrication.</span>
+          </div>
+          <div class="grounding">Grounded by<br><b>chunk #0</b></div>
+          <div class="v"><span class="verdict">Y</span></div>
+        </div>
+
+        <div class="claim-row">
+          <div class="ix">R1</div>
+          <div class="ct">At a 6% return, the formula gives roughly 12 years to double.
+            <span class="why">Both chunks #0 and #2 include the 6% / 12-year worked example. Numerically grounded.</span>
+          </div>
+          <div class="grounding">Grounded by<br><b>chunks #0, #2</b></div>
+          <div class="v"><span class="verdict">Y</span></div>
+        </div>
+
+        <div class="claim-row">
+          <div class="ix">R2</div>
+          <div class="ct">Monthly compounding produces a doubling time of about 11.6 years at the same nominal rate.
+            <span class="why">No retrieved chunk discusses monthly vs annual compounding. The 11.6-year figure has no source in retrieval — fabricated.</span>
+          </div>
+          <div class="grounding">Grounded by<br><b>—</b></div>
+          <div class="v"><span class="verdict no">N</span></div>
+        </div>
+
+        <div class="claim-row">
+          <div class="ix">R3</div>
+          <div class="ct">Banks generally prefer annual compounding because it reduces operational overhead.
+            <span class="why">Asserted without support. No chunk discusses bank preferences.</span>
+          </div>
+          <div class="grounding">Grounded by<br><b>—</b></div>
+          <div class="v"><span class="verdict no">N</span></div>
+        </div>
+
+        <div class="claim-row">
+          <div class="ix">R4</div>
+          <div class="ct">Daily compounding offers diminishing returns above 12 periods per year.
+            <span class="why">Plausible-sounding finance lore but not present in any retrieved chunk. Invented.</span>
+          </div>
+          <div class="grounding">Grounded by<br><b>—</b></div>
+          <div class="v"><span class="verdict no">N</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============== Latency + cost footer ============== -->
+    <div class="foot">
+      <div>
+        <div class="section-head" style="margin:0 0 12px;">
+          <h2 style="font-size:11px;">Phase latencies</h2>
+          <span class="sub">total 11.42 s</span>
+        </div>
+        <div class="lat" id="latChart"></div>
+      </div>
+      <div class="cost">
+        <div class="section-head" style="margin:0 0 12px;">
+          <h2 style="font-size:11px;">Tokens &amp; cost</h2>
+        </div>
+        <div class="row"><span>Decompose Q</span><b>412 in · 86 out</b></div>
+        <div class="row"><span>Decompose R</span><b>521 in · 124 out</b></div>
+        <div class="row"><span>Judge S</span><b>1,204 in · 88 out</b></div>
+        <div class="row"><span>Judge F</span><b>1,640 in · 142 out</b></div>
+        <div class="row"><span>Judge C</span><b>1,802 in · 96 out</b></div>
+        <div class="row total"><span>Total</span><b class="mono">$0.0062</b></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast">Copied 4 actions to clipboard.</div>
+
+<script>
+// phase latency bars (relative)
+const phases = [
+  { nm: 'persist',    ms:     5.7 },
+  { nm: 'decompose Q',ms:  1842.3 },
+  { nm: 'decompose R',ms:  1923.5 },
+  { nm: 'judge S',    ms:  1411.8 },
+  { nm: 'judge F',    ms:  1872.9 },
+  { nm: 'judge C',    ms:  1654.0 },
+];
+const maxMs = Math.max(...phases.map(p => p.ms));
+const lat = document.getElementById('latChart');
+phases.forEach(p => {
+  const h = Math.max(8, Math.round((p.ms / maxMs) * 110));
+  const el = document.createElement('div');
+  el.className = 'ph';
+  el.innerHTML = `
+    <span class="ms">${(p.ms/1000).toFixed(2)}s</span>
+    <div class="bar" style="height:${h}px;"><i style="height:100%;"></i></div>
+    <span class="nm">${p.nm}</span>
+  `;
+  lat.appendChild(el);
+});
+
+// copy actions
+document.getElementById('copyActions').addEventListener('click', () => {
+  const md = `## Veralith trace #1246 — incomplete_ungrounded
+
+**Suggestion:** Retrieval gap, plus generator hallucinated to fill the gap.
+
+1. Inspect the retriever for queries about \`compounding frequency\` — the chunk-store appears to be missing coverage on monthly vs annual tradeoffs.
+2. Re-rank with \`top_k = 8\` (currently 4) on this query class and verify Q1 gets supporting context.
+3. Lower generator temperature to \`0.2\` until retrieval is patched.
+4. Consider a \`refuse_when_insufficient\` guardrail keyed off the Sufficiency judge's verdict.`;
+  navigator.clipboard.writeText(md).catch(()=>{});
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+});
+
+// chunk → claim cross-highlight (light interaction)
+document.querySelectorAll('.chunk').forEach(c => {
+  c.addEventListener('mouseenter', () => {
+    const rank = c.querySelector('.rank').textContent.trim();
+    document.querySelectorAll('.claim').forEach(cl => {
+      const tip = cl.querySelector('.tip');
+      if (tip && tip.textContent.includes(rank)) cl.style.outline = '1px solid var(--accent)';
+    });
+  });
+  c.addEventListener('mouseleave', () => {
+    document.querySelectorAll('.claim').forEach(cl => cl.style.outline = '');
+  });
+});
+</script>
+
+</body>
+</html>

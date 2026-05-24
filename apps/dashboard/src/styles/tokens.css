@@ -1,0 +1,40 @@
+:root {
+  /* surfaces */
+  --bg:           #0b0c0e;
+  --panel:        #111316;
+  --panel-2:      #15181c;
+  --panel-3:      #1a1e23;
+  --line:         #23262b;
+  --line-2:       #2c3037;
+  --hover:        #181b1f;
+
+  /* text */
+  --fg:           #e9ebee;
+  --fg-2:         #b6bac1;
+  --fg-3:         #7c828c;
+  --fg-4:         #555b66;
+
+  /* accent — calm warm cyan */
+  --accent:       #6fd6c4;
+  --accent-dim:   #2b4f4a;
+
+  /* failure cells (semantic) */
+  --cell-cg:      #4ea872;
+  --cell-cu:      #e25c5c;
+  --cell-ig:      #e0a14a;
+  --cell-iu:      #b53636;
+  --cell-eg:      #d4c84a;
+  --cell-eu:      #e25c5c;
+
+  /* highlight backgrounds for claim text */
+  --hl-green:     rgba(78, 168, 114, 0.22);
+  --hl-green-b:   rgba(78, 168, 114, 0.55);
+  --hl-red:       rgba(226, 92, 92, 0.20);
+  --hl-red-b:     rgba(226, 92, 92, 0.65);
+
+  --radius:       10px;
+  --radius-sm:    6px;
+
+  --font-sans:    'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
