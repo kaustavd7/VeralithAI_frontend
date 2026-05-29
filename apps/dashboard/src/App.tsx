@@ -3,6 +3,10 @@ import { RequireAuth } from './components/RequireAuth';
 import Login from './routes/Login';
 import Onboarding from './routes/Onboarding';
 import Placeholder from './routes/Placeholder';
+import ProjectOverview from './routes/ProjectOverview';
+import TraceExplorer from './routes/TraceExplorer';
+import Analytics from './routes/Analytics';
+import TraceDetail from './routes/TraceDetail';
 
 export default function App() {
   return (
@@ -19,14 +23,32 @@ export default function App() {
         }
       />
 
+      {/* Project Overview — the new landing page for each project. */}
       <Route
         path="/projects/:slug"
         element={
           <RequireAuth>
-            <Placeholder
-              title="Overview"
-              subtitle="Phase 2 — KPI strip, charts, trace table."
-            />
+            <ProjectOverview />
+          </RequireAuth>
+        }
+      />
+
+      {/* Trace Explorer — triage table. */}
+      <Route
+        path="/projects/:slug/traces"
+        element={
+          <RequireAuth>
+            <TraceExplorer />
+          </RequireAuth>
+        }
+      />
+
+      {/* Legacy dense analytics dashboard, preserved at its own URL. */}
+      <Route
+        path="/projects/:slug/analytics"
+        element={
+          <RequireAuth>
+            <Analytics />
           </RequireAuth>
         }
       />
@@ -35,10 +57,7 @@ export default function App() {
         path="/projects/:slug/traces/:id"
         element={
           <RequireAuth>
-            <Placeholder
-              title="Trace Detail"
-              subtitle="Phase 3 — diagnosis hero, Q/R, claim highlights."
-            />
+            <TraceDetail />
           </RequireAuth>
         }
       />

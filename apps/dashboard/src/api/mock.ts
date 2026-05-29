@@ -1,9 +1,27 @@
-import type { Project, ApiKeyWithSecret } from './types';
+import type {
+  ApiKey,
+  ApiKeyWithSecret,
+  CalibrationResponse,
+  HealActionResponse,
+  HealCardDetail,
+  HealCardSummary,
+  HealsListQuery,
+  HealStatus,
+  Me,
+  Project,
+  StatsResponse,
+  TraceDetail,
+  TraceDetailResponse,
+  TraceListItem,
+  TracesQuery,
+  TracesResponse,
+} from './types';
 import { ApiError } from './types';
 
 const state = {
   projects: new Map<string, Project>(),
   keysByProject: new Map<string, ApiKeyWithSecret[]>(),
+  heals: new Map<string, HealCardDetail>(),
 };
 
 function slugify(name: string): string {
@@ -25,6 +43,266 @@ function randomSecret(): string {
 
 async function delay(ms = 250) {
   await new Promise((r) => setTimeout(r, ms));
+}
+
+// ---------------------------------------------------------------------------
+// Seed traces — mirrors the wireframe's `sampleTraces` array verbatim.
+// Used by getStats + listTraces so the page renders identical numbers to
+// `planning/veralith-ai/project/Veralith Dashboard.html`.
+// ---------------------------------------------------------------------------
+type SeedTrace = {
+  id: number;
+  q: string;
+  cell: TraceListItem['failure_cell'];
+  s: number;
+  f: number;
+  claims: number;
+  ms: number;
+  cost: number;
+  agoSeconds: number;
+};
+
+const SEED_TRACES: SeedTrace[] = [
+  // #1247 is the wireframe's deep-dive trace — Trace Detail page reads from it.
+  { id: 1247, q: 'Explain compounding frequency tradeoffs for monthly vs annual',      cell: 'incomplete_ungrounded', s: 0.5,  f: 0.4,  claims: 5, ms: 11422, cost: 0.0062, agoSeconds: 0 },
+  { id: 1246, q: 'What is the Rule of 72 and how does it apply to inflation?',         cell: 'complete_grounded',     s: 1.0,  f: 1.0,  claims: 5, ms: 8245,  cost: 0.0048, agoSeconds: 12 },
+  { id: 1245, q: 'How do bond yields relate to inflation expectations?',               cell: 'complete_grounded',     s: 1.0,  f: 1.0,  claims: 4, ms: 7340,  cost: 0.0041, agoSeconds: 38 },
+  { id: 1244, q: 'What is duration in fixed income?',                                  cell: 'extra_grounded',        s: 1.0,  f: 1.0,  claims: 6, ms: 8120,  cost: 0.0049, agoSeconds: 60 },
+  { id: 1243, q: 'Compute the doubling time at 6% annual return',                      cell: 'complete_grounded',     s: 1.0,  f: 1.0,  claims: 3, ms: 6890,  cost: 0.0037, agoSeconds: 120 },
+  { id: 1242, q: 'What does APR vs APY mean? Give a worked example',                   cell: 'complete_ungrounded',   s: 1.0,  f: 0.67, claims: 6, ms: 9128,  cost: 0.0051, agoSeconds: 180 },
+  { id: 1241, q: 'How would I model continuous compounding in Python?',                cell: 'incomplete_grounded',   s: 0.66, f: 1.0,  claims: 4, ms: 7950,  cost: 0.0044, agoSeconds: 300 },
+  { id: 1240, q: 'Define Sharpe ratio and its assumptions',                            cell: 'complete_grounded',     s: 1.0,  f: 1.0,  claims: 5, ms: 8033,  cost: 0.0047, agoSeconds: 360 },
+  { id: 1239, q: 'Tail risk in normal-distribution models',                            cell: 'extra_ungrounded',      s: 1.0,  f: 0.5,  claims: 5, ms: 9412,  cost: 0.0055, agoSeconds: 480 },
+  { id: 1238, q: 'Walk me through duration matching for an insurance liability',      cell: 'incomplete_grounded',   s: 0.66, f: 1.0,  claims: 8, ms: 10250, cost: 0.0058, agoSeconds: 660 },
+  { id: 1237, q: 'Why do central banks raise rates to fight inflation?',               cell: 'complete_grounded',     s: 1.0,  f: 1.0,  claims: 4, ms: 7400,  cost: 0.0042, agoSeconds: 840 },
+];
+
+function seedToTrace(s: SeedTrace, projectId: string): TraceListItem {
+  const created = new Date(Date.now() - s.agoSeconds * 1000).toISOString();
+  return {
+    id: s.id,
+    project_id: projectId,
+    query: s.q,
+    response_preview: '',
+    status: 'evaluated',
+    failure_cell: s.cell,
+    sufficiency_fraction: s.s,
+    faithfulness_fraction: s.f,
+    n_sub_questions: 0,
+    n_claims: s.claims,
+    created_at: created,
+    evaluated_at: created,
+    latency_ms_total: s.ms,
+    cost_usd: s.cost,
+  };
+}
+
+// Aggregate counts from the wireframe's distribution chart (1,247 traces / 24h).
+const SEED_STATS: StatsResponse = {
+  total_traces: 1247,
+  by_cell: {
+    complete_grounded: 1083,
+    incomplete_grounded: 87,
+    extra_grounded: 41,
+    complete_ungrounded: 24,
+    extra_ungrounded: 7,
+    incomplete_ungrounded: 5,
+  },
+  healthy_rate: 0.869,
+  avg_sufficiency: 0.94,
+  avg_faithfulness: 0.97,
+  total_cost_usd: 6.23,
+  timeseries: [
+    { bucket: '00', count: 34,  ok: 32,  failed: 2,  avg_sufficiency: 0.96, avg_faithfulness: 0.97 },
+    { bucket: '02', count: 29,  ok: 28,  failed: 1,  avg_sufficiency: 0.95, avg_faithfulness: 0.98 },
+    { bucket: '04', count: 22,  ok: 22,  failed: 0,  avg_sufficiency: 0.94, avg_faithfulness: 0.97 },
+    { bucket: '06', count: 44,  ok: 41,  failed: 3,  avg_sufficiency: 0.93, avg_faithfulness: 0.97 },
+    { bucket: '08', count: 77,  ok: 72,  failed: 5,  avg_sufficiency: 0.95, avg_faithfulness: 0.96 },
+    { bucket: '10', count: 105, ok: 98,  failed: 7,  avg_sufficiency: 0.94, avg_faithfulness: 0.97 },
+    { bucket: '12', count: 133, ok: 124, failed: 9,  avg_sufficiency: 0.92, avg_faithfulness: 0.98 },
+    { bucket: '14', count: 153, ok: 142, failed: 11, avg_sufficiency: 0.91, avg_faithfulness: 0.97 },
+    { bucket: '16', count: 170, ok: 156, failed: 14, avg_sufficiency: 0.89, avg_faithfulness: 0.96 },
+    { bucket: '18', count: 140, ok: 132, failed: 8,  avg_sufficiency: 0.9,  avg_faithfulness: 0.94 },
+    { bucket: '20', count: 100, ok: 96,  failed: 4,  avg_sufficiency: 0.92, avg_faithfulness: 0.96 },
+    { bucket: '22', count: 63,  ok: 60,  failed: 3,  avg_sufficiency: 0.94, avg_faithfulness: 0.97 },
+    { bucket: 'now', count: 43, ok: 42,  failed: 1,  avg_sufficiency: 0.93, avg_faithfulness: 0.96 },
+  ],
+  deltas: {
+    total_traces_pct_24h: 14.3,
+    healthy_rate_pp_24h: 1.2,
+    avg_sufficiency_delta_24h: 0.0,
+    avg_faithfulness_delta_24h: -0.02,
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Seed trace detail — mirrors `Veralith Trace Detail.html` verbatim for #1247.
+// Field-for-field with the contract; the wireframe's numbers, text, judge
+// reasoning, latency breakdown, and chunk content are reproduced as-is.
+// ---------------------------------------------------------------------------
+function buildSeedTraceDetail(projectId: string): TraceDetail {
+  const created = new Date(Date.now() - 12_000).toISOString();
+  return {
+    id: 1247,
+    project_id: projectId,
+    query:
+      'Explain compounding frequency tradeoffs for monthly vs annual, and how this changes the doubling time under the Rule of 72.',
+    response: [
+      'The Rule of 72 estimates doubling time by dividing 72 by the annual interest rate.',
+      'At a 6% return, the formula gives roughly 12 years to double.',
+      'Monthly compounding produces a doubling time of about 11.6 years at the same nominal rate.',
+      'Banks generally prefer annual compounding because it reduces operational overhead.',
+      'Daily compounding offers diminishing returns above 12 periods per year.',
+    ].join(' '),
+    status: 'evaluated',
+    created_at: created,
+    evaluated_at: created,
+    cost_usd: 0.0062,
+    context_chunks: [
+      {
+        rank: 0,
+        text: 'The Rule of 72 is a mental shortcut for estimating how long an investment takes to double. Divide 72 by the annual rate of return to get the approximate number of years. For example, at a 6% annual return, doubling takes ~12 years.',
+        source: 'compound_interest.md',
+        score: 0.82,
+      },
+      {
+        rank: 1,
+        text: 'Interest is the price of money over time. Simple interest accrues linearly on the principal, while compound interest accrues on principal plus prior interest.',
+        source: 'interest_basics.md',
+        score: 0.54,
+      },
+      {
+        rank: 2,
+        text: 'Worked examples of the Rule of 72: at 4% it takes 18 years to double, at 6% about 12 years, at 9% about 8 years. The approximation drifts at very low or very high rates.',
+        source: 'rule_of_72_examples.md',
+        score: 0.49,
+      },
+      {
+        rank: 3,
+        text: 'Time value of money: a dollar today is worth more than a dollar tomorrow. Discount rates capture this preference numerically.',
+        source: 'time_value_intro.md',
+        score: 0.31,
+      },
+    ],
+    sub_questions: [
+      { id: 0, order_idx: 0, text: 'How does the Rule of 72 estimate doubling time?' },
+      { id: 1, order_idx: 1, text: 'What are the tradeoffs of monthly vs annual compounding?' },
+    ],
+    claims: [
+      { id: 0, order_idx: 0, text: 'The Rule of 72 estimates doubling time by dividing 72 by the annual interest rate.' },
+      { id: 1, order_idx: 1, text: 'At a 6% return, the formula gives roughly 12 years to double.' },
+      { id: 2, order_idx: 2, text: 'Monthly compounding produces a doubling time of about 11.6 years at the same nominal rate.' },
+      { id: 3, order_idx: 3, text: 'Banks generally prefer annual compounding because it reduces operational overhead.' },
+      { id: 4, order_idx: 4, text: 'Daily compounding offers diminishing returns above 12 periods per year.' },
+    ],
+    sufficiency: [
+      {
+        sub_question_id: 0,
+        verdict: 'Y',
+        reasoning: 'Directly defined in chunk #0 (similarity 0.82). Sufficient context to answer.',
+        supporting_chunk_ranks: [0, 2],
+      },
+      {
+        sub_question_id: 1,
+        verdict: 'N',
+        reasoning:
+          'No retrieved chunk discusses compounding frequency tradeoffs. All chunks cover the Rule of 72 itself, not periodic compounding.',
+        supporting_chunk_ranks: [],
+      },
+    ],
+    faithfulness: [
+      {
+        claim_id: 0,
+        verdict: 'Y',
+        reasoning:
+          'Stated almost verbatim in chunk #0: "Divide 72 by the rate of return…". Direct lift, no fabrication.',
+        grounding_chunk_ranks: [0],
+      },
+      {
+        claim_id: 1,
+        verdict: 'Y',
+        reasoning: 'Both chunks #0 and #2 include the 6% / 12-year worked example. Numerically grounded.',
+        grounding_chunk_ranks: [0, 2],
+      },
+      {
+        claim_id: 2,
+        verdict: 'N',
+        reasoning:
+          'No retrieved chunk discusses monthly vs annual compounding outcomes. The 11.6-year figure has no source in retrieval — fabricated.',
+        grounding_chunk_ranks: [],
+      },
+      {
+        claim_id: 3,
+        verdict: 'N',
+        reasoning: 'Asserted without support. No chunk discusses bank preferences or operational considerations.',
+        grounding_chunk_ranks: [],
+      },
+      {
+        claim_id: 4,
+        verdict: 'N',
+        reasoning: 'Plausible-sounding finance lore, but invented. Not present in any retrieved context.',
+        grounding_chunk_ranks: [],
+      },
+    ],
+    completeness: {
+      overall: 'incomplete',
+      reasoning:
+        'Q0 is fully covered by R0/R1. Q1 has no grounded coverage — R2, R3, R4 are ungrounded fabrications attempting to fill the gap.',
+      mappings: [
+        { sub_question_id: 0, covered_by_claim_id: 0 },
+        { sub_question_id: 1, covered_by_claim_id: null },
+      ],
+      extra_claim_ids: [],
+    },
+    diagnosis: {
+      failure_cell: 'incomplete_ungrounded',
+      sufficiency_level: 'low',
+      sufficiency_fraction: 0.5,
+      faithfulness_fraction: 0.4,
+      n_sub_questions: 2,
+      n_claims: 5,
+      n_uncovered_sub_questions: 1,
+      n_extra_claims: 0,
+    },
+    suggestion: {
+      title: 'Retrieval gap, plus the generator hallucinated to fill the gap',
+      body:
+        'Only 1 of 2 sub-questions had supporting context in retrieval. The generator answered both anyway — and the un-grounded half is where the fabricated claims live. Fixing retrieval will likely fix both metrics together.',
+      actions: [
+        'Inspect the retriever for queries about `compounding frequency` — the chunk-store appears to be missing coverage on monthly vs annual tradeoffs.',
+        'Re-rank with `top_k = 8` (currently 4) on this query class and verify Q1 gets supporting context.',
+        'Lower generator temperature to `0.2` until retrieval is patched — this reduces willingness to fabricate when context is thin.',
+        'Consider a `refuse_when_insufficient` guardrail keyed off the Sufficiency judge\'s verdict.',
+      ],
+      detailed_body: null,
+      pattern_insights: [],
+    },
+    latency_ms: {
+      persist: 5.7,
+      'decompose Q': 1842.3,
+      'decompose R': 1923.5,
+      'judge S': 1411.8,
+      'judge F': 1872.9,
+      'judge C': 1654.0,
+    },
+    errors: {},
+    heal_sessions: [],
+  };
+}
+
+const SEED_CALIBRATION: CalibrationResponse = {
+  threshold: 0.85,
+  n_successful_traces: 1083,
+  percentile: 10,
+  using_fallback: false,
+  fallback_value: 0.5,
+  computed_at: new Date().toISOString(),
+};
+
+function findProject(projectIdOrSlug: string): Project | null {
+  if (state.projects.has(projectIdOrSlug)) return state.projects.get(projectIdOrSlug)!;
+  for (const p of state.projects.values()) if (p.slug === projectIdOrSlug) return p;
+  return null;
 }
 
 export const mockApi = {
@@ -87,4 +365,289 @@ export const mockApi = {
     state.keysByProject.set(projectId, list);
     return { api_key: apiKey };
   },
+
+  async listApiKeys(projectIdOrSlug: string): Promise<{ api_keys: ApiKey[] }> {
+    await delay(120);
+    const project = findProject(projectIdOrSlug);
+    const pid = project?.id ?? projectIdOrSlug;
+    const list = state.keysByProject.get(pid) ?? [];
+    // Strip the secret field when listing — matches contract §5.2.
+    const api_keys: ApiKey[] = list.map((k) => {
+      const { secret: _secret, ...rest } = k;
+      return rest;
+    });
+    return { api_keys };
+  },
+
+  async getStats(_projectIdOrSlug: string): Promise<StatsResponse> {
+    await delay(180);
+    return SEED_STATS;
+  },
+
+  async listTraces(projectIdOrSlug: string, q: TracesQuery = {}): Promise<TracesResponse> {
+    await delay(180);
+    const project = findProject(projectIdOrSlug);
+    const pid = project?.id ?? projectIdOrSlug;
+    let traces = SEED_TRACES.map((s) => seedToTrace(s, pid));
+    if (q.cells && q.cells.length > 0) {
+      const set = new Set(q.cells);
+      traces = traces.filter((t) => t.failure_cell && set.has(t.failure_cell));
+    }
+    if (q.status) traces = traces.filter((t) => t.status === q.status);
+    const total = traces.length;
+    const offset = q.offset ?? 0;
+    const limit = q.limit ?? 50;
+    const page = traces.slice(offset, offset + limit);
+    return { traces: page, total, has_more: offset + page.length < total };
+  },
+
+  async getCalibration(_projectIdOrSlug: string): Promise<CalibrationResponse> {
+    await delay(120);
+    return SEED_CALIBRATION;
+  },
+
+  async getTrace(
+    projectIdOrSlug: string,
+    traceId: number,
+  ): Promise<TraceDetailResponse> {
+    await delay(200);
+    const project = findProject(projectIdOrSlug);
+    const pid = project?.id ?? projectIdOrSlug;
+    if (traceId !== 1247) {
+      // Only #1247 has a hand-authored seed today; other ids fall back to it
+      // so the page is always reachable in mock mode.
+      const trace = { ...buildSeedTraceDetail(pid), id: traceId };
+      return { trace };
+    }
+    return { trace: buildSeedTraceDetail(pid) };
+  },
+
+  // -------------------------------------------------------------------------
+  // §5.0 GET /v1/me — mock returns a trialing user 14 days out.
+  // -------------------------------------------------------------------------
+  async getMe(userId: string): Promise<Me> {
+    await delay(80);
+    const now = Date.now();
+    const trialStart = new Date(now - 2 * 86400_000).toISOString();
+    const trialEnd = new Date(now + 12 * 86400_000).toISOString();
+    return {
+      id: userId,
+      email: 'you@veralith.local',
+      display_name: null,
+      trial_started_at: trialStart,
+      trial_expires_at: trialEnd,
+      subscription_status: 'trialing',
+      plan_tier: 'trial',
+      created_at: trialStart,
+    };
+  },
+
+  // -------------------------------------------------------------------------
+  // §5.1 DELETE /v1/projects/{id}
+  // -------------------------------------------------------------------------
+  async deleteProject(projectId: string): Promise<void> {
+    await delay(120);
+    if (!state.projects.has(projectId)) {
+      throw new ApiError('not_found', 'Project not found.', 404);
+    }
+    state.projects.delete(projectId);
+    state.keysByProject.delete(projectId);
+  },
+
+  // -------------------------------------------------------------------------
+  // §5.2 DELETE /v1/projects/{id}/api-keys/{key_id}
+  // -------------------------------------------------------------------------
+  async deleteApiKey(projectId: string, keyId: string): Promise<void> {
+    await delay(100);
+    const list = state.keysByProject.get(projectId);
+    if (!list) throw new ApiError('not_found', 'Project not found.', 404);
+    const key = list.find((k) => k.id === keyId);
+    if (!key) throw new ApiError('not_found', 'API key not found.', 404);
+    key.revoked_at = new Date().toISOString();
+  },
+
+  // -------------------------------------------------------------------------
+  // §5.9 Heals — seed 2 sample cards on first call so the UI has data.
+  // -------------------------------------------------------------------------
+  async listHeals(q: HealsListQuery = {}): Promise<HealCardSummary[]> {
+    await delay(150);
+    ensureSeedHeals();
+    let cards = Array.from(state.heals.values());
+    if (q.status_filter) cards = cards.filter((c) => c.status === q.status_filter);
+    cards.sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    const limit = q.limit ?? 50;
+    return cards.slice(0, limit).map(toSummary);
+  },
+
+  async getHeal(healId: string): Promise<HealCardDetail> {
+    await delay(120);
+    ensureSeedHeals();
+    const card = state.heals.get(healId);
+    if (!card) throw new ApiError('not_found', 'Heal card not found.', 404);
+    return card;
+  },
+
+  async healAction(
+    healId: string,
+    action: 'heal' | 'accept' | 'decline' | 'retry' | 'dismiss-fixed' | 'dismiss-ignore',
+  ): Promise<HealActionResponse> {
+    await delay(150);
+    ensureSeedHeals();
+    const card = state.heals.get(healId);
+    if (!card) throw new ApiError('not_found', 'Heal card not found.', 404);
+    const next = transition(card.status, action);
+    if (!next) {
+      throw new ApiError(
+        'conflict',
+        `Cannot '${action}' a card in status '${card.status}'.`,
+        409,
+      );
+    }
+    card.status = next;
+    card.updated_at = new Date().toISOString();
+    if (action === 'heal' || action === 'retry') {
+      card.in_progress_started_at = card.updated_at;
+      card.failure_reason = null;
+      card.failed_at = null;
+    }
+    if (action === 'accept') card.pr_accepted_at = card.updated_at;
+    return { id: card.id, status: card.status, pr_url: card.pr_url };
+  },
 };
+
+// ---------------------------------------------------------------------------
+// Heals — helpers + seed fixtures
+// ---------------------------------------------------------------------------
+function toSummary(c: HealCardDetail): HealCardSummary {
+  const {
+    id,
+    project_id,
+    status,
+    title,
+    suggestion_slug,
+    n_traces,
+    pr_url,
+    failure_reason,
+    last_trace_at,
+    created_at,
+    updated_at,
+  } = c;
+  return {
+    id,
+    project_id,
+    status,
+    title,
+    suggestion_slug,
+    n_traces,
+    pr_url,
+    failure_reason,
+    last_trace_at,
+    created_at,
+    updated_at,
+  };
+}
+
+function transition(
+  from: HealStatus,
+  action: 'heal' | 'accept' | 'decline' | 'retry' | 'dismiss-fixed' | 'dismiss-ignore',
+): HealStatus | null {
+  switch (action) {
+    case 'heal':
+      return from === 'open' || from === 'failed' ? 'in_progress' : null;
+    case 'accept':
+      return from === 'pr_raised' ? 'resolved' : null;
+    case 'decline':
+      return from === 'pr_raised' ? 'in_progress' : null;
+    case 'retry':
+      return from === 'failed' ? 'in_progress' : null;
+    case 'dismiss-fixed':
+      return from === 'open' || from === 'failed' || from === 'pr_raised'
+        ? 'manually_fixed'
+        : null;
+    case 'dismiss-ignore':
+      return from === 'open' || from === 'failed' || from === 'pr_raised' ? 'wont_fix' : null;
+  }
+}
+
+let seededHeals = false;
+function ensureSeedHeals(): void {
+  if (seededHeals) return;
+  seededHeals = true;
+  const projectId = state.projects.values().next().value?.id ?? 'mock-project';
+  const now = Date.now();
+  const cards: HealCardDetail[] = [
+    {
+      id: '535a3728-mock-open',
+      project_id: projectId,
+      status: 'open',
+      title: 'Retrieval misses queries about compounding frequency tradeoffs.',
+      suggestion_slug: 'retrieval-coverage-compounding',
+      n_traces: 3,
+      pr_url: null,
+      failure_reason: null,
+      last_trace_at: new Date(now - 5 * 60_000).toISOString(),
+      created_at: new Date(now - 2 * 3600_000).toISOString(),
+      updated_at: new Date(now - 5 * 60_000).toISOString(),
+      suggestion_description:
+        'Multiple traces ask about monthly vs annual compounding tradeoffs. The retriever returns Rule-of-72 chunks but nothing on periodic compounding — leading the generator to fabricate filler claims.',
+      previous_card_id: null,
+      pr_raised_at: null,
+      pr_accepted_at: null,
+      failed_at: null,
+      failure_patch: null,
+      in_progress_started_at: null,
+      proposed_fixes: [
+        {
+          title: 'Expand the chunk-store with periodic-compounding sources',
+          body:
+            'Add 3–5 explainer pages covering monthly vs annual vs continuous compounding to the index. Verify retrieval surfaces them with top_k=8.',
+          classification_confidence: 'high',
+          matched_via: 'llm',
+        },
+      ],
+      evidence_traces: [
+        {
+          id: 'trace-1247',
+          query: 'Explain compounding frequency tradeoffs for monthly vs annual.',
+          response: 'Monthly compounding produces a doubling time of about 11.6 years…',
+          added_at: new Date(now - 5 * 60_000).toISOString(),
+          failure_cell: 'incomplete_ungrounded',
+          sufficiency_score: 0.5,
+          faithfulness_score: 0.4,
+        },
+      ],
+    },
+    {
+      id: 'a1b2c3d4-mock-pr',
+      project_id: projectId,
+      status: 'pr_raised',
+      title: 'Generator fabricates bank-policy claims when retrieval is thin.',
+      suggestion_slug: 'guardrail-refuse-when-insufficient',
+      n_traces: 7,
+      pr_url: 'https://github.com/example/rag-app/pull/42',
+      failure_reason: null,
+      last_trace_at: new Date(now - 30 * 60_000).toISOString(),
+      created_at: new Date(now - 6 * 3600_000).toISOString(),
+      updated_at: new Date(now - 15 * 60_000).toISOString(),
+      suggestion_description:
+        'When the Sufficiency judge returns "low", the generator still produces grounded-sounding claims. Adding a refuse-when-insufficient guardrail in the prompt template prevents fabrication.',
+      previous_card_id: null,
+      pr_raised_at: new Date(now - 15 * 60_000).toISOString(),
+      pr_accepted_at: null,
+      failed_at: null,
+      failure_patch: null,
+      in_progress_started_at: new Date(now - 45 * 60_000).toISOString(),
+      proposed_fixes: [
+        {
+          title: 'Add refuse-when-insufficient guardrail to the generator prompt',
+          body:
+            'Inject a system rule: "If sufficiency=low, respond with `I do not have enough context.` rather than answering."',
+          classification_confidence: 'high',
+          matched_via: 'llm',
+        },
+      ],
+      evidence_traces: [],
+    },
+  ];
+  for (const c of cards) state.heals.set(c.id, c);
+}

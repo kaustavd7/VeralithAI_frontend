@@ -1,10 +1,25 @@
 import { supabase } from '../lib/supabase';
 import { mockApi } from './mock';
 import { ApiError } from './types';
-import type { ErrorEnvelope, Project, ApiKeyWithSecret } from './types';
+import type {
+  ApiKey,
+  ApiKeyWithSecret,
+  CalibrationResponse,
+  ErrorEnvelope,
+  HealActionResponse,
+  HealCardDetail,
+  HealCardSummary,
+  HealsListQuery,
+  Me,
+  Project,
+  StatsResponse,
+  TraceDetailResponse,
+  TracesQuery,
+  TracesResponse,
+} from './types';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_API === 'true';
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
+const BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
 async function authHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
@@ -36,6 +51,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       body?.error?.details,
     );
   }
+  if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
 
@@ -62,6 +78,91 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     });
+  },
+
+  async listApiKeys(projectId: string): Promise<{ api_keys: ApiKey[] }> {
+    if (USE_MOCK) return mockApi.listApiKeys(projectId);
+    return request(`/v1/projects/${projectId}/api-keys`);
+  },
+
+  async getStats(projectId: string): Promise<StatsResponse> {
+    if (USE_MOCK) return mockApi.getStats(projectId);
+    return request(`/v1/projects/${projectId}/stats`);
+  },
+
+  async listTraces(projectId: string, q: TracesQuery = {}): Promise<TracesResponse> {
+    if (USE_MOCK) return mockApi.listTraces(projectId, q);
+    const params = new URLSearchParams();
+    if (q.limit != null) params.set('limit', String(q.limit));
+    if (q.offset != null) params.set('offset', String(q.offset));
+    if (q.cells && q.cells.length) params.set('cells', q.cells.join(','));
+    if (q.since) params.set('since', q.since);
+    if (q.until) params.set('until', q.until);
+    if (q.status) params.set('status', q.status);
+    if (q.sort) params.set('sort', q.sort);
+    const qs = params.toString();
+    return request(`/v1/projects/${projectId}/traces${qs ? `?${qs}` : ''}`);
+  },
+
+  async getCalibration(projectId: string): Promise<CalibrationResponse> {
+    if (USE_MOCK) return mockApi.getCalibration(projectId);
+    return request(`/v1/projects/${projectId}/calibration`);
+  },
+
+  async getTrace(projectId: string, traceId: number): Promise<TraceDetailResponse> {
+    if (USE_MOCK) return mockApi.getTrace(projectId, traceId);
+    return request(`/v1/projects/${projectId}/traces/${traceId}`);
+  },
+
+  // -------------------------------------------------------------------------
+  // §5.0  GET /v1/me
+  // -------------------------------------------------------------------------
+  async getMe(): Promise<Me> {
+    if (USE_MOCK) return mockApi.getMe(await currentUserId());
+    return request('/v1/me');
+  },
+
+  // -------------------------------------------------------------------------
+  // §5.1  DELETE /v1/projects/{id}
+  // -------------------------------------------------------------------------
+  async deleteProject(projectId: string): Promise<void> {
+    if (USE_MOCK) return mockApi.deleteProject(projectId);
+    await request<void>(`/v1/projects/${projectId}`, { method: 'DELETE' });
+  },
+
+  // -------------------------------------------------------------------------
+  // §5.2  DELETE /v1/projects/{id}/api-keys/{key_id}
+  // -------------------------------------------------------------------------
+  async deleteApiKey(projectId: string, keyId: string): Promise<void> {
+    if (USE_MOCK) return mockApi.deleteApiKey(projectId, keyId);
+    await request<void>(`/v1/projects/${projectId}/api-keys/${keyId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // -------------------------------------------------------------------------
+  // §5.9  Heals — list + detail + 6 actions
+  // -------------------------------------------------------------------------
+  async listHeals(q: HealsListQuery = {}): Promise<HealCardSummary[]> {
+    if (USE_MOCK) return mockApi.listHeals(q);
+    const params = new URLSearchParams();
+    if (q.status_filter) params.set('status_filter', q.status_filter);
+    if (q.limit != null) params.set('limit', String(q.limit));
+    const qs = params.toString();
+    return request(`/v1/heals${qs ? `?${qs}` : ''}`);
+  },
+
+  async getHeal(healId: string): Promise<HealCardDetail> {
+    if (USE_MOCK) return mockApi.getHeal(healId);
+    return request(`/v1/heals/${healId}`);
+  },
+
+  async healAction(
+    healId: string,
+    action: 'heal' | 'accept' | 'decline' | 'retry' | 'dismiss-fixed' | 'dismiss-ignore',
+  ): Promise<HealActionResponse> {
+    if (USE_MOCK) return mockApi.healAction(healId, action);
+    return request(`/v1/heals/${healId}/${action}`, { method: 'POST' });
   },
 };
 

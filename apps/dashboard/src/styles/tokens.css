@@ -1,3 +1,21 @@
+/* ============================================================
+   Circular Std — global type
+   Only the Medium 500 weight is licensed for this project.
+   All weight references resolve to this file via a single
+   @font-face declaration; hierarchy comes from size + color.
+   ============================================================ */
+@font-face {
+  font-family: 'Circular Std';
+  src: url('/fonts/CircularStd-Medium.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================
+   Legacy palette (kept for Login, Onboarding, Analytics shell).
+   New project pages use the --po-* palette below.
+   ============================================================ */
 :root {
   /* surfaces */
   --bg:           #0b0c0e;
@@ -35,6 +53,82 @@
   --radius:       10px;
   --radius-sm:    6px;
 
-  --font-sans:    'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono:    'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans:    'Circular Std', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    'Circular Std', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ============================================================
+   New project-shell palette (--po-*) — used by Project Overview,
+   Trace Explorer, and every future page inside a project.
+   ============================================================ */
+:root,
+:root[data-theme="dark"] {
+  /* surfaces */
+  --po-bg:          #0c0d10;
+  --po-shell-bg:    #0a0b0e;
+  --po-panel:       #131418;
+  --po-panel-2:     #181a1e;
+  --po-line:        #232629;
+  --po-line-strong: #2d3138;
+  --po-hover:       #1a1c20;
+  --po-row-hover:   #1a1c20;
+  --po-row-active:  #1f2228;
+
+  /* foreground */
+  --po-fg:   #e8ebef;
+  --po-fg-2: #b4b9c1;
+  --po-fg-3: #7a808a;
+  --po-fg-4: #555a62;
+
+  /* status */
+  --po-live: #5dd1a1;
+  --po-idle: #e2b85a;
+  --po-bad:  #e07474;
+  --po-grey: #5c6068;
+
+  --po-radius:    12px;
+  --po-radius-sm: 8px;
+
+  --sb-collapsed: 56px;
+  --sb-expanded:  240px;
+  --sb-ease:      cubic-bezier(0.22, 0.7, 0.2, 1);
+}
+
+:root[data-theme="light"] {
+  --po-bg:          #f6f7f9;
+  --po-shell-bg:    #f0f1f4;
+  --po-panel:       #ffffff;
+  --po-panel-2:     #f9fafc;
+  --po-line:        #e4e7ec;
+  --po-line-strong: #d3d7df;
+  --po-hover:       #eef0f4;
+  --po-row-hover:   #eef0f4;
+  --po-row-active:  #e4e8ee;
+
+  --po-fg:   #1a1d23;
+  --po-fg-2: #4a4f57;
+  --po-fg-3: #6c7280;
+  --po-fg-4: #9aa0aa;
+
+  /* darker brand colors so they stay legible on white */
+  --accent:  #2b9c8a;
+  --po-live: #2ea876;
+  --po-idle: #b07e1d;
+  --po-bad:  #b53636;
+  --po-grey: #7a808a;
+
+  /* slightly darker cell colors for light bg — dark-text cell pills stay readable */
+  --cell-cg: #3d8a5e;
+  --cell-cu: #c54a4a;
+  --cell-ig: #b88336;
+  --cell-iu: #9a2828;
+  --cell-eg: #a89a30;
+  --cell-eu: #c54a4a;
+}
+
+/* Pulse used by the live-state dot on the new shell. */
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(93, 209, 161, 0.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(93, 209, 161, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(93, 209, 161, 0); }
 }

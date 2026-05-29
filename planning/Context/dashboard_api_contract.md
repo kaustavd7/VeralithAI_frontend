@@ -256,6 +256,37 @@ export interface Suggestion {
 
 ## 5. Endpoints
 
+### 5.0. Current user
+
+#### `GET /v1/me`
+
+**Auth:** JWT only.
+**Description:** Return the authenticated user's profile + trial / subscription state. Powers the settings page and any "trial expiring in X days" banner the dashboard wants to render.
+
+**Response 200:**
+```json
+{
+  "id": "8b21ee...",
+  "email": "alice@example.com",
+  "display_name": null,
+  "trial_started_at": "2026-05-27T10:00:00Z",
+  "trial_expires_at": "2026-06-10T10:00:00Z",
+  "subscription_status": "trialing",
+  "plan_tier": "trial",
+  "created_at": "2026-05-27T10:00:00Z"
+}
+```
+
+**Fields:**
+- `subscription_status`: one of `trialing` (default), `active`, `past_due`, `canceled`. Until Stripe is wired (post-alpha), every user stays `trialing` indefinitely.
+- `plan_tier`: one of `trial`, `pro`. Mirrors the Stripe price tier once billing is live.
+- `display_name`: nullable. Editable via a future `PATCH /v1/me`.
+
+**Errors:**
+- `404` if the user's profile row is missing (shouldn't happen — created by a Supabase auth trigger). Surface a friendly error and ping support.
+
+---
+
 ### 5.1. Projects
 
 #### `GET /v1/projects`
@@ -751,6 +782,165 @@ sse.addEventListener("trace_evaluated", (e) => {
 
 ---
 
+### 5.9. Heals (self-heal queue)
+
+Heals are user-curated tickets that group failing traces by an LLM-derived
+"suggestion_key" — the canonical failure pattern. One ticket per
+`(project_id, suggestion_key)`; new failing traces attach to an existing
+open ticket if their root cause matches, otherwise open a new one. The
+user decides which to heal, and the customer's Claude Code (configured
+via MCP) does the actual code change in the customer's repo.
+
+See `docs/self_heal_architecture.md` for the full design.
+
+#### State machine
+
+```
+open ──[user: Heal]──► in_progress
+     ├─[user: I fixed manually]──► manually_fixed (terminal)
+     └─[user: Just ignore]──────► wont_fix (terminal)
+
+in_progress ──[agent: PR raised]──► pr_raised
+            └─[agent: failed]────► failed
+
+pr_raised ──[user: Accept]──► resolved (terminal)
+          └─[user: Decline]──► in_progress (close_pr action queued)
+
+failed ──[user: Retry]──► in_progress
+       └─[user: Ignore]──► wont_fix
+```
+
+Attracting states (new matching traces auto-attach): `open`, `in_progress`,
+`pr_raised`. Terminal: `resolved`, `manually_fixed`, `wont_fix`,
+`superseded`. `failed` is non-attracting but recoverable via Retry.
+
+---
+
+#### `GET /v1/heals`
+
+**Auth:** JWT only.
+**Query params:** `status_filter` (optional, e.g. `open`), `limit` (default 50, max 200).
+**Description:** List heal cards across the user's projects, most-recently-updated first.
+
+**Response 200:** array of:
+```json
+{
+  "id": "535a3728-...",
+  "project_id": "04b77897-...",
+  "status": "open",
+  "title": "Failure in grounding responses to factual queries due to lack of relevant data.",
+  "suggestion_slug": "fact-retrieval-accuracy",
+  "n_traces": 1,
+  "pr_url": null,
+  "failure_reason": null,
+  "last_trace_at": "2026-05-28T13:58:42Z",
+  "created_at": "2026-05-28T13:58:42Z",
+  "updated_at": "2026-05-28T13:58:42Z"
+}
+```
+
+`title` is the canonical one-sentence description of the failure pattern (use it as the card title in the UI). `pr_url` is populated for states where a PR exists (`pr_raised`, `resolved`, sometimes `failed`); render it as a clickable link to the customer's git host.
+
+---
+
+#### `GET /v1/heals/{id}`
+
+**Auth:** JWT only.
+**Description:** Full card detail. Use for the card-detail pane.
+
+**Response 200:** same fields as the summary, plus:
+```json
+{
+  ...same as summary,
+  "suggestion_description": "...",
+  "previous_card_id": "eb48d33d-...",
+  "pr_raised_at": "2026-05-28T18:01:03Z",
+  "pr_accepted_at": null,
+  "failed_at": null,
+  "failure_patch": null,
+  "in_progress_started_at": null,
+  "proposed_fixes": [
+    {
+      "title": "Improve data retrieval mechanism for factual queries",
+      "body": "Enhance the system's ability to retrieve relevant data...",
+      "classification_confidence": "high",
+      "matched_via": "llm"
+    }
+  ],
+  "evidence_traces": [
+    {
+      "id": "0bf59734-...",
+      "query": "What is OpenAI's revenue in 2025?",
+      "response": "OpenAI's revenue in 2025 was approximately $4.8 billion.",
+      "added_at": "2026-05-28T13:58:42Z",
+      "failure_cell": "complete_ungrounded",
+      "sufficiency_score": 0.0,
+      "faithfulness_score": 0.0
+    }
+  ]
+}
+```
+
+- `proposed_fixes`: the per-trace LLM recommendations that classified into THIS card's key. May be empty if the card just opened and no eval has run yet. Multiple entries if multiple distinct fixes were proposed across the card's evidence traces. **Render each as a numbered bullet.**
+- `evidence_traces`: most-recent 5 traces attached to this card. **Render as collapsible list** with the query + response visible by default.
+- `previous_card_id`: if present, link to that card with a "Previous attempt: PR X — did the issue recur?" banner.
+
+---
+
+#### State-machine action endpoints
+
+All take no body (except where noted). All return:
+```json
+{ "id": "<card_id>", "status": "<new_status>", "pr_url": "<optional>" }
+```
+
+On invalid transition: `409 Conflict` with a message like *"Cannot 'heal' a card in status 'wont_fix'. Allowed statuses: ['failed', 'open']."*
+
+| Method | Path | Legal from | Effect |
+|---|---|---|---|
+| `POST` | `/v1/heals/{id}/heal` | `open`, `failed` | Status → `in_progress`. Queues a `heal` action for Claude Code. |
+| `POST` | `/v1/heals/{id}/accept` | `pr_raised` | Status → `resolved`. Stores `pr_accepted_at`. Terminal. |
+| `POST` | `/v1/heals/{id}/decline` | `pr_raised` | Status → `in_progress`. Queues a `close_pr` action for Claude Code to close the PR in the customer's repo. |
+| `POST` | `/v1/heals/{id}/retry` | `failed` | Status → `in_progress`. Queues a fresh `heal` action. Clears `failure_reason`. |
+| `POST` | `/v1/heals/{id}/dismiss-fixed` | `open`, `failed`, `pr_raised` | Status → `manually_fixed`. Terminal. |
+| `POST` | `/v1/heals/{id}/dismiss-ignore` | `open`, `failed`, `pr_raised` | Status → `wont_fix`. Terminal. |
+
+#### Frontend UX guidance
+
+**The Heal page:**
+- Default view: open heals at the top, then pr_raised, then in_progress, then everything else.
+- Quick filters: `open` / `pr_raised` / `failed` / `terminal`.
+- Each row shows: title, n_traces, status badge, last_trace_at (relative time), pr_url (icon link if present).
+
+**The card detail pane:**
+- Header: title + status badge.
+- "Heal" button: enabled only when `status in {open, failed}`. Variant: "Retry" label when `status == failed`.
+- "Ignore" split button: `I fixed manually` and `Just ignore`.
+- When `status == pr_raised`: prominent `Accept` (green) and `Decline` (gray) buttons + the PR URL.
+- When `status == failed`: show `failure_reason` and `failure_patch` (collapsible code block). Show Retry / Ignore.
+- "Heal with Claude Code" badge somewhere: "After clicking Heal, your Claude Code (configured via MCP) will pick up the work, edit the relevant code, and open a PR. Watch this card for updates."
+
+#### Polling
+
+No SSE on heals yet. Poll the list endpoint every 10-15 seconds while the user has the Heal page open. Once a card is in `in_progress` or the user is on its detail view, poll the detail every 5 seconds until the status changes to a terminal or `pr_raised` state.
+
+---
+
+### 5.10. MCP endpoints (informational — agent-facing, not for the dashboard)
+
+Under `/mcp/*`. These are called by the customer's Claude Code (or other agent) using an API key — NOT by the dashboard. Documented here so Dev 2 understands the full loop.
+
+- `GET /mcp/work` — agent polls for pending work for its project.
+- `GET /mcp/work/{action_id}` — full work-item details.
+- `POST /mcp/work/{action_id}/claim` — lock for 15 min.
+- `POST /mcp/work/{action_id}/pr-raised` — agent reports PR raised.
+- `POST /mcp/work/{action_id}/failed` — agent couldn't complete.
+- `POST /mcp/work/{action_id}/pr-closed` — agent closed a PR (after user Decline).
+
+Dev 2 does not need to call any of these. They power the agent side of the loop. If the dashboard needs to surface "is Claude Code making progress on this heal?" we can later expose a read-only `GET /v1/heals/{id}/action-status` based on the underlying `pending_actions` table.
+
+---
+
 ## 6. Rate limiting
 
 ### Free-tier cap
@@ -857,6 +1047,8 @@ demonstrated demand.
 | Date | Author | Change |
 |---|---|---|
 | 2026-05-24 | Dev 1 (initial) | Initial freeze for v0.2.0 release. |
+| 2026-05-27 | Dev 1 | Added §5.0 `GET /v1/me`. Trial fields land on User schema (`trial_started_at`, `trial_expires_at`, `subscription_status`, `plan_tier`). |
+| 2026-05-28 | Dev 1 | Added §5.9 Heals (self-heal queue) — full `/v1/heals/*` surface, state machine, UX guidance for the dashboard. Added §5.10 informational MCP endpoints (agent-facing). |
 
 Any future edit MUST:
 1. Add a row to this changelog.

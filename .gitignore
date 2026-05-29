@@ -19,3 +19,5 @@ pnpm-debug.log*
 
 coverage
 *.tsbuildinfo
+
+planning
