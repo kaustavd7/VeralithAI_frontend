@@ -51,30 +51,38 @@ async function delay(ms = 250) {
 // `planning/veralith-ai/project/Veralith Dashboard.html`.
 // ---------------------------------------------------------------------------
 type SeedTrace = {
-  id: number;
+  id: string;
   q: string;
   cell: TraceListItem['failure_cell'];
-  s: number;
-  f: number;
+  s: number | null;
+  f: number | null;
   claims: number;
-  ms: number;
-  cost: number;
+  ms: number | null;
+  cost: number | null;
   agoSeconds: number;
+  evaluating?: boolean;
 };
 
+// UUID seeds — kept stable so the Trace Detail route key (`#9516a1e2-…`)
+// resolves to the hand-authored detail fixture below. The first trace is
+// always #9516a1e2-… (the wireframe's deep-dive); others mirror DEV2_HANDOFF.
+export const SEED_DETAIL_ID = '9516a1e2-7c4d-4f1a-b8e3-2a1f6d90c001';
+
 const SEED_TRACES: SeedTrace[] = [
-  // #1247 is the wireframe's deep-dive trace — Trace Detail page reads from it.
-  { id: 1247, q: 'Explain compounding frequency tradeoffs for monthly vs annual',      cell: 'incomplete_ungrounded', s: 0.5,  f: 0.4,  claims: 5, ms: 11422, cost: 0.0062, agoSeconds: 0 },
-  { id: 1246, q: 'What is the Rule of 72 and how does it apply to inflation?',         cell: 'complete_grounded',     s: 1.0,  f: 1.0,  claims: 5, ms: 8245,  cost: 0.0048, agoSeconds: 12 },
-  { id: 1245, q: 'How do bond yields relate to inflation expectations?',               cell: 'complete_grounded',     s: 1.0,  f: 1.0,  claims: 4, ms: 7340,  cost: 0.0041, agoSeconds: 38 },
-  { id: 1244, q: 'What is duration in fixed income?',                                  cell: 'extra_grounded',        s: 1.0,  f: 1.0,  claims: 6, ms: 8120,  cost: 0.0049, agoSeconds: 60 },
-  { id: 1243, q: 'Compute the doubling time at 6% annual return',                      cell: 'complete_grounded',     s: 1.0,  f: 1.0,  claims: 3, ms: 6890,  cost: 0.0037, agoSeconds: 120 },
-  { id: 1242, q: 'What does APR vs APY mean? Give a worked example',                   cell: 'complete_ungrounded',   s: 1.0,  f: 0.67, claims: 6, ms: 9128,  cost: 0.0051, agoSeconds: 180 },
-  { id: 1241, q: 'How would I model continuous compounding in Python?',                cell: 'incomplete_grounded',   s: 0.66, f: 1.0,  claims: 4, ms: 7950,  cost: 0.0044, agoSeconds: 300 },
-  { id: 1240, q: 'Define Sharpe ratio and its assumptions',                            cell: 'complete_grounded',     s: 1.0,  f: 1.0,  claims: 5, ms: 8033,  cost: 0.0047, agoSeconds: 360 },
-  { id: 1239, q: 'Tail risk in normal-distribution models',                            cell: 'extra_ungrounded',      s: 1.0,  f: 0.5,  claims: 5, ms: 9412,  cost: 0.0055, agoSeconds: 480 },
-  { id: 1238, q: 'Walk me through duration matching for an insurance liability',      cell: 'incomplete_grounded',   s: 0.66, f: 1.0,  claims: 8, ms: 10250, cost: 0.0058, agoSeconds: 660 },
-  { id: 1237, q: 'Why do central banks raise rates to fight inflation?',               cell: 'complete_grounded',     s: 1.0,  f: 1.0,  claims: 4, ms: 7400,  cost: 0.0042, agoSeconds: 840 },
+  // Two in-flight (evaluating) rows at the top — no scores yet.
+  { id: '7d2f9c41-0a58-4e6b-bc93-1f60d7a25e88', q: 'How does dollar-cost averaging interact with sequence-of-returns risk near retirement?', cell: null, s: null, f: null, claims: 0, ms: null, cost: null, agoSeconds: 8, evaluating: true },
+  { id: 'a1c8e530-4b21-4d7f-9e84-30f5b6c91a72', q: 'Derive the effective annual rate from a nominal rate compounded continuously',          cell: null, s: null, f: null, claims: 0, ms: null, cost: null, agoSeconds: 24, evaluating: true },
+  // Hand-authored deep-dive trace.
+  { id: SEED_DETAIL_ID,                          q: 'Explain compounding frequency tradeoffs for monthly vs annual',                          cell: 'incomplete_ungrounded', s: 0.5,  f: 0.4,  claims: 5, ms: 11422, cost: 0.0062, agoSeconds: 120 },
+  { id: 'b3d8f0a4-1e62-4c97-9a05-7f3c2d81e4b2', q: 'Tail risk in normal-distribution models — when does the assumption break down?',         cell: 'extra_ungrounded',      s: 0.25, f: 0.50, claims: 5, ms: 9412,  cost: 0.0055, agoSeconds: 840 },
+  { id: 'c71a4e9d-8b30-4f25-ae18-5d9026fb13c4', q: 'Walk me through a Monte Carlo simulation of retirement spending under variable inflation', cell: 'incomplete_ungrounded', s: 0.28, f: 0.42, claims: 6, ms: 10100, cost: 0.0057, agoSeconds: 1320 },
+  { id: 'd0e2c5b7-3a41-4d8e-b6f9-1c84a7e520d6', q: 'How would I model continuous compounding in Python with arbitrary contribution schedules?', cell: 'incomplete_grounded', s: 0.33, f: 1.00, claims: 4, ms: 7950,  cost: 0.0044, agoSeconds: 1860 },
+  { id: 'e4f9a1c8-6d52-4b73-8e10-9a3b5c7d2f81', q: 'What is the Sortino ratio and how does it differ from Sharpe in practical use?',         cell: 'incomplete_grounded',   s: 0.45, f: 0.95, claims: 5, ms: 8400,  cost: 0.0047, agoSeconds: 2640 },
+  { id: 'f28b6d04-9c13-4a85-bf27-3e016d4a9c53', q: 'Are floating-rate notes immune to duration risk? Explain with worked example',          cell: 'complete_ungrounded',   s: 0.50, f: 0.45, claims: 6, ms: 9128,  cost: 0.0051, agoSeconds: 3480 },
+  { id: '0a7c3e91-2f84-4d16-95b8-6c2917f0a4e7', q: 'Define duration-matching for a pension liability and outline the rebalancing cadence', cell: 'incomplete_grounded',   s: 0.55, f: 1.00, claims: 8, ms: 10250, cost: 0.0058, agoSeconds: 3600 },
+  { id: '1b9d4f72-5e03-4c28-a6f1-8d40b3927e15', q: 'What does APR vs APY mean? Give a worked example over 5 years',                         cell: 'complete_ungrounded',   s: 0.62, f: 0.67, claims: 6, ms: 9128,  cost: 0.0051, agoSeconds: 3900 },
+  { id: '2c0e5a83-7f14-4d39-b720-9e51c4038f26', q: 'Compare yield-to-maturity and yield-to-call for callable bonds',                        cell: 'incomplete_grounded',   s: 0.66, f: 0.98, claims: 4, ms: 7340,  cost: 0.0041, agoSeconds: 4200 },
+  { id: '3d1f6b94-8005-4e4a-c831-0f62d5149037', q: 'Why do central banks raise rates to fight inflation — describe the transmission channel', cell: 'incomplete_grounded', s: 0.66, f: 1.00, claims: 4, ms: 7400,  cost: 0.0042, agoSeconds: 4800 },
 ];
 
 function seedToTrace(s: SeedTrace, projectId: string): TraceListItem {
@@ -84,14 +92,14 @@ function seedToTrace(s: SeedTrace, projectId: string): TraceListItem {
     project_id: projectId,
     query: s.q,
     response_preview: '',
-    status: 'evaluated',
+    status: s.evaluating ? 'evaluating' : 'evaluated',
     failure_cell: s.cell,
     sufficiency_fraction: s.s,
     faithfulness_fraction: s.f,
     n_sub_questions: 0,
     n_claims: s.claims,
     created_at: created,
-    evaluated_at: created,
+    evaluated_at: s.evaluating ? null : created,
     latency_ms_total: s.ms,
     cost_usd: s.cost,
   };
@@ -140,10 +148,10 @@ const SEED_STATS: StatsResponse = {
 // Field-for-field with the contract; the wireframe's numbers, text, judge
 // reasoning, latency breakdown, and chunk content are reproduced as-is.
 // ---------------------------------------------------------------------------
-function buildSeedTraceDetail(projectId: string): TraceDetail {
+function buildSeedTraceDetail(projectId: string, id: string = SEED_DETAIL_ID): TraceDetail {
   const created = new Date(Date.now() - 12_000).toISOString();
   return {
-    id: 1247,
+    id,
     project_id: projectId,
     query:
       'Explain compounding frequency tradeoffs for monthly vs annual, and how this changes the doubling time under the Rule of 72.',
@@ -379,8 +387,13 @@ export const mockApi = {
     return { api_keys };
   },
 
-  async getStats(_projectIdOrSlug: string): Promise<StatsResponse> {
+  async getStats(
+    _projectIdOrSlug: string,
+    _q: { since?: string; until?: string; bucket?: 'hour' | 'day' } = {},
+  ): Promise<StatsResponse> {
     await delay(180);
+    // Mock ignores window params — every panel sees the same seed series.
+    // Real backend filters via ?since/?until/?bucket.
     return SEED_STATS;
   },
 
@@ -408,18 +421,14 @@ export const mockApi = {
 
   async getTrace(
     projectIdOrSlug: string,
-    traceId: number,
+    traceId: string,
   ): Promise<TraceDetailResponse> {
     await delay(200);
     const project = findProject(projectIdOrSlug);
     const pid = project?.id ?? projectIdOrSlug;
-    if (traceId !== 1247) {
-      // Only #1247 has a hand-authored seed today; other ids fall back to it
-      // so the page is always reachable in mock mode.
-      const trace = { ...buildSeedTraceDetail(pid), id: traceId };
-      return { trace };
-    }
-    return { trace: buildSeedTraceDetail(pid) };
+    // Hand-authored seed lives at SEED_DETAIL_ID. Any other UUID falls back
+    // to the same fixture with the id rewritten so the page is reachable.
+    return { trace: buildSeedTraceDetail(pid, traceId) };
   },
 
   // -------------------------------------------------------------------------

@@ -6,7 +6,7 @@ import type { Diagnosis, Suggestion } from '../../api/types';
 interface Props {
   diagnosis: Diagnosis;
   suggestion: Suggestion;
-  traceId: number;
+  traceId: string;
 }
 
 const CELL_MEANINGS: Record<string, string> = {
@@ -33,9 +33,9 @@ const CELL_SEVERITY: Record<string, string> = {
   extra_ungrounded:      'EXTRA · ungrounded',
 };
 
-function buildMarkdown(traceId: number, cell: string, s: Suggestion): string {
+function buildMarkdown(traceId: string, cell: string, s: Suggestion): string {
   const items = s.actions.map((a) => `- ${a}`).join('\n');
-  return `## Veralith trace #${traceId} — ${cell}
+  return `## Veralith trace #${traceId.slice(0, 8)} — ${cell}
 
 **Suggestion:** ${s.title}
 

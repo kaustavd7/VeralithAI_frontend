@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import {
   useApiKeys,
@@ -7,7 +8,8 @@ import {
   useTraces,
 } from '../hooks/useOverviewData';
 import { useProjects } from '../hooks/useProjects';
-import type { StatsResponse, TraceListItem, Project } from '../api/types';
+import { api } from '../api/client';
+import type { ApiKey, StatsResponse, TraceListItem, Project } from '../api/types';
 
 /* ─────────────────────────────────────────────────────────────
    Catmull-Rom → cubic-bezier sparkline (ported from wireframe).
@@ -609,7 +611,108 @@ export default function ProjectOverview() {
             Analytics &amp; trace explorer unlock once your first trace arrives.
           </div>
         )}
+
+        <ApiKeysSection projectId={project.id} apiKeys={apiKeys.data?.api_keys ?? []} />
       </div>
     </ProjectShell>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   API Keys section — list + revoke. Uses .ak-* styles.
+   ─────────────────────────────────────────────────────────── */
+
+function ApiKeysSection({ projectId, apiKeys }: { projectId: string; apiKeys: ApiKey[] }) {
+  const queryClient = useQueryClient();
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const confirmTarget = apiKeys.find((k) => k.id === confirmId);
+
+  const revoke = useMutation({
+    mutationFn: (keyId: string) => api.deleteApiKey(projectId, keyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['api-keys', projectId] });
+    },
+  });
+
+  if (apiKeys.length === 0) return null;
+
+  return (
+    <div className="ak-card" style={{ marginTop: 24 }}>
+      <div className="ak-card-head">
+        <div>
+          <div className="ak-card-title">API keys</div>
+          <div className="ak-card-sub">
+            Keys authenticate the SDK and ingest endpoints. Revoked keys stay listed for audit.
+          </div>
+        </div>
+      </div>
+      <div className="ak-list">
+        {apiKeys.map((k) => {
+          const revoked = k.revoked_at !== null;
+          return (
+            <div key={k.id} className={'ak-row' + (revoked ? ' is-revoked' : '')}>
+              <div className="ak-key-ic">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="5.5" cy="8" r="2.8" stroke="currentColor" strokeWidth="1.3" />
+                  <path d="M8.3 8H14M11.5 8v2.4M13.2 8v1.8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div className="ak-main">
+                <div className="ak-titlerow">
+                  <span className="ak-name">{k.name ?? 'default'}</span>
+                </div>
+                <div className="ak-meta">
+                  <span className={'ak-prefix' + (revoked ? ' is-struck' : '')}>{k.prefix}</span>
+                  <span className="he-dot-sep">·</span>
+                  <span>Created {new Date(k.created_at).toLocaleDateString()}</span>
+                  {k.last_used_at && (
+                    <>
+                      <span className="he-dot-sep">·</span>
+                      <span>Last used {new Date(k.last_used_at).toLocaleDateString()}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="ak-action">
+                {revoked ? (
+                  <span className="ak-revoked-pill">
+                    Revoked {new Date(k.revoked_at!).toLocaleDateString()}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="ak-revoke"
+                    onClick={() => setConfirmId(k.id)}
+                    disabled={revoke.isPending}
+                  >Revoke</button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {confirmTarget && (
+        <div className="he-modal-scrim" onClick={() => setConfirmId(null)}>
+          <div className="he-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="he-modal-title">Revoke this API key?</div>
+            <div className="he-modal-body">
+              Requests using <span className="se-mono ak-modal-prefix">{confirmTarget.prefix}…</span> will
+              return <span className="se-mono">401</span> immediately. This cannot be undone.
+              Issue a new key first if you have running services.
+            </div>
+            <div className="he-modal-actions">
+              <button className="he-btn he-btn-ghost" onClick={() => setConfirmId(null)}>Cancel</button>
+              <button
+                className="he-btn he-btn-danger"
+                onClick={() => {
+                  revoke.mutate(confirmTarget.id);
+                  setConfirmId(null);
+                }}
+              >Revoke</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

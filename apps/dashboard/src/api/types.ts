@@ -61,7 +61,8 @@ export interface StatsResponse {
 }
 
 export interface TraceListItem {
-  id: number;
+  // UUID per backend (per DEV2_HANDOFF.md §0). Display leading 8 chars.
+  id: string;
   project_id: string;
   query: string;
   response_preview: string;
@@ -73,6 +74,7 @@ export interface TraceListItem {
   n_claims: number;
   created_at: string;
   evaluated_at: string | null;
+  // Both fields are null in the current backend (no latency/cost storage yet).
   latency_ms_total: number | null;
   cost_usd: number | null;
 }
@@ -168,7 +170,8 @@ export interface HealSession {
 }
 
 export interface TraceDetail {
-  id: number;
+  // UUID per backend.
+  id: string;
   project_id: string;
   query: string;
   response: string;
@@ -177,6 +180,8 @@ export interface TraceDetail {
   evaluated_at: string | null;
   cost_usd: number | null;
   context_chunks: ContextChunk[];
+  // Per DEV2_HANDOFF.md §0 these are not emitted by the current backend; mocks
+  // still seed them so the Trace Detail page works end-to-end in mock mode.
   sub_questions: SubQuestion[];
   claims: Claim[];
   sufficiency: SufficiencyJudgment[];

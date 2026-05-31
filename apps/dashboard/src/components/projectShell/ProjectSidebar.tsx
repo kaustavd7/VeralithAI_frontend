@@ -6,6 +6,7 @@ export type SidebarNavId =
   | 'traces'
   | 'live'
   | 'analytics'
+  | 'heals'
   | 'cells'
   | 'calibration'
   | 'judges'
@@ -43,6 +44,7 @@ function groups(slug: string): Group[] {
       label: 'diagnostics',
       items: [
         { id: 'analytics', label: 'Analytics', kbd: 'g a', icon: 'chart', route: `/projects/${slug}/analytics` },
+        { id: 'heals', label: 'Heals', kbd: 'g h', icon: 'heal', route: `/heals` },
         { id: 'cells', label: 'Failure cells', kbd: 'g f', icon: 'cells' },
         { id: 'calibration', label: 'Calibration', kbd: 'g c', icon: 'calib' },
       ],
@@ -75,6 +77,12 @@ const ICONS = {
     </>
   ),
   chart: <path d="M2 13l3-6 3 3 3-7 3 5" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinejoin="round" />,
+  heal: (
+    <>
+      <path d="M2 8h12M8 2v12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="8" cy="8" r="6.2" stroke="currentColor" strokeWidth="1.3" fill="none" />
+    </>
+  ),
   cells: (
     <>
       <rect x="2" y="2" width="5" height="5" stroke="currentColor" strokeWidth="1.3" fill="none" />

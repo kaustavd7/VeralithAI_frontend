@@ -32,9 +32,9 @@
   --fg-3:         #7c828c;
   --fg-4:         #555b66;
 
-  /* accent — calm warm cyan */
-  --accent:       #6fd6c4;
-  --accent-dim:   #2b4f4a;
+  /* accent — sage green (A3B18A · 588157 · 3A5A40 · 344E41 · DAD7CD palette) */
+  --accent:       #A3B18A;
+  --accent-dim:   #344E41;
 
   /* failure cells (semantic) */
   --cell-cg:      #4ea872;
@@ -86,6 +86,10 @@
   --po-bad:  #e07474;
   --po-grey: #5c6068;
 
+  /* Ink on accent-colored fills (primary buttons, avatar gradient, ws mark).
+     Dark forest green reads well on sage-green (#A3B18A) fills. */
+  --accent-ink: #1a2a1d;
+
   --po-radius:    12px;
   --po-radius-sm: 8px;
 
@@ -110,8 +114,8 @@
   --po-fg-3: #6c7280;
   --po-fg-4: #9aa0aa;
 
-  /* darker brand colors so they stay legible on white */
-  --accent:  #2b9c8a;
+  /* darker sage so it stays legible on white (588157 from the palette) */
+  --accent:  #588157;
   --po-live: #2ea876;
   --po-idle: #b07e1d;
   --po-bad:  #b53636;
@@ -124,6 +128,29 @@
   --cell-iu: #9a2828;
   --cell-eg: #a89a30;
   --cell-eu: #c54a4a;
+
+  /* On accent fills, light theme flips ink to white for legibility on teal. */
+  --accent-ink: #ffffff;
+
+  /* Legacy palette overrides — kept in lockstep with the --po-* light theme
+     so components ported from the original canvas (Trace Detail panes,
+     Login, Onboarding) flip correctly when [data-theme="light"]. */
+  --bg:         #f6f7f9;
+  --panel:      #ffffff;
+  --panel-2:    #f9fafc;
+  --panel-3:    #eef0f4;
+  --line:       #e4e7ec;
+  --line-2:     #d3d7df;
+  --hover:      #eef0f4;
+  --fg:         #1a1d23;
+  --fg-2:       #4a4f57;
+  --fg-3:       #6c7280;
+  --fg-4:       #9aa0aa;
+  --accent-dim: #DAD7CD;
+  --hl-green:   rgba(61, 138, 94, 0.18);
+  --hl-green-b: rgba(61, 138, 94, 0.55);
+  --hl-red:     rgba(197, 74, 74, 0.15);
+  --hl-red-b:   rgba(197, 74, 74, 0.55);
 }
 
 /* Pulse used by the live-state dot on the new shell. */

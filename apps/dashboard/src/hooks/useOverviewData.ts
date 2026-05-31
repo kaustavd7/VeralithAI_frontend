@@ -2,10 +2,21 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 import type { TracesQuery } from '../api/types';
 
-export function useStats(projectId: string) {
+export interface StatsQueryParams {
+  since?: string;
+  until?: string;
+  bucket?: 'hour' | 'day';
+}
+
+/**
+ * Per DEV2_HANDOFF.md §1, each windowed Analytics panel may resolve to a
+ * different time window, so this hook key includes the params and each panel
+ * keeps its own cache slot.
+ */
+export function useStats(projectId: string, params: StatsQueryParams = {}) {
   return useQuery({
-    queryKey: ['stats', projectId],
-    queryFn: () => api.getStats(projectId),
+    queryKey: ['stats', projectId, params],
+    queryFn: () => api.getStats(projectId, params),
     enabled: !!projectId,
   });
 }

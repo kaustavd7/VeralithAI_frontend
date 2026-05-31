@@ -1,14 +1,34 @@
-import { useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
 import { useStats, useTraces } from '../hooks/useOverviewData';
 import type {
   FailureCell,
-  StatsResponse,
   StatsTimeseriesPoint,
-  TraceListItem,
 } from '../api/types';
+
+/* Time-window vocabulary. Each panel may resolve to a different window
+   (page default OR per-panel override). See DEV2_HANDOFF.md §1. */
+type TimeWindow = '1h' | '24h' | '7d' | '30d';
+
+function sinceForWindow(win: TimeWindow): string {
+  const ms =
+    win === '1h' ? 3_600_000 :
+    win === '24h' ? 86_400_000 :
+    win === '7d' ? 7 * 86_400_000 :
+    30 * 86_400_000;
+  return new Date(Date.now() - ms).toISOString();
+}
+function bucketForWindow(win: TimeWindow): 'hour' | 'day' {
+  return win === '7d' || win === '30d' ? 'day' : 'hour';
+}
+function subtitleForWindow(win: TimeWindow): string {
+  return win === '1h' ? 'hourly · last 1h' :
+         win === '24h' ? 'hourly · last 24h' :
+         win === '7d' ? 'daily · last 7d' :
+         'daily · last 30d';
+}
 
 /* ─────────────────────────────────────────────────────────────
    Catmull-Rom smoothing + Gaussian kernel — ported from
@@ -62,6 +82,86 @@ function GripDots() {
   );
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Panel actions (⋯ menu) — time-window override + placeholders
+   for Duplicate / Export / Remove (UI-only until DEV2_HANDOFF §1
+   layout-persistence and CSV-per-panel work lands).
+   ─────────────────────────────────────────────────────────── */
+
+const WIN_OPTIONS: TimeWindow[] = ['1h', '24h', '7d', '30d'];
+
+function PanelActions({
+  windowed,
+  win,
+  onWin,
+  onClear,
+}: {
+  windowed: boolean;
+  win: TimeWindow;
+  onWin: (w: TimeWindow) => void;
+  onClear: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e: MouseEvent) {
+      if (!ref.current) return;
+      if (!ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+
+  return (
+    <div className="an-actions">
+      <div className="an-more-wrap" ref={ref}>
+        <button
+          type="button"
+          className={'an-act' + (open ? ' is-active' : '')}
+          title="Panel options"
+          onClick={() => setOpen((o) => !o)}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <circle cx="2" cy="6" r="1" fill="currentColor" />
+            <circle cx="6" cy="6" r="1" fill="currentColor" />
+            <circle cx="10" cy="6" r="1" fill="currentColor" />
+          </svg>
+        </button>
+        {open && (
+          <div className="an-more-menu" onMouseDown={(e) => e.stopPropagation()}>
+            {windowed && (
+              <>
+                <div className="an-more-hd">Time window</div>
+                <div className="an-more-wins">
+                  {WIN_OPTIONS.map((w) => (
+                    <button
+                      key={w}
+                      type="button"
+                      className={'an-more-win' + (w === win ? ' is-active' : '')}
+                      onClick={() => { onWin(w); setOpen(false); }}
+                    >{w}</button>
+                  ))}
+                </div>
+                <div className="an-more-note">Overrides the page window for this panel only.</div>
+                <button
+                  type="button"
+                  className="an-more-item"
+                  onClick={() => { onClear(); setOpen(false); }}
+                >Follow page window</button>
+                <div className="an-more-div" />
+              </>
+            )}
+            <button type="button" className="an-more-item" disabled>Duplicate panel</button>
+            <button type="button" className="an-more-item" disabled>Export data · CSV</button>
+            <button type="button" className="an-more-item an-more-danger" disabled>Remove panel</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AnPanel({
   title,
   subtitle,
@@ -69,6 +169,11 @@ function AnPanel({
   kpiDelta,
   kpiDir = 'flat',
   span,
+  windowed = false,
+  win = '24h',
+  override = false,
+  onWin,
+  onClearWin,
   children,
 }: {
   title: string;
@@ -77,6 +182,14 @@ function AnPanel({
   kpiDelta?: string;
   kpiDir?: 'up' | 'down' | 'flat';
   span: number;
+  /** Panel responds to per-panel window override. */
+  windowed?: boolean;
+  /** Current resolved window (panel override or page default). */
+  win?: TimeWindow;
+  /** Whether `win` is an override (true) or inherited from page (false). */
+  override?: boolean;
+  onWin?: (w: TimeWindow) => void;
+  onClearWin?: () => void;
   children: React.ReactNode;
 }) {
   return (
@@ -84,7 +197,12 @@ function AnPanel({
       <div className="an-panel-head">
         <GripDots />
         <div className="an-panel-tg">
-          <span className="an-panel-title">{title}</span>
+          <span className="an-panel-title">
+            {title}
+            {windowed && override && (
+              <span className="an-win-pill" title="Panel time-window override">{win}</span>
+            )}
+          </span>
           {subtitle && <span className="an-panel-sub">{subtitle}</span>}
         </div>
         {kpi !== undefined && (
@@ -92,6 +210,14 @@ function AnPanel({
             <span className="an-kpi-val po-mono">{kpi}</span>
             {kpiDelta && <span className={`an-kpi-d po-mono an-d-${kpiDir}`}>{kpiDelta}</span>}
           </div>
+        )}
+        {windowed && (
+          <PanelActions
+            windowed={windowed}
+            win={win}
+            onWin={(w) => onWin?.(w)}
+            onClear={() => onClearWin?.()}
+          />
         )}
       </div>
       <div className="an-panel-body">{children}</div>
@@ -104,9 +230,24 @@ function AnPanel({
    Data source: stats.timeseries[].count / ok / failed.
    ─────────────────────────────────────────────────────────── */
 
-function TraceVolumePanel({ stats }: { stats: StatsResponse }) {
+function TraceVolumePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeWindow }) {
+  const { win, override, setOverride, clearOverride } = usePanelWindow(pageWindow);
+  const statsQuery = useStats(slug, useMemo(
+    () => ({ since: sinceForWindow(win), bucket: bucketForWindow(win) }),
+    [win],
+  ));
+  const stats = statsQuery.data;
   const [hi, setHi] = useState<number | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
+
+  if (!stats) {
+    return (
+      <AnPanel title="Trace volume" subtitle={subtitleForWindow(win)} span={12}
+        windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
+        <div className="po-page-loading" style={{ padding: '20px 0' }}>Loading…</div>
+      </AnPanel>
+    );
+  }
 
   const series = stats.timeseries;
   const okSeries = series.map((b) => b.ok);
@@ -123,10 +264,8 @@ function TraceVolumePanel({ stats }: { stats: StatsResponse }) {
   const pb = 10;
 
   const ymax = Math.max(1, ...okSeries, ...badSeries);
-  const yTicks = useMemo(() => {
-    const step = roundNice(ymax / 3);
-    return [0, step, step * 2, step * 3];
-  }, [ymax]);
+  const yTickStep = roundNice(ymax / 3);
+  const yTicks = [0, yTickStep, yTickStep * 2, yTickStep * 3];
   const yMaxTick = yTicks[yTicks.length - 1] || 1;
 
   const xAt = (i: number) => (n > 1 ? (W / (n - 1)) * i : W / 2);
@@ -172,7 +311,8 @@ function TraceVolumePanel({ stats }: { stats: StatsResponse }) {
   const deltaDir = deltaPct >= 0 ? 'up' : 'down';
 
   return (
-    <AnPanel title="Trace volume" subtitle="hourly · last 24h" span={12}>
+    <AnPanel title="Trace volume" subtitle={subtitleForWindow(win)} span={12}
+      windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
       <div style={{ position: 'relative' }}>
         <div className="an-tv-stats">
           <div className="an-tv-legend">
@@ -448,25 +588,40 @@ function packCellBubbles(byCell: Record<FailureCell, number>) {
   return { cells, grandTotal, vw, vh };
 }
 
-function CellBubblePanel({ stats }: { stats: StatsResponse }) {
+function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeWindow }) {
+  const { win, override, setOverride, clearOverride } = usePanelWindow(pageWindow);
+  const statsQuery = useStats(slug, useMemo(
+    () => ({ since: sinceForWindow(win), bucket: bucketForWindow(win) }),
+    [win],
+  ));
+  const byCell = statsQuery.data?.by_cell;
   const { cells, grandTotal, vw, vh } = useMemo(
-    () => packCellBubbles(stats.by_cell),
-    [stats.by_cell],
+    () => packCellBubbles(byCell ?? {
+      complete_grounded: 0, complete_ungrounded: 0,
+      incomplete_grounded: 0, incomplete_ungrounded: 0,
+      extra_grounded: 0, extra_ungrounded: 0,
+    }),
+    [byCell],
   );
   const [hover, setHover] = useState<number | null>(null);
   const hc = hover != null ? cells[hover] : null;
   const healthyPct = grandTotal > 0
-    ? Math.round(((stats.by_cell.complete_grounded ?? 0) / grandTotal) * 100)
+    ? Math.round(((byCell?.complete_grounded ?? 0) / grandTotal) * 100)
     : 0;
 
   return (
     <AnPanel
       title="Failure-cell distribution"
-      subtitle="bubble · area ∝ trace count · last 24h"
+      subtitle={`bubble · area ∝ trace count · ${subtitleForWindow(win)}`}
       kpi={grandTotal.toLocaleString()}
       kpiDelta={`${healthyPct}% healthy`}
       kpiDir="up"
       span={5}
+      windowed
+      win={win}
+      override={override}
+      onWin={setOverride}
+      onClearWin={clearOverride}
     >
       <svg
         width="100%"
@@ -623,24 +778,38 @@ const CELL_LABEL: Record<FailureCell, string> = {
 
 function TopFailingPanel({
   slug,
-  traces,
+  pageWindow,
 }: {
   slug: string;
-  traces: TraceListItem[];
+  pageWindow: TimeWindow;
 }) {
   const navigate = useNavigate();
+  const { win, override, setOverride, clearOverride } = usePanelWindow(pageWindow);
+  const tracesQuery = useTraces(
+    slug,
+    useMemo(
+      () => ({ limit: 200, sort: 'newest' as const, since: sinceForWindow(win) }),
+      [win],
+    ),
+  );
   const rows = useMemo(() => {
+    const traces = tracesQuery.data?.traces ?? [];
     return [...traces]
       .filter((t) => t.sufficiency_fraction != null)
       .sort((a, b) => (a.sufficiency_fraction ?? 1) - (b.sufficiency_fraction ?? 1))
       .slice(0, 7);
-  }, [traces]);
+  }, [tracesQuery.data]);
 
   return (
     <AnPanel
       title="Top failing queries"
-      subtitle="sufficiency ↑ · worst-first · last 24h"
+      subtitle={`sufficiency ↑ · worst-first · ${subtitleForWindow(win)}`}
       span={12}
+      windowed
+      win={win}
+      override={override}
+      onWin={setOverride}
+      onClearWin={clearOverride}
     >
       <div className="an-leaderboard">
         {rows.length === 0 && (
@@ -690,15 +859,286 @@ function TopFailingPanel({
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Page
+   Hallucination Trend — count of traces with faithfulness < 0.6
+   over the active window, bucketed client-side (no dedicated API
+   yet — see Analytics productionization doc §2 for the planned
+   `/stats` field addition once volume outgrows JS bucketing).
+
+   Headline KPI: rate as % of total volume in window.
+   Chart: area + line, hover crosshair, mode toggle (line/bars).
    ─────────────────────────────────────────────────────────── */
 
-type TimeWindow = '1h' | '24h' | '7d' | '30d';
+function HallucinationTrendPanel({
+  slug,
+  pageWindow,
+}: {
+  slug: string;
+  pageWindow: TimeWindow;
+}) {
+  const { win, override, setOverride, clearOverride } = usePanelWindow(pageWindow);
+  const [mode, setMode] = useState<'line' | 'bars'>('line');
+  const [hi, setHi] = useState<number | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
 
-function sinceFor(win: TimeWindow): string {
-  const ms = win === '1h' ? 3_600_000 : win === '24h' ? 86_400_000 : win === '7d' ? 7 * 86_400_000 : 30 * 86_400_000;
-  return new Date(Date.now() - ms).toISOString();
+  // One traces fetch + one stats fetch per panel-window.
+  const since = sinceForWindow(win);
+  const tracesQuery = useTraces(
+    slug,
+    useMemo(
+      () => ({ limit: 200, sort: 'newest' as const, since }),
+      [since],
+    ),
+  );
+  const statsQuery = useStats(
+    slug,
+    useMemo(
+      () => ({ since, bucket: bucketForWindow(win) }),
+      [since, win],
+    ),
+  );
+
+  // Client-side bucketing — count traces with faithfulness_fraction < 0.6
+  // per bucket of the corresponding stats series. Fine at alpha volumes;
+  // once daily volume exceeds ~10k, ask Dev 1 to add a per-bucket
+  // `faithfulness_lt_0_6` count to `/stats.timeseries[]`.
+  const series = useMemo(() => {
+    const buckets = statsQuery.data?.timeseries ?? [];
+    if (buckets.length === 0) return { series: [] as number[], labels: [] as string[] };
+    const bucketStartsMs = buckets.map((b) => Date.parse(b.bucket));
+    const bucketSizeMs =
+      bucketStartsMs.length > 1
+        ? bucketStartsMs[1] - bucketStartsMs[0]
+        : (win === '7d' || win === '30d' ? 86_400_000 : 3_600_000);
+    const counts = new Array<number>(buckets.length).fill(0);
+    for (const t of tracesQuery.data?.traces ?? []) {
+      const f = t.faithfulness_fraction;
+      if (f == null || f >= 0.6) continue;
+      const ts = Date.parse(t.created_at);
+      if (Number.isNaN(ts)) continue;
+      const idx = Math.floor((ts - bucketStartsMs[0]) / bucketSizeMs);
+      if (idx >= 0 && idx < counts.length) counts[idx] += 1;
+    }
+    return { series: counts, labels: buckets.map((b) => shortBucketLabel(b)) };
+  }, [statsQuery.data, tracesQuery.data, win]);
+
+  const n = series.series.length;
+  const W = 800;
+  const H = 190;
+  const pt = 10;
+  const pb = 10;
+  const ymax = Math.max(1, ...series.series);
+  const yStep = roundNice(ymax / 3);
+  const yTicks = [0, yStep, yStep * 2, yStep * 3];
+  const yMaxTick = yTicks[yTicks.length - 1] || 1;
+  const xAt = (i: number) => (n > 1 ? (W / (n - 1)) * i : W / 2);
+  const yAt = (v: number) => H - pb - (v / yMaxTick) * (H - pb - pt);
+  const yPct = (v: number) => ((H - pb - (v / yMaxTick) * (H - pb - pt)) / H) * 100;
+  const linePath = anSmooth(gSmooth(series.series, 1.2).map((v, i) => [xAt(i), yAt(v)]));
+  const base = yAt(0);
+  const areaPath = linePath + ` L ${xAt(Math.max(0, n - 1))} ${base} L ${xAt(0)} ${base} Z`;
+
+  const totalHalluc = series.series.reduce((s, v) => s + v, 0);
+  const totalTraces = useMemo(
+    () => (statsQuery.data?.timeseries ?? []).reduce((s, b) => s + b.count, 0),
+    [statsQuery.data],
+  );
+  const rate = totalTraces > 0 ? ((totalHalluc / totalTraces) * 100).toFixed(1) : '0.0';
+  const peak = n > 0 ? Math.max(...series.series) : 0;
+  const peakIdx = series.series.indexOf(peak);
+
+  function handleMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (!chartRef.current || n < 2) return;
+    const rect = chartRef.current.getBoundingClientRect();
+    const relX = e.clientX - rect.left;
+    setHi(Math.max(0, Math.min(n - 1, Math.round((relX / rect.width) * (n - 1)))));
+  }
+  function handleLeave() {
+    setHi(null);
+  }
+
+  const overlay =
+    hi != null && n > 0
+      ? {
+          xPct: n > 1 ? (hi / (n - 1)) * 100 : 50,
+          flip: (hi / Math.max(1, n - 1)) * 100 > 58,
+          topPct: yPct(series.series[hi]),
+          label: series.labels[hi],
+          count: series.series[hi],
+        }
+      : null;
+
+  if (!statsQuery.data || !tracesQuery.data) {
+    return (
+      <AnPanel title="Hallucination trend" subtitle={subtitleForWindow(win)} span={7}
+        windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
+        <div className="po-page-loading" style={{ padding: '20px 0' }}>Loading…</div>
+      </AnPanel>
+    );
+  }
+
+  return (
+    <AnPanel
+      title="Hallucination trend"
+      subtitle={subtitleForWindow(win)}
+      span={7}
+      windowed
+      win={win}
+      override={override}
+      onWin={setOverride}
+      onClearWin={clearOverride}
+    >
+      <div style={{ position: 'relative' }}>
+        <div className="an-tv-stats">
+          <div className="an-tv-legend">
+            <span className="an-tv-leg">
+              <span className="an-tv-dot" style={{ background: 'var(--cell-cu)' }} />
+              <span className="an-tv-lbl">FAITHFULNESS &lt; 0.6</span>
+              <b className="an-tv-n">{totalHalluc.toLocaleString()}</b>
+            </span>
+            {peak > 0 && (
+              <span className="an-tv-leg">
+                <span className="an-tv-lbl-sub">
+                  peak {peak} at {series.labels[peakIdx]}
+                </span>
+              </span>
+            )}
+          </div>
+          <div className="an-tv-kpi">
+            <span className="an-tv-kpi-n">{rate}%</span>
+            <span className="an-tv-kpi-d an-tv-kpi-d-warn">of volume</span>
+          </div>
+        </div>
+
+        <div className="an-seg-row">
+          <div className="an-seg">
+            <button
+              type="button"
+              className={'an-seg-opt' + (mode === 'line' ? ' is-active' : '')}
+              onClick={() => setMode('line')}
+            >Line</button>
+            <button
+              type="button"
+              className={'an-seg-opt' + (mode === 'bars' ? ' is-active' : '')}
+              onClick={() => setMode('bars')}
+            >Bars</button>
+          </div>
+        </div>
+
+        <div className="an-tv-chart-row">
+          <div className="an-tv-yaxis">
+            {yTicks.map((v) => (
+              <span key={v} className="an-tv-ylabel" style={{ top: `${yPct(v)}%` }}>{v}</span>
+            ))}
+          </div>
+          <div
+            ref={chartRef}
+            className="an-tv-chart-area"
+            onMouseMove={handleMove}
+            onMouseLeave={handleLeave}
+          >
+            <svg
+              width="100%"
+              height="100%"
+              viewBox={`0 0 ${W} ${H}`}
+              preserveAspectRatio="none"
+              style={{ display: 'block', cursor: 'crosshair' }}
+            >
+              <defs>
+                <linearGradient id="anHalFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="rgba(226,92,92,0.30)" />
+                  <stop offset="100%" stopColor="rgba(226,92,92,0.02)" />
+                </linearGradient>
+              </defs>
+              {yTicks.map((v) => (
+                <line
+                  key={v}
+                  x1={0}
+                  x2={W}
+                  y1={yAt(v)}
+                  y2={yAt(v)}
+                  stroke="var(--po-line)"
+                  strokeWidth="0.6"
+                  opacity="0.55"
+                />
+              ))}
+              {mode === 'line' ? (
+                <>
+                  <path d={areaPath} fill="url(#anHalFill)" />
+                  <path
+                    d={linePath}
+                    stroke="var(--cell-cu)"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </>
+              ) : (
+                series.series.map((v, i) => {
+                  const bw = n > 1 ? (W / (n - 1)) * 0.6 : 12;
+                  const x = Math.max(0, Math.min(W - bw, xAt(i) - bw / 2));
+                  const y = yAt(v);
+                  return (
+                    <rect
+                      key={i}
+                      x={x}
+                      width={bw}
+                      y={y}
+                      height={Math.max(0, base - y)}
+                      fill="var(--cell-cu)"
+                      opacity={hi === i ? 1 : 0.9}
+                    />
+                  );
+                })
+              )}
+            </svg>
+            {overlay && (
+              <>
+                <div className="an-tv-crosshair" style={{ left: `${overlay.xPct}%` }} />
+                {mode === 'line' && (
+                  <div
+                    className="an-tv-dot-mark"
+                    style={{
+                      left: `${overlay.xPct}%`,
+                      top: `${overlay.topPct}%`,
+                      background: 'var(--cell-cu)',
+                    }}
+                  />
+                )}
+                <div
+                  className={'an-tv-tip' + (overlay.flip ? ' is-left' : '')}
+                  style={{ left: `${overlay.xPct}%` }}
+                >
+                  <div className="an-tv-tip-hour">{overlay.label}</div>
+                  <div className="an-tv-tip-row">
+                    <span className="an-tv-tip-dot" style={{ background: 'var(--cell-cu)' }} />
+                    <span className="an-tv-tip-lbl">hallucinated</span>
+                    <span className="an-tv-tip-val">{overlay.count}</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="an-tv-xaxis">
+          {pickXTicks(n).map((i) => (
+            <span
+              key={i}
+              className="an-tv-xlabel"
+              style={{ left: `${n > 1 ? (i / (n - 1)) * 100 : 50}%` }}
+            >
+              {series.labels[i]}
+            </span>
+          ))}
+        </div>
+      </div>
+    </AnPanel>
+  );
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Page
+   ─────────────────────────────────────────────────────────── */
 
 export default function Analytics() {
   const { slug = '' } = useParams<{ slug: string }>();
@@ -708,37 +1148,9 @@ export default function Analytics() {
     [projects.data, slug],
   );
 
-  const [timeWindow, setTimeWindow] = useState<TimeWindow>('24h');
-  const stats = useStats(slug);
-  // Fetch a generous page; the leaderboard sorts client-side
-  // (sufficiency_asc is unsupported by the contract — see BACKEND_GAPS.md §8).
-  const traces = useTraces(slug, {
-    limit: 200,
-    sort: 'newest',
-    since: sinceFor(timeWindow),
-  });
-
-  // Don't gate on `!project` — after a hard refresh, the in-memory mock state
-  // is wiped and projects.data may not contain the slug. We still want the
-  // analytics page to render against stats/traces (the slug is enough).
+  // Page default window. Each panel may override locally via its ⋯ menu.
+  const [pageWindow, setPageWindow] = useState<TimeWindow>('24h');
   const projectName = project?.name ?? slug;
-
-  if (stats.isLoading || traces.isLoading) {
-    return (
-      <ProjectShell slug={slug} active="analytics" project={projectName}>
-        <div className="po-page-loading">Loading analytics…</div>
-      </ProjectShell>
-    );
-  }
-  if (stats.isError || !stats.data) {
-    return (
-      <ProjectShell slug={slug} active="analytics" project={projectName}>
-        <div className="po-page-error">Failed to load analytics data.</div>
-      </ProjectShell>
-    );
-  }
-
-  const traceRows = traces.data?.traces ?? [];
 
   return (
     <ProjectShell slug={slug} active="analytics" project={projectName}>
@@ -750,8 +1162,8 @@ export default function Analytics() {
               <button
                 key={w}
                 type="button"
-                className={'an-tchip' + (w === timeWindow ? ' is-active' : '')}
-                onClick={() => setTimeWindow(w)}
+                className={'an-tchip' + (w === pageWindow ? ' is-active' : '')}
+                onClick={() => setPageWindow(w)}
               >
                 {w}
               </button>
@@ -763,12 +1175,7 @@ export default function Analytics() {
             </button>
             <button type="button" className="an-add-btn" disabled title="Coming soon">
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                <path
-                  d="M6 1v10M1 6h10"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                />
+                <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
               </svg>
               Add panel
             </button>
@@ -776,20 +1183,35 @@ export default function Analytics() {
         </header>
 
         <div className="an-grid">
-          <TraceVolumePanel stats={stats.data} />
-          <CellBubblePanel stats={stats.data} />
-          <TopFailingPanel slug={slug} traces={traceRows} />
+          <TraceVolumePanel slug={slug} pageWindow={pageWindow} />
+          <CellBubblePanel slug={slug} pageWindow={pageWindow} />
+          <HallucinationTrendPanel slug={slug} pageWindow={pageWindow} />
+          <TopFailingPanel slug={slug} pageWindow={pageWindow} />
         </div>
 
         <div className="an-status">
           <span className="an-s-dot" />
           <span className="an-s-text po-mono">
-            <b>default</b> · 3 panels · grid · 12-col · snap to ¼
+            <b>default</b> · 4 panels · grid · 12-col · snap to ¼
           </span>
           <span className="an-s-sep" />
-          <span className="an-s-keys po-mono">3 panels live · 3 deferred (see BACKEND_GAPS.md §A)</span>
+          <span className="an-s-keys po-mono">4 panels live · latency/score-distributions/calibration-drift deferred (see BACKEND_GAPS.md §A)</span>
         </div>
       </div>
     </ProjectShell>
   );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Per-panel window state helper
+   ─────────────────────────────────────────────────────────── */
+function usePanelWindow(pageWindow: TimeWindow) {
+  const [override, setOverride] = useState<TimeWindow | null>(null);
+  const win = override ?? pageWindow;
+  return {
+    win,
+    override: override !== null,
+    setOverride: (w: TimeWindow) => setOverride(w),
+    clearOverride: () => setOverride(null),
+  };
 }

@@ -68,7 +68,12 @@ export function AccountMenu({ onClose }: Props) {
       </div>
 
       <div className="am-group">
-        <button className="am-item" role="menuitem" type="button" disabled>
+        <button
+          className="am-item"
+          role="menuitem"
+          type="button"
+          onClick={() => { onClose(); navigate('/settings'); }}
+        >
           <svg className="am-ic" width="14" height="14" viewBox="0 0 16 16" fill="none">
             <circle cx="8" cy="8" r="1.8" stroke="currentColor" strokeWidth="1.3" />
             <path
@@ -78,7 +83,7 @@ export function AccountMenu({ onClose }: Props) {
               strokeLinecap="round"
             />
           </svg>
-          Account preferences
+          Settings
         </button>
         <button className="am-item" role="menuitem" type="button" disabled>
           <svg className="am-ic" width="14" height="14" viewBox="0 0 16 16" fill="none">

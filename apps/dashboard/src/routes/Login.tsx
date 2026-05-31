@@ -19,11 +19,11 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
-  // Bounce signed-in users to wherever they came from, or onboarding.
+  // Bounce signed-in users to where they came from, or to the projects home.
   useEffect(() => {
     if (loading || !session) return;
     const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname;
-    navigate(from ?? '/onboarding', { replace: true });
+    navigate(from ?? '/projects', { replace: true });
   }, [session, loading, navigate, location.state]);
 
   function clearMessages() {
@@ -44,7 +44,7 @@ export default function Login() {
         const { data, error: err } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/onboarding` },
+          options: { emailRedirectTo: `${window.location.origin}/projects` },
         });
         if (err) throw err;
         // If email confirmation is required, no session is returned yet.
@@ -67,7 +67,7 @@ export default function Login() {
     try {
       const { error: err } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}/onboarding` },
+        options: { redirectTo: `${window.location.origin}/projects` },
       });
       if (err) throw err;
       // Browser is about to be redirected to the provider's consent screen.

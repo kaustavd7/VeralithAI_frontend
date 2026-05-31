@@ -27,7 +27,13 @@ const CELL_BY_ID: Record<FailureCell, (typeof CELLS)[number]> = Object.fromEntri
    ─────────────────────────────────────────────────────────── */
 
 type TimeWindow = '1h' | '24h' | '7d' | '30d';
-type SortKey = 'newest' | 'oldest' | 'sufficiency_asc';
+type SortKey =
+  | 'newest'
+  | 'oldest'
+  | 'sufficiency_asc'
+  | 'sufficiency_desc'
+  | 'faithfulness_asc'
+  | 'faithfulness_desc';
 
 function sinceFor(win: TimeWindow): string {
   const ms = win === '1h' ? 3_600_000 : win === '24h' ? 86_400_000 : win === '7d' ? 7 * 86_400_000 : 30 * 86_400_000;
@@ -165,9 +171,12 @@ function SortPill({ sort, onChange }: { sort: SortKey; onChange: (s: SortKey) =>
         >
           {(
             [
-              { id: 'newest' as SortKey, label: 'newest' },
-              { id: 'oldest' as SortKey, label: 'oldest' },
-              { id: 'sufficiency_asc' as SortKey, label: 'sufficiency ↑ (page)' },
+              { id: 'newest' as SortKey,             label: 'newest' },
+              { id: 'oldest' as SortKey,             label: 'oldest' },
+              { id: 'sufficiency_asc' as SortKey,    label: 'sufficiency ↑' },
+              { id: 'sufficiency_desc' as SortKey,   label: 'sufficiency ↓' },
+              { id: 'faithfulness_asc' as SortKey,   label: 'faithfulness ↑' },
+              { id: 'faithfulness_desc' as SortKey,  label: 'faithfulness ↓' },
             ]
           ).map((o) => (
             <button
@@ -297,10 +306,19 @@ export default function TraceExplorer() {
         return false;
       });
     }
+    // Always float evaluating rows to the top regardless of sort.
+    const evalRows = out.filter((t) => t.status === 'evaluating');
+    let scored = out.filter((t) => t.status !== 'evaluating');
     if (sort === 'sufficiency_asc') {
-      out = [...out].sort((a, b) => (a.sufficiency_fraction ?? 1) - (b.sufficiency_fraction ?? 1));
+      scored = [...scored].sort((a, b) => (a.sufficiency_fraction ?? 1) - (b.sufficiency_fraction ?? 1));
+    } else if (sort === 'sufficiency_desc') {
+      scored = [...scored].sort((a, b) => (b.sufficiency_fraction ?? 0) - (a.sufficiency_fraction ?? 0));
+    } else if (sort === 'faithfulness_asc') {
+      scored = [...scored].sort((a, b) => (a.faithfulness_fraction ?? 1) - (b.faithfulness_fraction ?? 1));
+    } else if (sort === 'faithfulness_desc') {
+      scored = [...scored].sort((a, b) => (b.faithfulness_fraction ?? 0) - (a.faithfulness_fraction ?? 0));
     }
-    return out;
+    return [...evalRows, ...scored];
   }, [traces.data, search, sort]);
 
   const total = traces.data?.total ?? 0;
@@ -341,7 +359,13 @@ export default function TraceExplorer() {
   }
 
   const isEmptyAfterFilters = !traces.isLoading && rows.length === 0;
-  const sortLabel = sort === 'oldest' ? 'oldest' : sort === 'sufficiency_asc' ? 'sufficiency ↑' : 'newest';
+  const sortLabel =
+    sort === 'oldest' ? 'oldest' :
+    sort === 'sufficiency_asc' ? 'sufficiency ↑' :
+    sort === 'sufficiency_desc' ? 'sufficiency ↓' :
+    sort === 'faithfulness_asc' ? 'faithfulness ↑' :
+    sort === 'faithfulness_desc' ? 'faithfulness ↓' :
+    'newest';
   const projectName = project?.name ?? slug;
 
   return (
@@ -432,10 +456,11 @@ export default function TraceExplorer() {
               <div className="te-tbody">
                 {rows.map((r) => {
                   const cell = r.failure_cell ? CELL_BY_ID[r.failure_cell] : null;
+                  const evaluating = r.status === 'evaluating';
                   return (
                     <div
                       key={r.id}
-                      className="te-row"
+                      className={'te-row' + (evaluating ? ' is-evaluating' : '')}
                       data-sev={severityAttr(r.sufficiency_fraction)}
                       onClick={() => navigate(`/projects/${slug}/traces/${r.id}`)}
                       role="link"
@@ -443,15 +468,22 @@ export default function TraceExplorer() {
                       title={r.query}
                     >
                       <div className="te-td te-col-sev">
-                        <span className="te-sev" style={{ background: severityBg(r.sufficiency_fraction) }} />
+                        <span
+                          className={'te-sev' + (evaluating ? ' is-evaluating' : '')}
+                          style={evaluating ? undefined : { background: severityBg(r.sufficiency_fraction) }}
+                        />
                       </div>
                       <div className="te-td te-col-time po-mono">{relativeTime(r.created_at)}</div>
                       <div className="te-td te-col-q">
-                        <span className="te-q-id po-mono">#{r.id}</span>
+                        <span className="te-q-id po-mono" title={r.id}>#{r.id.slice(0, 8)}</span>
                         <span className="te-q-text">{r.query}</span>
                       </div>
                       <div className="te-td te-col-cell">
-                        {cell ? (
+                        {evaluating ? (
+                          <span className="te-eval-pill">
+                            <span className="te-eval-dot" />evaluating
+                          </span>
+                        ) : cell ? (
                           <span
                             className="te-cell-pill"
                             style={{ ['--c' as keyof CSSProperties]: cell.color } as CSSProperties}
@@ -459,16 +491,14 @@ export default function TraceExplorer() {
                             <span className="te-cell-label">{cell.label}</span>
                           </span>
                         ) : (
-                          <span className="po-mono" style={{ color: 'var(--po-fg-4)', fontSize: 12 }}>
-                            —
-                          </span>
+                          <span className="po-mono" style={{ color: 'var(--po-fg-4)', fontSize: 12 }}>—</span>
                         )}
                       </div>
                       <div className="te-td te-col-s">
-                        <MeterBar value={r.sufficiency_fraction} />
+                        {evaluating ? <span className="te-shimmer" /> : <MeterBar value={r.sufficiency_fraction} />}
                       </div>
                       <div className="te-td te-col-f">
-                        <MeterBar value={r.faithfulness_fraction} />
+                        {evaluating ? <span className="te-shimmer" /> : <MeterBar value={r.faithfulness_fraction} />}
                       </div>
                     </div>
                   );

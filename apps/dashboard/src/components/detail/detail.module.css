@@ -94,7 +94,7 @@
 }
 .cellMeaning { color: var(--fg-2); font-size: 12.5px; }
 .sfPair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
-.sfBox { background: rgba(0, 0, 0, 0.25); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+.sfBox { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
 .sfL { font-size: 10px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.06em; }
 .sfV { font-family: var(--font-mono); font-size: 20px; color: var(--fg); margin-top: 2px; }
 .sfVBad { color: var(--cell-cu); }

@@ -11,6 +11,9 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false,
       staleTime: 30_000,
+      // In dev, fail fast so "stuck loading" surfaces as a visible error
+      // (3-retry default makes 404s look like infinite spinners).
+      retry: import.meta.env.DEV ? 0 : 2,
     },
   },
 });

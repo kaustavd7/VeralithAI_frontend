@@ -85,9 +85,17 @@ export const api = {
     return request(`/v1/projects/${projectId}/api-keys`);
   },
 
-  async getStats(projectId: string): Promise<StatsResponse> {
-    if (USE_MOCK) return mockApi.getStats(projectId);
-    return request(`/v1/projects/${projectId}/stats`);
+  async getStats(
+    projectId: string,
+    q: { since?: string; until?: string; bucket?: 'hour' | 'day' } = {},
+  ): Promise<StatsResponse> {
+    if (USE_MOCK) return mockApi.getStats(projectId, q);
+    const params = new URLSearchParams();
+    if (q.since) params.set('since', q.since);
+    if (q.until) params.set('until', q.until);
+    if (q.bucket) params.set('bucket', q.bucket);
+    const qs = params.toString();
+    return request(`/v1/projects/${projectId}/stats${qs ? `?${qs}` : ''}`);
   },
 
   async listTraces(projectId: string, q: TracesQuery = {}): Promise<TracesResponse> {
@@ -109,7 +117,7 @@ export const api = {
     return request(`/v1/projects/${projectId}/calibration`);
   },
 
-  async getTrace(projectId: string, traceId: number): Promise<TraceDetailResponse> {
+  async getTrace(projectId: string, traceId: string): Promise<TraceDetailResponse> {
     if (USE_MOCK) return mockApi.getTrace(projectId, traceId);
     return request(`/v1/projects/${projectId}/traces/${traceId}`);
   },

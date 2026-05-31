@@ -3,16 +3,30 @@ import { RequireAuth } from './components/RequireAuth';
 import Login from './routes/Login';
 import Onboarding from './routes/Onboarding';
 import Placeholder from './routes/Placeholder';
+import ProjectsHome from './routes/ProjectsHome';
 import ProjectOverview from './routes/ProjectOverview';
 import TraceExplorer from './routes/TraceExplorer';
 import Analytics from './routes/Analytics';
 import TraceDetail from './routes/TraceDetail';
+import Heals from './routes/Heals';
+import Settings from './routes/Settings';
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/onboarding" replace />} />
+      <Route path="/" element={<Navigate to="/projects" replace />} />
       <Route path="/login" element={<Login />} />
+
+      {/* Projects Home — post-login landing. Lists the user's projects;
+          empty-state CTA links to /onboarding for the first project. */}
+      <Route
+        path="/projects"
+        element={
+          <RequireAuth>
+            <ProjectsHome />
+          </RequireAuth>
+        }
+      />
 
       <Route
         path="/onboarding"
@@ -23,7 +37,7 @@ export default function App() {
         }
       />
 
-      {/* Project Overview — the new landing page for each project. */}
+      {/* Project Overview — single-project landing. */}
       <Route
         path="/projects/:slug"
         element={
@@ -58,6 +72,42 @@ export default function App() {
         element={
           <RequireAuth>
             <TraceDetail />
+          </RequireAuth>
+        }
+      />
+
+      {/* Heals — global queue + detail (cross-project). */}
+      <Route
+        path="/heals"
+        element={
+          <RequireAuth>
+            <Heals />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/heals/:cardId"
+        element={
+          <RequireAuth>
+            <Heals />
+          </RequireAuth>
+        }
+      />
+
+      {/* Settings — global profile + plan + sign-out. */}
+      <Route
+        path="/settings"
+        element={
+          <RequireAuth>
+            <Settings />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/settings/profile"
+        element={
+          <RequireAuth>
+            <Settings />
           </RequireAuth>
         }
       />

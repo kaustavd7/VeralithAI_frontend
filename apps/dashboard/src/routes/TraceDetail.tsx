@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Sidebar } from '../components/shell/Sidebar';
-import shellStyles from '../components/shell/shell.module.css';
+import { ProjectShell } from '../components/projectShell/ProjectShell';
+import { useProjects } from '../hooks/useProjects';
 import detailStyles from '../components/detail/detail.module.css';
 import { DiagnosisHero } from '../components/detail/DiagnosisHero';
 import { QueryPane } from '../components/detail/QueryPane';
@@ -16,11 +16,15 @@ import { useTrace } from '../hooks/useTrace';
 export default function TraceDetail() {
   const { slug = '', id = '' } = useParams<{ slug: string; id: string }>();
   const navigate = useNavigate();
-  const traceId = Number(id);
-  const query = useTrace(slug, traceId);
-  const [activeNav, setActiveNav] = useState('traces');
+  const query = useTrace(slug, id);
 
-  // Cross-highlight state: hover a claim OR a chunk (mutually exclusive).
+  const projects = useProjects();
+  const project = useMemo(
+    () => projects.data?.projects.find((p) => p.slug === slug || p.id === slug),
+    [projects.data, slug],
+  );
+  const projectName = project?.name ?? slug;
+
   const [hoveredClaimId, setHoveredClaimId] = useState<number | null>(null);
   const [hoveredChunkRank, setHoveredChunkRank] = useState<number | null>(null);
 
@@ -34,13 +38,13 @@ export default function TraceDetail() {
   }
 
   const shell = (body: React.ReactNode) => (
-    <div className={shellStyles.app}>
-      <Sidebar activeId={activeNav} onSelect={(i) => setActiveNav(i.id)} />
-      <main className={shellStyles.main}>
-        <DetailTopBar slug={slug} traceId={traceId} onBack={() => navigate(`/projects/${slug}`)} />
-        {body}
-      </main>
-    </div>
+    <ProjectShell slug={slug} active="traces" project={projectName}>
+      <DetailActionBar
+        traceId={id}
+        onBack={() => navigate(`/projects/${slug}/traces`)}
+      />
+      {body}
+    </ProjectShell>
   );
 
   if (query.isLoading) {
@@ -49,7 +53,7 @@ export default function TraceDetail() {
   if (query.isError || !query.data) {
     return shell(
       <div style={{ padding: 28, color: 'var(--cell-cu)' }}>
-        Failed to load trace #{id}.
+        Failed to load trace #{id.slice(0, 8)}.
       </div>,
     );
   }
@@ -152,23 +156,24 @@ export default function TraceDetail() {
   );
 }
 
-interface TopBarProps {
-  slug: string;
-  traceId: number;
+/* ─────────────────────────────────────────────────────────────
+   Detail action bar — sits inside ProjectShell main content.
+   ProjectTopbar already shows the workspace/project breadcrumb,
+   so this row only carries the trace ID + per-trace actions.
+   ─────────────────────────────────────────────────────────── */
+function DetailActionBar({
+  traceId,
+  onBack,
+}: {
+  traceId: string;
   onBack: () => void;
-}
-
-function DetailTopBar({ slug, traceId, onBack }: TopBarProps) {
+}) {
   return (
     <div className={detailStyles.topbar}>
       <div className={detailStyles.crumbs}>
-        <a onClick={onBack}>workspace</a>
-        <span className={detailStyles.crumbsSep}>/</span>
-        <a onClick={onBack}>{slug}</a>
-        <span className={detailStyles.crumbsSep}>/</span>
         <a onClick={onBack}>traces</a>
         <span className={detailStyles.crumbsSep}>/</span>
-        <span className={detailStyles.crumbsHere}>#{traceId}</span>
+        <span className={detailStyles.crumbsHere} title={traceId}>#{traceId.slice(0, 8)}</span>
       </div>
       <div className={detailStyles.topActions}>
         <button

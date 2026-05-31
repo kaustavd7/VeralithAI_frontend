@@ -14,7 +14,7 @@ interface Props {
   total: number;
   cellFilter: FailureCell | null;
   onClearFilter: () => void;
-  freshIds?: Set<number>;
+  freshIds?: Set<string>;
 }
 
 export function TraceTable({
