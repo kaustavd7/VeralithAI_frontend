@@ -64,11 +64,11 @@ export function SFChart({ stats, calibration }: Props) {
       </div>
       <div className={styles.cardLegend}>
         <span className={styles.legendCh}>
-          <span className={styles.legendSw} style={{ background: '#6fd6c4' }} />
+          <span className={styles.legendSw} style={{ background: 'var(--po-live)' }} />
           Sufficiency {stats.avg_sufficiency.toFixed(2)}
         </span>
         <span className={styles.legendCh}>
-          <span className={styles.legendSw} style={{ background: '#d4c84a' }} />
+          <span className={styles.legendSw} style={{ background: '#76936A' }} />
           Faithfulness {stats.avg_faithfulness.toFixed(2)}
         </span>
         <span className={`${styles.legendCh} ${styles.legendRight}`}>
@@ -80,29 +80,29 @@ export function SFChart({ stats, calibration }: Props) {
           {gridLines}
           {xLabels}
 
-          <path d={smoothArea(sPts, yScale(min))} fill="rgba(111,214,196,0.10)" />
+          <path d={smoothArea(sPts, yScale(min))} fill="rgba(163,177,138,0.10)" />
           <path
             d={smoothPath(sPts)}
-            stroke="#6fd6c4"
+            stroke="var(--po-live)"
             strokeWidth="1.8"
             fill="none"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
           {sPts.map((p, i) => (
-            <circle key={`s-${i}`} cx={p[0]} cy={p[1]} r={1.8} fill="#6fd6c4" />
+            <circle key={`s-${i}`} cx={p[0]} cy={p[1]} r={1.8} fill="var(--po-live)" />
           ))}
 
           <path
             d={smoothPath(fPts)}
-            stroke="#d4c84a"
+            stroke="#76936A"
             strokeWidth="1.8"
             fill="none"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
           {fPts.map((p, i) => (
-            <circle key={`f-${i}`} cx={p[0]} cy={p[1]} r={1.8} fill="#d4c84a" />
+            <circle key={`f-${i}`} cx={p[0]} cy={p[1]} r={1.8} fill="#76936A" />
           ))}
 
           <line

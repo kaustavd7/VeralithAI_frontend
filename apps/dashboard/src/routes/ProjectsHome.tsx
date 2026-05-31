@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { useProjects } from '../hooks/useProjects';
 import { AccountMenu } from '../components/projectShell/AccountMenu';
+import { api } from '../api/client';
 import '../styles/project-shell.css';
 import '../styles/project-page.css';
 import type { Project } from '../api/types';
@@ -124,6 +126,7 @@ export default function ProjectsHome() {
   const [acctOpen, setAcctOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('active');
+  const [creating, setCreating] = useState(false);
 
   const displayName = useMemo(() => {
     const meta = user?.user_metadata as Record<string, unknown> | undefined;
@@ -212,7 +215,7 @@ export default function ProjectsHome() {
               <div className="ph-empty-sub">
                 Create your first project to get an API key and start sending traces from your LLM app.
               </div>
-              <button type="button" className="ph-new" onClick={() => navigate('/onboarding')}>
+              <button type="button" className="ph-new" onClick={() => setCreating(true)}>
                 <PlusIcon />
                 New project
               </button>
@@ -238,7 +241,7 @@ export default function ProjectsHome() {
                   <option value="name">Name</option>
                   <option value="traces">Trace volume</option>
                 </select>
-                <button type="button" className="ph-new" onClick={() => navigate('/onboarding')}>
+                <button type="button" className="ph-new" onClick={() => setCreating(true)}>
                   <PlusIcon />
                   New project
                 </button>
@@ -251,7 +254,7 @@ export default function ProjectsHome() {
                 <button
                   type="button"
                   className="ph-card ph-card-ghost"
-                  onClick={() => navigate('/onboarding')}
+                  onClick={() => setCreating(true)}
                 >
                   <PlusIcon size={16} />
                   New project
@@ -259,6 +262,108 @@ export default function ProjectsHome() {
               </div>
             </>
           )}
+        </div>
+      </div>
+
+      {creating && <CreateProjectModal onClose={() => setCreating(false)} />}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Create-project modal — name + region. Region is cosmetic (no
+   backend param yet); on Create we provision the project plus a
+   default API key so it can receive traces immediately, then route
+   to the new project's overview. The guided one-time full-key
+   reveal still lives in /onboarding.
+   ─────────────────────────────────────────────────────────── */
+
+function CreateProjectModal({ onClose }: { onClose: () => void }) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [name, setName] = useState('');
+  const [region, setRegion] = useState('us-east');
+
+  const create = useMutation({
+    mutationFn: async (projName: string) => {
+      const { project } = await api.createProject({ name: projName });
+      // Provision a default key so the new project can ingest right away.
+      try {
+        await api.createApiKey(project.id, { name: 'default' });
+      } catch {
+        /* non-fatal — the key can be issued later */
+      }
+      return project;
+    },
+    onSuccess: (project) => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      onClose();
+      navigate(`/projects/${project.slug ?? project.id}`);
+    },
+  });
+
+  const trimmed = name.trim();
+  const regions: [string, string][] = [
+    ['us-east', 'US East'],
+    ['eu-west', 'EU West'],
+    ['ap-south', 'AP South'],
+  ];
+
+  return (
+    <div
+      className="ph-scrim"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="ph-modal" role="dialog" aria-modal="true">
+        <div className="ph-modal-head">
+          <div className="ph-modal-title">Create a new project</div>
+          <div className="ph-modal-sub">A project groups traces, judges and analytics behind one API key.</div>
+        </div>
+        <div className="ph-modal-body">
+          <div className="ph-form-row">
+            <label className="ph-form-label" htmlFor="ph-proj-name">Project name</label>
+            <input
+              id="ph-proj-name"
+              className="ph-form-control"
+              placeholder="e.g. billing-rag"
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && trimmed && !create.isPending) create.mutate(trimmed);
+              }}
+            />
+            <span className="ph-form-hint">Lowercase, used in your project URL and key prefix.</span>
+          </div>
+          <div className="ph-form-row">
+            <label className="ph-form-label">Region</label>
+            <div className="ph-seg">
+              {regions.map(([id, label]) => (
+                <button
+                  type="button"
+                  key={id}
+                  className={'ph-seg-opt' + (region === id ? ' is-active' : '')}
+                  onClick={() => setRegion(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {create.isError && <span className="ph-form-err">Couldn’t create the project. Please try again.</span>}
+        </div>
+        <div className="ph-modal-foot">
+          <button type="button" className="ph-btn-ghost" onClick={onClose}>Cancel</button>
+          <button
+            type="button"
+            className="ph-btn-primary"
+            disabled={!trimmed || create.isPending}
+            onClick={() => create.mutate(trimmed)}
+          >
+            {create.isPending ? 'Creating…' : 'Create project'}
+          </button>
         </div>
       </div>
     </div>
@@ -270,7 +375,7 @@ export default function ProjectsHome() {
    ─────────────────────────────────────────────────────────── */
 
 function ProjectCard({ project, onOpen }: { project: Project; onOpen: () => void }) {
-  const { name, trace_count, created_at } = project;
+  const { name, trace_count } = project;
   // env + key-prefix are not yet exposed on the Project shape (see
   // BACKEND_GAPS.md). Show neutral placeholders until they land.
   const keyHint = (project.slug ?? '').slice(0, 14);
@@ -302,7 +407,7 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: () => void
         ) : (
           <span className="ph-card-live">
             <span className="po-dot po-dot-grey" />
-            no traces · created {relativeTime(created_at)}
+            no traces yet
           </span>
         )}
       </div>
@@ -311,17 +416,4 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: () => void
       </span>
     </button>
   );
-}
-
-function relativeTime(iso: string): string {
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return '—';
-  const sec = Math.max(0, Math.round((Date.now() - t) / 1000));
-  if (sec < 60) return 'just now';
-  const min = Math.round(sec / 60);
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr}h ago`;
-  const day = Math.round(hr / 24);
-  return `${day}d ago`;
 }

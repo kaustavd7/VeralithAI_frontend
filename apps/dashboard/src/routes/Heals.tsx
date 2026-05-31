@@ -165,7 +165,7 @@ function EvidenceRow({ trace, defaultOpen }: { trace: HealEvidenceTrace; default
       <button className="he-ev-head" onClick={() => setOpen((o) => !o)}>
         <Caret open={open} />
         <span className="he-ev-id" title={trace.id}>{shortId(trace.id)}</span>
-        <span className="he-cell-chip" style={{ '--c': `var(--cell-${abbr})` } as React.CSSProperties}>
+        <span className="he-cell-chip" style={{ '--c': `var(--fcell-${abbr})` } as React.CSSProperties}>
           <span className="he-cell-dot" />
           {cellLabels[abbr]}
         </span>

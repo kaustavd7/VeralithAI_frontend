@@ -670,8 +670,15 @@
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: 2px 4px 10px;
 }
-.an-tv-legend { display: flex; flex-direction: column; gap: 5px; }
-.an-tv-leg { display: flex; align-items: center; gap: 7px; }
+.an-tv-legend { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; align-items: center; }
+.an-tv-leg { display: inline-flex; align-items: center; gap: 7px; }
+/* Interactive (clickable) legend pills — only the <button> variant gets the pill
+   chrome, so the Hallucination panel's <span> legend stays plain. */
+button.an-tv-leg { background: var(--po-bg); border: 1px solid var(--po-line); border-radius: 7px;
+  padding: 4px 10px; cursor: pointer; font: inherit; text-align: left; transition: 140ms; }
+button.an-tv-leg:hover { border-color: var(--po-line-strong); background: var(--po-hover); }
+.an-tv-leg.is-off { opacity: 0.5; }
+.an-tv-leg.is-off .an-tv-dot { filter: grayscale(1); }
 .an-tv-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .an-tv-lbl { font-size: 11px; letter-spacing: 0.06em; color: var(--po-fg-3); font-weight: 600; }
 .an-tv-n { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--po-fg); }

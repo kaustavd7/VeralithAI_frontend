@@ -36,13 +36,28 @@
   --accent:       #A3B18A;
   --accent-dim:   #344E41;
 
-  /* failure cells (semantic) */
+  /* Semantic status aliases (RED / AMBER / GREEN). Despite the --cell- name these
+     are used app-wide as danger/warn/success (heal statuses, deltas, form errors,
+     buttons, low-score text) — NOT as the failure-cell taxonomy. Per the sage
+     retheme, amber + red are PRESERVED as semantics; the taxonomy ramp moved to
+     --fcell-* below. Don't sage-ify these or error text turns green. */
   --cell-cg:      #4ea872;
   --cell-cu:      #e25c5c;
   --cell-ig:      #e0a14a;
   --cell-iu:      #b53636;
   --cell-eg:      #d4c84a;
   --cell-eu:      #e25c5c;
+
+  /* Failure-cell TAXONOMY ramp — SAGE, light→dark = healthy→worst.
+     Used by the cell bubble chart, the Failure Cells page, trace-explorer pills
+     and the cell distribution. Theme-agnostic (one ramp; contrast handled by the
+     paired --fcell-ink-* text colors: dark on the two lightest, white on the rest). */
+  --fcell-cg:     #DAD7CD;  --fcell-ink-cg: #2c3a28;
+  --fcell-ig:     #A3B18A;  --fcell-ink-ig: #26331f;
+  --fcell-eg:     #76936A;  --fcell-ink-eg: #ffffff;
+  --fcell-cu:     #588157;  --fcell-ink-cu: #ffffff;
+  --fcell-eu:     #3A5A40;  --fcell-ink-eu: #ffffff;
+  --fcell-iu:     #344E41;  --fcell-ink-iu: #ffffff;
 
   /* highlight backgrounds for claim text */
   --hl-green:     rgba(78, 168, 114, 0.22);
@@ -80,15 +95,15 @@
   --po-fg-3: #7a808a;
   --po-fg-4: #555a62;
 
-  /* status */
-  --po-live: #5dd1a1;
+  /* status — live/healthy is now SAGE (was #5dd1a1); amber + red preserved as semantics */
+  --po-live: #A3B18A;
   --po-idle: #e2b85a;
   --po-bad:  #e07474;
   --po-grey: #5c6068;
 
   /* Ink on accent-colored fills (primary buttons, avatar gradient, ws mark).
      Dark forest green reads well on sage-green (#A3B18A) fills. */
-  --accent-ink: #1a2a1d;
+  --accent-ink: #20301c;
 
   --po-radius:    12px;
   --po-radius-sm: 8px;
@@ -114,9 +129,9 @@
   --po-fg-3: #6c7280;
   --po-fg-4: #9aa0aa;
 
-  /* darker sage so it stays legible on white (588157 from the palette) */
-  --accent:  #588157;
-  --po-live: #2ea876;
+  /* deeper sage so it stays legible on white (per the sage retheme: accent + live = #4f7a4d) */
+  --accent:  #4f7a4d;
+  --po-live: #4f7a4d;
   --po-idle: #b07e1d;
   --po-bad:  #b53636;
   --po-grey: #7a808a;
@@ -153,9 +168,9 @@
   --hl-red-b:   rgba(197, 74, 74, 0.55);
 }
 
-/* Pulse used by the live-state dot on the new shell. */
+/* Pulse used by the live-state dot on the new shell. Sage glow (was #5dd1a1). */
 @keyframes pulse {
-  0%   { box-shadow: 0 0 0 0   rgba(93, 209, 161, 0.55); }
-  70%  { box-shadow: 0 0 0 7px rgba(93, 209, 161, 0); }
-  100% { box-shadow: 0 0 0 0   rgba(93, 209, 161, 0); }
+  0%   { box-shadow: 0 0 0 0   rgba(163, 177, 138, 0.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(163, 177, 138, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(163, 177, 138, 0); }
 }

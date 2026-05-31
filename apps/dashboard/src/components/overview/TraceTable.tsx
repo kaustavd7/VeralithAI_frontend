@@ -88,7 +88,7 @@ export function TraceTable({
                 <td className={styles.queryCell}>{t.query}</td>
                 <td>
                   {meta ? (
-                    <span className={styles.cellChip} style={{ background: meta.color }}>
+                    <span className={styles.cellChip} style={{ background: meta.color, color: meta.ink }}>
                       {meta.label}
                     </span>
                   ) : (

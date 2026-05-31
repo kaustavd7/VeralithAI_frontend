@@ -307,7 +307,7 @@ function HealthyRateCard({ stats }: { stats: StatsResponse }) {
           <Sparkline
             values={values}
             color="var(--po-live)"
-            fill="rgba(93, 209, 161, 0.10)"
+            fill="rgba(163, 177, 138, 0.12)"
             width={420}
             height={104}
             dot

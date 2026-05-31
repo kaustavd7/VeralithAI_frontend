@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export type SidebarNavId =
@@ -45,7 +45,7 @@ function groups(slug: string): Group[] {
       items: [
         { id: 'analytics', label: 'Analytics', kbd: 'g a', icon: 'chart', route: `/projects/${slug}/analytics` },
         { id: 'heals', label: 'Heals', kbd: 'g h', icon: 'heal', route: `/heals` },
-        { id: 'cells', label: 'Failure cells', kbd: 'g f', icon: 'cells' },
+        { id: 'cells', label: 'Failure cells', kbd: 'g f', icon: 'cells', route: `/projects/${slug}/analytics/cells` },
         { id: 'calibration', label: 'Calibration', kbd: 'g c', icon: 'calib' },
       ],
     },
@@ -138,6 +138,29 @@ function SbIcon({ name }: { name: keyof typeof ICONS }) {
   );
 }
 
+/* Slide-out shortcut tooltip: "Go to X" + keycaps (G then F). Appears to the right
+   of the row after a deliberate ~2s hover rest (CSS transition-delay drives the
+   timing). Works collapsed and expanded; escapes the rail because .sb / .sb-scroll
+   are overflow:visible. */
+function SbTip({ label, kbd }: { label: string; kbd?: string }) {
+  const keys = kbd ? kbd.trim().split(/\s+/) : [];
+  return (
+    <span className="sb-tip" role="tooltip" aria-hidden="true">
+      <span className="sb-tip-label">Go to {label}</span>
+      {keys.length > 0 && (
+        <span className="sb-tip-keys">
+          {keys.map((k, i) => (
+            <Fragment key={i}>
+              {i > 0 && <span className="sb-tip-then">then</span>}
+              <kbd className="sb-tip-key">{k.toUpperCase()}</kbd>
+            </Fragment>
+          ))}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export function ProjectSidebar({ active, slug }: Props) {
   const [hover, setHover] = useState(false);
   const navigate = useNavigate();
@@ -173,7 +196,6 @@ export function ProjectSidebar({ active, slug }: Props) {
                 <div
                   key={it.id}
                   className={className}
-                  data-tip={it.label}
                   onClick={() => {
                     if (disabled || !it.route) return;
                     navigate(it.route);
@@ -185,7 +207,7 @@ export function ProjectSidebar({ active, slug }: Props) {
                   </span>
                   <span className="sb-item-label">{it.label}</span>
                   {it.badge && <span className="sb-item-badge">{it.badge}</span>}
-                  {it.kbd && <span className="sb-item-kbd">{it.kbd}</span>}
+                  <SbTip label={it.label} kbd={it.kbd} />
                 </div>
               );
             })}

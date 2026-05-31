@@ -31,41 +31,61 @@ function subtitleForWindow(win: TimeWindow): string {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Catmull-Rom smoothing + Gaussian kernel — ported from
-   planning/Context/VeralithAI/analytics.jsx verbatim.
+   Monotone-cubic interpolation (`monoPath`) + nice dynamic y-scale
+   (`tvNiceScale`) — ported from analytics.jsx. Monotone-cubic is
+   smooth, passes through every point, and never overshoots, so it
+   replaces the prior Catmull-Rom + Gaussian pre-smoothing on all
+   line charts.
    ─────────────────────────────────────────────────────────── */
 
-function anSmooth(pts: [number, number][], t = 0.5): string {
-  if (pts.length < 2) return '';
-  let d = `M ${pts[0][0]} ${pts[0][1]}`;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[i - 1] ?? pts[i];
-    const p1 = pts[i];
-    const p2 = pts[i + 1];
-    const p3 = pts[i + 2] ?? p2;
-    const cp1x = p1[0] + (p2[0] - p0[0]) * t;
-    const cp1y = p1[1] + (p2[1] - p0[1]) * t;
-    const cp2x = p2[0] - (p3[0] - p1[0]) * t;
-    const cp2y = p2[1] - (p3[1] - p1[1]) * t;
-    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2[0]} ${p2[1]}`;
+function monoPath(pts: [number, number][]): string {
+  const n = pts.length;
+  if (n < 2) return n ? `M ${pts[0][0]} ${pts[0][1]}` : '';
+  const xs = pts.map((p) => p[0]);
+  const ys = pts.map((p) => p[1]);
+  const dx: number[] = [];
+  const delta: number[] = [];
+  for (let i = 0; i < n - 1; i++) {
+    dx[i] = xs[i + 1] - xs[i];
+    delta[i] = (ys[i + 1] - ys[i]) / (dx[i] || 1e-6);
+  }
+  const m = new Array<number>(n);
+  m[0] = delta[0];
+  m[n - 1] = delta[n - 2];
+  for (let i = 1; i < n - 1; i++) m[i] = delta[i - 1] * delta[i] <= 0 ? 0 : (delta[i - 1] + delta[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (delta[i] === 0) {
+      m[i] = 0;
+      m[i + 1] = 0;
+      continue;
+    }
+    const a = m[i] / delta[i];
+    const b = m[i + 1] / delta[i];
+    const s = a * a + b * b;
+    if (s > 9) {
+      const t = 3 / Math.sqrt(s);
+      m[i] = t * a * delta[i];
+      m[i + 1] = t * b * delta[i];
+    }
+  }
+  let d = `M ${xs[0]} ${ys[0]}`;
+  for (let i = 0; i < n - 1; i++) {
+    const h = dx[i];
+    d += ` C ${xs[i] + h / 3} ${ys[i] + (m[i] * h) / 3}, ${xs[i + 1] - h / 3} ${ys[i + 1] - (m[i + 1] * h) / 3}, ${xs[i + 1]} ${ys[i + 1]}`;
   }
   return d;
 }
 
-function gSmooth(vals: number[], sigma = 1.4): number[] {
-  if (vals.length === 0) return vals;
-  const r = Math.max(1, Math.ceil(sigma * 2.5));
-  const k: number[] = [];
-  for (let i = -r; i <= r; i++) k.push(Math.exp(-(i * i) / (2 * sigma * sigma)));
-  const sum = k.reduce((s, w) => s + w, 0);
-  return vals.map((_, idx) => {
-    let acc = 0;
-    for (let j = -r; j <= r; j++) {
-      const m = Math.max(0, Math.min(vals.length - 1, idx + j));
-      acc += vals[m] * k[j + r];
-    }
-    return acc / sum;
-  });
+function tvNiceScale(max: number): { top: number; ticks: number[] } {
+  if (!isFinite(max) || max <= 0) max = 1;
+  const rough = max / 4;
+  const p = Math.pow(10, Math.floor(Math.log10(rough)));
+  const nn = rough / p;
+  const step = (nn <= 1 ? 1 : nn <= 2 ? 2 : nn <= 2.5 ? 2.5 : nn <= 5 ? 5 : 10) * p;
+  const top = Math.ceil(max / step) * step;
+  const ticks: number[] = [];
+  for (let v = 0; v <= top + step * 0.001; v += step) ticks.push(Math.round(v * 100) / 100);
+  return { top, ticks };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -238,6 +258,8 @@ function TraceVolumePanel({ slug, pageWindow }: { slug: string; pageWindow: Time
   ));
   const stats = statsQuery.data;
   const [hi, setHi] = useState<number | null>(null);
+  const [mode, setMode] = useState<'line' | 'bar'>('line');
+  const [hidden, setHidden] = useState<Set<'ok' | 'bad'>>(new Set());
   const chartRef = useRef<HTMLDivElement>(null);
 
   if (!stats) {
@@ -258,29 +280,51 @@ function TraceVolumePanel({ slug, pageWindow }: { slug: string; pageWindow: Time
   const total = totalOk + totalBad;
   const badPct = total > 0 ? ((totalBad / total) * 100).toFixed(1) : '0.0';
 
+  const showOk = !hidden.has('ok');
+  const showBad = !hidden.has('bad');
+  const toggleSeries = (k: 'ok' | 'bad') =>
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      // never allow both hidden — re-show the other
+      if (next.has('ok') && next.has('bad')) next.delete(k === 'ok' ? 'bad' : 'ok');
+      return next;
+    });
+
   const W = 800;
   const H = 190;
   const pt = 10;
   const pb = 10;
 
-  const ymax = Math.max(1, ...okSeries, ...badSeries);
-  const yTickStep = roundNice(ymax / 3);
-  const yTicks = [0, yTickStep, yTickStep * 2, yTickStep * 3];
-  const yMaxTick = yTicks[yTicks.length - 1] || 1;
+  // dynamic y-scale fitted to the VISIBLE series — line: max single value;
+  // bar: max stacked column — so an isolated small series fills the plot.
+  let dataMax = 1;
+  if (mode === 'line') {
+    if (showOk) dataMax = Math.max(dataMax, ...okSeries);
+    if (showBad) dataMax = Math.max(dataMax, ...badSeries);
+  } else {
+    okSeries.forEach((ok, i) => {
+      let s = 0;
+      if (showOk) s += ok;
+      if (showBad) s += badSeries[i];
+      if (s > dataMax) dataMax = s;
+    });
+  }
+  const { top: yMaxTick, ticks: yTicks } = tvNiceScale(dataMax);
 
   const xAt = (i: number) => (n > 1 ? (W / (n - 1)) * i : W / 2);
   const yAt = (v: number) => H - pb - (v / yMaxTick) * (H - pb - pt);
   const yPct = (v: number) => ((H - pb - (v / yMaxTick) * (H - pb - pt)) / H) * 100;
-
-  const okSm = gSmooth(okSeries, 1.4);
-  const badSm = gSmooth(badSeries, 1.4);
-  const okPts: [number, number][] = okSm.map((v, i) => [xAt(i), yAt(v)]);
-  const badPts: [number, number][] = badSm.map((v, i) => [xAt(i), yAt(v)]);
-  const okLine = anSmooth(okPts);
-  const badLine = anSmooth(badPts);
   const base = yAt(0);
+
+  const okPts: [number, number][] = okSeries.map((v, i) => [xAt(i), yAt(v)]);
+  const badPts: [number, number][] = badSeries.map((v, i) => [xAt(i), yAt(v)]);
+  const okLine = monoPath(okPts);
+  const badLine = monoPath(badPts);
   const okArea = okLine + ` L ${xAt(n - 1)} ${base} L ${xAt(0)} ${base} Z`;
   const badArea = badLine + ` L ${xAt(n - 1)} ${base} L ${xAt(0)} ${base} Z`;
+  const barW = n > 1 ? (W / (n - 1)) * 0.6 : 24;
 
   function handleMove(e: React.MouseEvent<HTMLDivElement>) {
     if (!chartRef.current || n < 2) return;
@@ -298,8 +342,8 @@ function TraceVolumePanel({ slug, pageWindow }: { slug: string; pageWindow: Time
       ? {
           xPct: n > 1 ? (hi / (n - 1)) * 100 : 50,
           flip: (hi / Math.max(1, n - 1)) * 100 > 58,
-          okPct: (yAt(okSm[hi]) / H) * 100,
-          badPct: (yAt(badSm[hi]) / H) * 100,
+          okPct: (yAt(okSeries[hi]) / H) * 100,
+          badPct: (yAt(badSeries[hi]) / H) * 100,
           ok: okSeries[hi],
           bad: badSeries[hi],
           label: shortBucketLabel(series[hi]),
@@ -316,23 +360,48 @@ function TraceVolumePanel({ slug, pageWindow }: { slug: string; pageWindow: Time
       <div style={{ position: 'relative' }}>
         <div className="an-tv-stats">
           <div className="an-tv-legend">
-            <span className="an-tv-leg">
+            <button
+              type="button"
+              className={'an-tv-leg' + (showOk ? '' : ' is-off')}
+              onClick={() => toggleSeries('ok')}
+              title="Toggle grounded"
+            >
               <span className="an-tv-dot" style={{ background: 'var(--po-live)' }} />
-              <span className="an-tv-lbl">COMPLETED</span>
+              <span className="an-tv-lbl">GROUNDED</span>
               <b className="an-tv-n">{totalOk.toLocaleString()}</b>
-            </span>
-            <span className="an-tv-leg">
+            </button>
+            <button
+              type="button"
+              className={'an-tv-leg' + (showBad ? '' : ' is-off')}
+              onClick={() => toggleSeries('bad')}
+              title="Toggle ungrounded"
+            >
               <span className="an-tv-dot" style={{ background: 'var(--po-bad)' }} />
-              <span className="an-tv-lbl">FAILED</span>
+              <span className="an-tv-lbl">UNGROUNDED</span>
               <b className="an-tv-n">{totalBad.toLocaleString()}</b>
               {total > 0 && <span className="an-tv-pct">· {badPct}%</span>}
-            </span>
+            </button>
           </div>
           <div className="an-tv-kpi">
             <span className="an-tv-kpi-n">{total.toLocaleString()}</span>
             <span className={'an-tv-kpi-d' + (deltaDir === 'down' ? ' an-tv-kpi-d-warn' : '')}>
               {deltaDir === 'up' ? '↑' : '↓'} {Math.abs(deltaPct).toFixed(1)}% vs prev 24h
             </span>
+          </div>
+        </div>
+
+        <div className="an-seg-row">
+          <div className="an-seg">
+            <button
+              type="button"
+              className={'an-seg-opt' + (mode === 'line' ? ' is-active' : '')}
+              onClick={() => setMode('line')}
+            >Lines</button>
+            <button
+              type="button"
+              className={'an-seg-opt' + (mode === 'bar' ? ' is-active' : '')}
+              onClick={() => setMode('bar')}
+            >Bars</button>
           </div>
         </div>
 
@@ -370,66 +439,103 @@ function TraceVolumePanel({ slug, pageWindow }: { slug: string; pageWindow: Time
                   opacity="0.55"
                 />
               ))}
-              <path d={okArea} fill="rgba(93,209,161,0.13)" />
-              <path d={badArea} fill="rgba(224,116,116,0.24)" />
-              <path
-                d={okLine}
-                stroke="var(--po-live)"
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d={badLine}
-                stroke="var(--po-bad)"
-                strokeWidth="1.7"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              {mode === 'line' ? (
+                <>
+                  {showOk && <path d={okArea} fill="rgba(163,177,138,0.16)" />}
+                  {showBad && <path d={badArea} fill="rgba(224,116,116,0.20)" />}
+                  {showOk && (
+                    <path
+                      d={okLine}
+                      stroke="var(--po-live)"
+                      strokeWidth="2"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  )}
+                  {showBad && (
+                    <path
+                      d={badLine}
+                      stroke="var(--po-bad)"
+                      strokeWidth="1.7"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  )}
+                </>
+              ) : (
+                okSeries.map((ok, i) => {
+                  const x = Math.max(0, Math.min(W - barW, xAt(i) - barW / 2));
+                  const bottom = showOk ? ok : 0;
+                  return (
+                    <g key={i} opacity={hi === i ? 1 : 0.9}>
+                      {showOk && (
+                        <rect x={x} width={barW} y={yAt(ok)} height={Math.max(0, base - yAt(ok))} fill="var(--po-live)" />
+                      )}
+                      {showBad && (
+                        <rect
+                          x={x}
+                          width={barW}
+                          y={yAt(bottom + badSeries[i])}
+                          height={Math.max(0, yAt(bottom) - yAt(bottom + badSeries[i]))}
+                          fill="var(--po-bad)"
+                        />
+                      )}
+                    </g>
+                  );
+                })
+              )}
             </svg>
 
             {overlay && (
               <>
                 <div className="an-tv-crosshair" style={{ left: `${overlay.xPct}%` }} />
-                <div
-                  className="an-tv-dot-mark"
-                  style={{
-                    left: `${overlay.xPct}%`,
-                    top: `${overlay.okPct}%`,
-                    background: 'var(--po-live)',
-                  }}
-                />
-                <div
-                  className="an-tv-dot-mark"
-                  style={{
-                    left: `${overlay.xPct}%`,
-                    top: `${overlay.badPct}%`,
-                    background: 'var(--po-bad)',
-                  }}
-                />
+                {mode === 'line' && showOk && (
+                  <div
+                    className="an-tv-dot-mark"
+                    style={{
+                      left: `${overlay.xPct}%`,
+                      top: `${overlay.okPct}%`,
+                      background: 'var(--po-live)',
+                    }}
+                  />
+                )}
+                {mode === 'line' && showBad && (
+                  <div
+                    className="an-tv-dot-mark"
+                    style={{
+                      left: `${overlay.xPct}%`,
+                      top: `${overlay.badPct}%`,
+                      background: 'var(--po-bad)',
+                    }}
+                  />
+                )}
                 <div
                   className={'an-tv-tip' + (overlay.flip ? ' is-left' : '')}
                   style={{ left: `${overlay.xPct}%` }}
                 >
                   <div className="an-tv-tip-hour">{overlay.label}</div>
-                  <div className="an-tv-tip-row">
-                    <span
-                      className="an-tv-tip-dot"
-                      style={{ background: 'var(--po-live)' }}
-                    />
-                    <span className="an-tv-tip-lbl">completed</span>
-                    <span className="an-tv-tip-val">{overlay.ok}</span>
-                  </div>
-                  <div className="an-tv-tip-row">
-                    <span
-                      className="an-tv-tip-dot"
-                      style={{ background: 'var(--po-bad)' }}
-                    />
-                    <span className="an-tv-tip-lbl">failed</span>
-                    <span className="an-tv-tip-val">{overlay.bad}</span>
-                  </div>
+                  {showOk && (
+                    <div className="an-tv-tip-row">
+                      <span
+                        className="an-tv-tip-dot"
+                        style={{ background: 'var(--po-live)' }}
+                      />
+                      <span className="an-tv-tip-lbl">grounded</span>
+                      <span className="an-tv-tip-val">{overlay.ok}</span>
+                    </div>
+                  )}
+                  {showBad && (
+                    <div className="an-tv-tip-row">
+                      <span
+                        className="an-tv-tip-dot"
+                        style={{ background: 'var(--po-bad)' }}
+                      />
+                      <span className="an-tv-tip-lbl">ungrounded</span>
+                      <span className="an-tv-tip-val">{overlay.bad}</span>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -486,18 +592,23 @@ function shortBucketLabel(p: StatsTimeseriesPoint | undefined): string {
    analytics.jsx).
    ─────────────────────────────────────────────────────────── */
 
-const CELL_BUBBLES: { id: FailureCell; label: string; rgb: string }[] = [
-  { id: 'complete_grounded',     label: 'complete · grounded',     rgb: '120,196,150' },
-  { id: 'incomplete_grounded',   label: 'incomplete · grounded',   rgb: '226,176,118' },
-  { id: 'extra_grounded',        label: 'extra · grounded',        rgb: '220,206,128' },
-  { id: 'complete_ungrounded',   label: 'complete · ungrounded',   rgb: '226,142,142' },
-  { id: 'extra_ungrounded',      label: 'extra · ungrounded',      rgb: '220,135,135' },
-  { id: 'incomplete_ungrounded', label: 'incomplete · ungrounded', rgb: '196,108,108' },
+// Sage ramp (light→dark = healthy→worst). `text` is the contrast-aware label
+// color (dark on the two lightest fills, white on the rest); `rgb` drives the
+// hover-ring + faint background gradient.
+const CELL_BUBBLES: { id: FailureCell; label: string; fill: string; text: string; rgb: string }[] = [
+  { id: 'complete_grounded',     label: 'complete · grounded',     fill: '#DAD7CD', text: '#2c3a28', rgb: '218,215,205' },
+  { id: 'incomplete_grounded',   label: 'incomplete · grounded',   fill: '#A3B18A', text: '#26331f', rgb: '163,177,138' },
+  { id: 'extra_grounded',        label: 'extra · grounded',        fill: '#76936A', text: '#FFFFFF', rgb: '118,147,106' },
+  { id: 'complete_ungrounded',   label: 'complete · ungrounded',   fill: '#588157', text: '#FFFFFF', rgb: '88,129,87' },
+  { id: 'extra_ungrounded',      label: 'extra · ungrounded',      fill: '#3A5A40', text: '#FFFFFF', rgb: '58,90,64' },
+  { id: 'incomplete_ungrounded', label: 'incomplete · ungrounded', fill: '#344E41', text: '#FFFFFF', rgb: '52,78,65' },
 ];
 
 type PackedCell = {
   id: FailureCell;
   label: string;
+  fill: string;
+  text: string;
   rgb: string;
   count: number;
   r: number;
@@ -632,8 +743,8 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
       >
         <defs>
           <radialGradient id="anBubSpace" cx="50%" cy="44%" r="62%">
-            <stop offset="0%" stopColor="rgba(111,214,196,0.06)" />
-            <stop offset="100%" stopColor="rgba(111,214,196,0)" />
+            <stop offset="0%" stopColor="rgba(163,177,138,0.06)" />
+            <stop offset="100%" stopColor="rgba(163,177,138,0)" />
           </radialGradient>
         </defs>
         <rect x="0" y="0" width={vw} height={vh} fill="url(#anBubSpace)" />
@@ -642,6 +753,7 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
           const dim = hover != null && hover !== i;
           const share = grandTotal > 0 ? c.count / grandTotal : 0;
           const pct = (share * 100).toFixed(share < 0.01 ? 1 : 0);
+          const sub = c.text === '#FFFFFF' ? 'rgba(255,255,255,0.82)' : 'rgba(38,51,31,0.62)';
           return (
             <g key={c.id} transform={`translate(${c.x} ${c.y})`}>
               <g
@@ -653,34 +765,30 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
                 onMouseEnter={() => setHover(i)}
               >
                 {hover === i && (
-                  <circle r={c.r + 7} fill={`rgba(${c.rgb},0.16)`} />
+                  <circle r={c.r + 7} fill={`rgba(${c.rgb},0.18)`} />
                 )}
-                <circle r={c.r} fill={`rgba(${c.rgb},${hover === i ? 0.78 : 0.5})`} />
+                <circle r={c.r} fill={c.fill} />
                 {c.r >= 22 ? (
                   <>
                     <text
                       y="-2"
                       textAnchor="middle"
-                      fill="#fff"
+                      fill={c.text}
                       fontSize="14"
                       fontWeight="700"
                       fontFamily="var(--font-sans)"
-                      style={{
-                        fontVariantNumeric: 'tabular-nums',
-                        pointerEvents: 'none',
-                        textShadow: '0 1px 4px rgba(0,0,0,0.5)',
-                      }}
+                      style={{ fontVariantNumeric: 'tabular-nums', pointerEvents: 'none' }}
                     >
                       {c.count.toLocaleString()}
                     </text>
                     <text
                       y="13"
                       textAnchor="middle"
-                      fill="rgba(255,255,255,0.72)"
+                      fill={sub}
                       fontSize="10"
                       fontWeight="500"
                       fontFamily="var(--font-mono)"
-                      style={{ pointerEvents: 'none', textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}
+                      style={{ pointerEvents: 'none' }}
                     >
                       {pct}%
                     </text>
@@ -689,15 +797,11 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
                   <text
                     y="4"
                     textAnchor="middle"
-                    fill="#fff"
+                    fill={c.text}
                     fontSize="12"
                     fontWeight="700"
                     fontFamily="var(--font-sans)"
-                    style={{
-                      fontVariantNumeric: 'tabular-nums',
-                      pointerEvents: 'none',
-                      textShadow: '0 1px 4px rgba(0,0,0,0.5)',
-                    }}
+                    style={{ fontVariantNumeric: 'tabular-nums', pointerEvents: 'none' }}
                   >
                     {c.count.toLocaleString()}
                   </text>
@@ -706,15 +810,11 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
                     x={c.r + 7}
                     y="4"
                     textAnchor="start"
-                    fill="#fff"
+                    fill="var(--po-fg-2)"
                     fontSize="11"
                     fontWeight="700"
                     fontFamily="var(--font-sans)"
-                    style={{
-                      fontVariantNumeric: 'tabular-nums',
-                      pointerEvents: 'none',
-                      textShadow: '0 1px 3px rgba(0,0,0,0.4)',
-                    }}
+                    style={{ fontVariantNumeric: 'tabular-nums', pointerEvents: 'none' }}
                   >
                     {c.count.toLocaleString()}
                   </text>
@@ -732,7 +832,7 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
           fontWeight="500"
           fontFamily="var(--font-sans)"
           style={{ transition: 'opacity .2s ease', opacity: hc ? 1 : 0.7 }}
-          fill={hc ? `rgb(${hc.rgb})` : 'var(--po-fg-3)'}
+          fill={hc ? 'var(--po-fg)' : 'var(--po-fg-3)'}
         >
           {hc
             ? `${hc.label} — ${hc.count.toLocaleString()} · ${(
@@ -745,7 +845,7 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
       <div className="an-legend an-cell-legend">
         {CELL_BUBBLES.map((c) => (
           <span key={c.id} className="an-leg-item">
-            <span className="an-leg-sw" style={{ background: `rgb(${c.rgb})` }} />
+            <span className="an-leg-sw" style={{ background: c.fill }} />
             {c.label}
           </span>
         ))}
@@ -760,12 +860,12 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
    ─────────────────────────────────────────────────────────── */
 
 const CELL_COLOR: Record<FailureCell, string> = {
-  complete_grounded: 'var(--cell-cg)',
-  complete_ungrounded: 'var(--cell-cu)',
-  incomplete_grounded: 'var(--cell-ig)',
-  incomplete_ungrounded: 'var(--cell-iu)',
-  extra_grounded: 'var(--cell-eg)',
-  extra_ungrounded: 'var(--cell-eu)',
+  complete_grounded: 'var(--fcell-cg)',
+  complete_ungrounded: 'var(--fcell-cu)',
+  incomplete_grounded: 'var(--fcell-ig)',
+  incomplete_ungrounded: 'var(--fcell-iu)',
+  extra_grounded: 'var(--fcell-eg)',
+  extra_ungrounded: 'var(--fcell-eu)',
 };
 const CELL_LABEL: Record<FailureCell, string> = {
   complete_grounded: 'complete · grounded',
@@ -933,7 +1033,7 @@ function HallucinationTrendPanel({
   const xAt = (i: number) => (n > 1 ? (W / (n - 1)) * i : W / 2);
   const yAt = (v: number) => H - pb - (v / yMaxTick) * (H - pb - pt);
   const yPct = (v: number) => ((H - pb - (v / yMaxTick) * (H - pb - pt)) / H) * 100;
-  const linePath = anSmooth(gSmooth(series.series, 1.2).map((v, i) => [xAt(i), yAt(v)]));
+  const linePath = monoPath(series.series.map((v, i) => [xAt(i), yAt(v)]));
   const base = yAt(0);
   const areaPath = linePath + ` L ${xAt(Math.max(0, n - 1))} ${base} L ${xAt(0)} ${base} Z`;
 

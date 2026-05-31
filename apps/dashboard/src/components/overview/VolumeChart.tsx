@@ -70,10 +70,10 @@ export function VolumeChart({ stats }: Props) {
           {gridLines}
           {xLabels}
 
-          <path d={smoothArea(okPts, yScale(0))} fill="rgba(111,214,196,0.16)" />
+          <path d={smoothArea(okPts, yScale(0))} fill="rgba(163,177,138,0.16)" />
           <path
             d={smoothPath(okPts)}
-            stroke="#6fd6c4"
+            stroke="var(--po-live)"
             strokeWidth="1.8"
             fill="none"
             strokeLinejoin="round"
@@ -90,7 +90,7 @@ export function VolumeChart({ stats }: Props) {
                 y={H - padB - h}
                 width={4}
                 height={h}
-                fill="#e25c5c"
+                fill="var(--cell-cu)"
                 rx={1}
               />
             );
@@ -102,7 +102,7 @@ export function VolumeChart({ stats }: Props) {
               cx={padL + xStep * i}
               cy={yScale(d.ok)}
               r={2}
-              fill="#6fd6c4"
+              fill="var(--po-live)"
             />
           ))}
 
@@ -111,7 +111,7 @@ export function VolumeChart({ stats }: Props) {
             x2={lastX}
             y1={padT}
             y2={H - padB}
-            stroke="#6fd6c4"
+            stroke="var(--po-live)"
             strokeDasharray="2 3"
             strokeOpacity={0.5}
           />

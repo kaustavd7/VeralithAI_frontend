@@ -261,11 +261,11 @@
 }
 .streamRow:last-child { border-bottom: none; }
 .streamFresh {
-  background: linear-gradient(90deg, rgba(111,214,196,0.10), transparent 70%);
+  background: linear-gradient(90deg, rgba(163,177,138,0.12), transparent 70%);
   animation: fadeArrival 2.4s ease-out forwards;
 }
 @keyframes fadeArrival {
-  0%   { background: rgba(111,214,196,0.18); }
+  0%   { background: rgba(163,177,138,0.20); }
   100% { background: transparent; }
 }
 .streamCell {
@@ -372,7 +372,7 @@
 .table td { color: var(--fg-2); }
 .table tr:last-child td { border-bottom: none; }
 .table tr:hover td { background: var(--hover); cursor: pointer; }
-.tableFresh td { background: rgba(111,214,196,0.06); }
+.tableFresh td { background: rgba(163,177,138,0.07); }
 
 .cellChip {
   font-family: var(--font-mono);

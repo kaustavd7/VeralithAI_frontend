@@ -7,6 +7,7 @@ import ProjectsHome from './routes/ProjectsHome';
 import ProjectOverview from './routes/ProjectOverview';
 import TraceExplorer from './routes/TraceExplorer';
 import Analytics from './routes/Analytics';
+import FailureCells from './routes/FailureCells';
 import TraceDetail from './routes/TraceDetail';
 import Heals from './routes/Heals';
 import Settings from './routes/Settings';
@@ -63,6 +64,16 @@ export default function App() {
         element={
           <RequireAuth>
             <Analytics />
+          </RequireAuth>
+        }
+      />
+
+      {/* Failure Cells — the 2×3 grounded/complete taxonomy over time. */}
+      <Route
+        path="/projects/:slug/analytics/cells"
+        element={
+          <RequireAuth>
+            <FailureCells />
           </RequireAuth>
         }
       />
