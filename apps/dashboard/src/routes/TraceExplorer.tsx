@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
 import { useStats, useTraces } from '../hooks/useOverviewData';
@@ -272,10 +272,24 @@ export default function TraceExplorer() {
     [projects.data, slug],
   );
 
-  const [timeWindow, setTimeWindow] = useState<TimeWindow>('24h');
-  const [activeCells, setActiveCells] = useState<Set<FailureCell>>(new Set());
+  // Seed filters from the URL (e.g. the Today "active failures" alert deep-links here).
+  const [searchParams] = useSearchParams();
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>(() => {
+    const w = searchParams.get('window');
+    return w === '1h' || w === '24h' || w === '7d' || w === '30d' ? w : '24h';
+  });
+  const [activeCells, setActiveCells] = useState<Set<FailureCell>>(() => {
+    const raw = searchParams.get('cells');
+    if (!raw) return new Set();
+    const valid = new Set<string>(CELLS.map((c) => c.id));
+    return new Set(raw.split(',').filter((id) => valid.has(id)) as FailureCell[]);
+  });
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState<SortKey>('newest');
+  const [sort, setSort] = useState<SortKey>(() => {
+    const s = searchParams.get('sort');
+    const ok = ['newest', 'oldest', 'sufficiency_asc', 'sufficiency_desc', 'faithfulness_asc', 'faithfulness_desc'];
+    return ok.includes(s ?? '') ? (s as SortKey) : 'newest';
+  });
   const [page, setPage] = useState(0);
 
   const since = useMemo(() => sinceFor(timeWindow), [timeWindow]);

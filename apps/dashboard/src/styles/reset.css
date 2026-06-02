@@ -8,6 +8,9 @@ html,
 body,
 #root {
   height: 100%;
+  /* the app scrolls inside .shell-main; nothing should scroll the document
+     horizontally, so clip any stray sub-pixel/edge overflow (e.g. card glow). */
+  overflow-x: clip;
 }
 
 body {

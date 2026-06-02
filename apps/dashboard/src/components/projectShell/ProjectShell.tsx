@@ -10,6 +10,10 @@ type Props = {
   project: string;
   env?: 'production' | 'staging' | 'local';
   workspace?: string;
+  /** Extra class on `.shell-main` (e.g. a pure-black canvas override). */
+  mainClass?: string;
+  /** Overlay pinned to the bottom of the content frame (e.g. the Workbench). */
+  drawer?: ReactNode;
   children: ReactNode;
 };
 
@@ -19,6 +23,8 @@ export function ProjectShell({
   project,
   env = 'local',
   workspace = 'workspace',
+  mainClass,
+  drawer,
   children,
 }: Props) {
   return (
@@ -26,7 +32,8 @@ export function ProjectShell({
       <ProjectTopbar project={project} env={env} workspace={workspace} />
       <div className="shell-body">
         <ProjectSidebar active={active} slug={slug} />
-        <main className="shell-main">{children}</main>
+        <main className={'shell-main' + (mainClass ? ' ' + mainClass : '')}>{children}</main>
+        {drawer}
       </div>
     </div>
   );

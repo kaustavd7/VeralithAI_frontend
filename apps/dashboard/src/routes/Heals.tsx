@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { useAuth } from '../hooks/useAuth';
 import { api } from '../api/client';
-import { AccountMenu } from '../components/projectShell/AccountMenu';
+import { ProjectShell } from '../components/projectShell/ProjectShell';
+import { useProjects } from '../hooks/useProjects';
 import '../styles/project-shell.css';
 import '../styles/project-page.css';
 import type {
@@ -352,6 +352,7 @@ function DetailPane({
   onAction: (a: ActionKind) => void;
   onCollapse: () => void;
 }) {
+  const { slug = '' } = useParams<{ slug: string }>();
   if (isLoading || !card) {
     return (
       <div className="he-detail he-detail-empty">
@@ -398,7 +399,7 @@ function DetailPane({
         </div>
         {card.previous_card_id && (
           <div className="he-recur">
-            Previous attempt: <a href={`/heals/${card.previous_card_id}`}>earlier card</a> didn’t fix it — recurred at this trace.
+            Previous attempt: <a href={`/projects/${slug}/heals/${card.previous_card_id}`}>earlier card</a> didn’t fix it — recurred at this trace.
           </div>
         )}
       </div>
@@ -455,59 +456,15 @@ function DetailPane({
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Topbar (shared chrome with ProjectsHome)
-   ─────────────────────────────────────────────────────────── */
-
-function HealsTopbar() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [acctOpen, setAcctOpen] = useState(false);
-  const displayName = useMemo(() => {
-    const meta = user?.user_metadata as Record<string, unknown> | undefined;
-    const full = (meta?.['full_name'] as string | undefined) ?? (meta?.['name'] as string | undefined);
-    return full ?? user?.email?.split('@')[0] ?? '';
-  }, [user]);
-  const initials = (displayName || user?.email || '').slice(0, 2).toUpperCase();
-
-  return (
-    <header className="ph-top">
-      <span className="ph-brand" style={{ cursor: 'pointer' }} onClick={() => navigate('/projects')}>
-        <span className="ph-brand-mark">
-          <svg width="20" height="20" viewBox="0 0 22 22">
-            <path d="M4 13.5 L7.5 6.5 L13 5 L18.5 9.5 L18 15 L11.5 19 L5 17.5 Z"
-              fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-            <path d="M7.5 6.5 L11 11 L18.5 9.5 M11 11 L11.5 19 M11 11 L5 17.5"
-              stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.55" fill="none" strokeLinejoin="round" />
-          </svg>
-        </span>
-        <span className="ph-brand-name">VeralithAI</span>
-      </span>
-      <span className="ph-crumb-sep">/</span>
-      <span className="ph-crumb">heals</span>
-      <div className="ph-top-right">
-        <span className="ph-avatar-wrap">
-          <button
-            type="button"
-            className="ph-avatar tb-avatar"
-            aria-haspopup="menu"
-            aria-expanded={acctOpen}
-            onClick={() => setAcctOpen((v) => !v)}
-          >{initials || '··'}</button>
-          {acctOpen && <AccountMenu onClose={() => setAcctOpen(false)} />}
-        </span>
-      </div>
-    </header>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Page
+   Page — rendered inside the project shell (sidebar + topbar)
    ─────────────────────────────────────────────────────────── */
 
 export default function Heals() {
-  const { cardId } = useParams<{ cardId?: string }>();
+  const { slug = '', cardId } = useParams<{ slug: string; cardId?: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const projects = useProjects();
+  const projectName = projects.data?.projects.find((p) => p.slug === slug || p.id === slug)?.name ?? slug;
 
   const [filter, setFilter] = useState<FilterId>('all');
   const [splitPct, setSplitPct] = useState(42);
@@ -596,7 +553,7 @@ export default function Heals() {
 
   function selectCard(id: string) {
     if (!detailOpen) setDetailOpen(true);
-    navigate(`/heals/${id}`);
+    navigate(`/projects/${slug}/heals/${id}`);
   }
 
   // Splitter drag
@@ -627,9 +584,8 @@ export default function Heals() {
   const showDetail = detailOpen && !isEmpty;
 
   return (
-    <div className="ph">
-      <HealsTopbar />
-      <div className={'he-page' + (dragging ? ' is-dragging' : '')} ref={pageRef} style={{ flex: 1, minHeight: 0 }}>
+    <ProjectShell slug={slug} active="heals" project={projectName}>
+      <div className={'he-page' + (dragging ? ' is-dragging' : '')} ref={pageRef}>
         <div
           className="he-queue"
           style={showDetail ? { width: `${splitPct}%` } : { flex: 1, width: 'auto' }}
@@ -728,6 +684,6 @@ export default function Heals() {
           />
         )}
       </div>
-    </div>
+    </ProjectShell>
   );
 }

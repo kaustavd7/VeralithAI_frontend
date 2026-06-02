@@ -1,10 +1,12 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { RequireAuth } from './components/RequireAuth';
+import { WorkbenchDrawer } from './components/workbench/WorkbenchDrawer';
+import { useAuth } from './hooks/useAuth';
 import Login from './routes/Login';
 import Onboarding from './routes/Onboarding';
 import Placeholder from './routes/Placeholder';
 import ProjectsHome from './routes/ProjectsHome';
-import ProjectOverview from './routes/ProjectOverview';
+import TodayOverview from './routes/TodayOverview';
 import TraceExplorer from './routes/TraceExplorer';
 import Analytics from './routes/Analytics';
 import FailureCells from './routes/FailureCells';
@@ -13,6 +15,27 @@ import Heals from './routes/Heals';
 import Settings from './routes/Settings';
 
 export default function App() {
+  return (
+    <>
+      <AppRoutes />
+      {/* Persistent Workbench — fixed to the bottom of every authenticated page,
+          mounted once here so its open/tab state survives navigation. */}
+      <GlobalWorkbench />
+    </>
+  );
+}
+
+/* The Workbench dev drawer is global (Stripe "Developers"-bar model): a fixed
+   collapsed strip on every signed-in page; click to bring the panel up. Hidden
+   pre-auth (login). */
+function GlobalWorkbench() {
+  const { user } = useAuth();
+  const { pathname } = useLocation();
+  if (!user || pathname === '/login') return null;
+  return <WorkbenchDrawer />;
+}
+
+function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/projects" replace />} />
@@ -38,12 +61,13 @@ export default function App() {
         }
       />
 
-      {/* Project Overview — single-project landing. */}
+      {/* Project Overview — the "Today" command-center (B2 glow) + Workbench.
+          Demo data for now; ProjectOverview.tsx kept for backend wiring later. */}
       <Route
         path="/projects/:slug"
         element={
           <RequireAuth>
-            <ProjectOverview />
+            <TodayOverview />
           </RequireAuth>
         }
       />
@@ -87,9 +111,9 @@ export default function App() {
         }
       />
 
-      {/* Heals — global queue + detail (cross-project). */}
+      {/* Heals — per-project queue + detail. */}
       <Route
-        path="/heals"
+        path="/projects/:slug/heals"
         element={
           <RequireAuth>
             <Heals />
@@ -97,7 +121,7 @@ export default function App() {
         }
       />
       <Route
-        path="/heals/:cardId"
+        path="/projects/:slug/heals/:cardId"
         element={
           <RequireAuth>
             <Heals />

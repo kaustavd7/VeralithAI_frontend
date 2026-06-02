@@ -1058,7 +1058,7 @@ button.an-tv-leg:hover { border-color: var(--po-line-strong); background: var(--
 .he-chip.is-active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
 [data-theme="light"] .he-chip.is-active { background: #4f7a4d; color: #fff; border-color: #4f7a4d; }
 
-.he-queue-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.he-queue-list { flex: 1; overflow-y: auto; padding: 12px 12px 52px; display: flex; flex-direction: column; gap: 12px; }
 .he-card-row { position: relative; display: block; width: 100%; text-align: left; cursor: pointer;
   flex: none; background: var(--po-panel); border: 1px solid var(--po-line);
   border-radius: var(--po-radius-sm); padding: 16px 16px 16px 20px; overflow: hidden;
@@ -1131,7 +1131,7 @@ button.an-tv-leg:hover { border-color: var(--po-line-strong); background: var(--
 .he-badge-dot.is-pulse { animation: he-breathe 1.4s ease-in-out infinite; }
 .he-badge-lg { font-size: 12px; padding: 4px 11px 4px 9px; }
 
-.he-detail { flex: 1; min-width: 0; overflow-y: auto; padding: 24px 28px 40px; position: relative; }
+.he-detail { flex: 1; min-width: 0; overflow-y: auto; padding: 24px 28px 52px; position: relative; }
 .he-detail-empty { display: flex; }
 .he-placeholder { margin: auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .he-placeholder-t { font-size: 13px; color: var(--po-fg-4); }

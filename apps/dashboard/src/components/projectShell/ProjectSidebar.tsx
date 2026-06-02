@@ -44,7 +44,7 @@ function groups(slug: string): Group[] {
       label: 'diagnostics',
       items: [
         { id: 'analytics', label: 'Analytics', kbd: 'g a', icon: 'chart', route: `/projects/${slug}/analytics` },
-        { id: 'heals', label: 'Heals', kbd: 'g h', icon: 'heal', route: `/heals` },
+        { id: 'heals', label: 'Heals', kbd: 'g h', icon: 'heal', route: `/projects/${slug}/heals` },
         { id: 'cells', label: 'Failure cells', kbd: 'g f', icon: 'cells', route: `/projects/${slug}/analytics/cells` },
         { id: 'calibration', label: 'Calibration', kbd: 'g c', icon: 'calib' },
       ],

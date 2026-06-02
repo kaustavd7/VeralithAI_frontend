@@ -15,7 +15,10 @@
 .shell {
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  /* fixed to the viewport so the topbar + sidebar stay put and only
+     .shell-main scrolls (the document itself never scrolls). */
+  height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background: var(--po-bg);
