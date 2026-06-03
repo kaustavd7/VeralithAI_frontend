@@ -1172,7 +1172,6 @@ playIO.observe(panel);
     target.y = e.clientY - r.top;
     if (smooth.x < -9000) { smooth.x = target.x; smooth.y = target.y; }
     active = true;
-    lastActiveT = performance.now();
   }
   stage.addEventListener("pointermove", setTarget);
   stage.addEventListener("pointerdown", setTarget);
@@ -1195,9 +1194,6 @@ playIO.observe(panel);
   }
 
   let lastW = -1;
-  let lastActiveT = -1e9, lastMaskT = 0, dynamicMaskOn = false;
-  const cssMaskCv = document.createElement("canvas");
-  const cssMaskX = cssMaskCv.getContext("2d");
 
   let branchMaskUrl = null;
   // STATIC mask — layer one (the bare branch) only. So in the resting state the
@@ -1243,26 +1239,6 @@ playIO.observe(panel);
       copy.style.maskPosition = (-ox) + "px " + (-oy) + "px";
     }
   }
-  // DYNAMIC mask — layer two. While the cursor is revealing moss we snapshot the
-  // live canvas alpha (bare branch + whatever grass is currently revealed) and
-  // use THAT as the cream clip, so the cream follows the grasses on hover.
-  function refreshCssMask() {
-    if (imgReady < 2 || !W || !H) return;
-    const sw = Math.max(1, Math.round(W * 0.3));
-    const sh = Math.max(1, Math.round(H * 0.3));
-    if (cssMaskCv.width !== sw) cssMaskCv.width = sw;
-    if (cssMaskCv.height !== sh) cssMaskCv.height = sh;
-    cssMaskX.clearRect(0, 0, sw, sh);
-    // bare branch + revealed grass; two draws firm up alpha without expanding onto white
-    cssMaskX.drawImage(canvas, 0, 0, sw, sh);
-    cssMaskX.drawImage(canvas, 0, 0, sw, sh);
-    const url = cssMaskCv.toDataURL();
-    for (const copy of creamCopies) {
-      copy.style.webkitMaskImage = "url(" + url + ")";
-      copy.style.maskImage = "url(" + url + ")";
-    }
-    alignMasks();
-  }
   // re-align once text settles (fonts load + entrance animation finishes)
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(alignMasks);
   window.addEventListener("load", alignMasks);
@@ -1281,7 +1257,6 @@ playIO.observe(panel);
       target.y = rect.y + rect.h * (0.40 + 0.08 * Math.sin(now * 0.00035 * 2.0));
       if (smooth.x < -9000) { smooth.x = target.x; smooth.y = target.y; }
       active = true;
-      lastActiveT = now;
     }
 
     if (smooth.x > -9000) {
@@ -1364,17 +1339,6 @@ playIO.observe(panel);
     ctx.clearRect(0, 0, W, H);
     if (imgReady >= 2) ctx.drawImage(bareKeyed, rect.x, rect.y, rect.w, rect.h);   // Layer A base
     ctx.drawImage(tmpCv, 0, 0, W, H);                                              // Layer B reveal
-
-    // cream-text mask: track the live canvas (revealed grasses) while active,
-    // then settle back to the crisp bare-branch silhouette when idle.
-    const aliveMask = active || (now - lastActiveT) < 1800;
-    if (aliveMask) {
-      dynamicMaskOn = true;
-      if (now - lastMaskT > 66) { refreshCssMask(); lastMaskT = now; }
-    } else if (dynamicMaskOn) {
-      dynamicMaskOn = false;
-      buildBranchMask();
-    }
 
     requestAnimationFrame(frame);
   }
