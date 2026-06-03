@@ -1,7 +1,8 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { RequireAuth } from './components/RequireAuth';
 import { WorkbenchDrawer } from './components/workbench/WorkbenchDrawer';
 import { useAuth } from './hooks/useAuth';
+import Landing from './routes/Landing';
 import Login from './routes/Login';
 import Onboarding from './routes/Onboarding';
 import Placeholder from './routes/Placeholder';
@@ -38,7 +39,8 @@ function GlobalWorkbench() {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/projects" replace />} />
+      {/* Public landing page (marketing/hero) at the root. */}
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
 
       {/* Projects Home — post-login landing. Lists the user's projects;
