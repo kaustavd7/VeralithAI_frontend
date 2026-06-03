@@ -11,7 +11,12 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [mode, setMode] = useState<Mode>('sign-in');
+  // Start in sign-up mode when arrived via ?mode=signup (e.g. the marketing
+  // site's "Start free" button); default to sign-in otherwise.
+  const [mode, setMode] = useState<Mode>(() => {
+    const m = new URLSearchParams(window.location.search).get('mode');
+    return m === 'signup' || m === 'sign-up' ? 'sign-up' : 'sign-in';
+  });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);

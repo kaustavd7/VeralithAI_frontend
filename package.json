@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "pnpm -F dashboard dev",
+    "dev:web": "pnpm -F web dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint"
