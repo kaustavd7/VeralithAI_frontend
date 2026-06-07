@@ -21,3 +21,6 @@ coverage
 *.tsbuildinfo
 
 planning
+
+# local-only snapshot for previewing the landing page (not deployed)
+landing-local

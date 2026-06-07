@@ -109,13 +109,13 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
   background:#fff;
   border:var(--frame) solid var(--obsidian);   /* dark-green frame, matches the page frame */
   display:flex; align-items:center;
-  font-family:"Hanken Grotesk", "Neue Montreal", Arial, sans-serif;
+  font-family:var(--display);   /* Supera Gothic */
   transition:opacity .5s ease;
 }
 .preloader.lift{ opacity:0; pointer-events:none; }      /* fades out at 100 */
 .pl-inner{ display:flex; align-items:baseline; gap:26vw; padding-left:13vw; }
 .pl-label,
-.pl-count{ font-size:clamp(1.3rem, 2.1vw, 1.8rem); font-weight:500; color:var(--obsidian); line-height:1; }
+.pl-count{ font-size:clamp(0.9rem, 1.3vw, 1.1rem); font-weight:700; color:var(--obsidian); line-height:1; }
 .pl-count{ font-variant-numeric:tabular-nums; }
 
 /* hold the hero entrance until the screen clears */
@@ -128,7 +128,7 @@ body.is-loading .settle{ animation-play-state:paused; }
    ============================================================ */
 .nav{
   position:sticky; top:0; z-index:100;
-  transition:background .35s ease, border-color .35s ease, backdrop-filter .35s ease;
+  transition:background .35s ease, border-color .35s ease, backdrop-filter .35s ease, transform .45s ease, opacity .3s ease;
   border-bottom:1px solid transparent;
 }
 .nav.scrolled{
@@ -136,6 +136,8 @@ body.is-loading .settle{ animation-play-state:paused; }
   backdrop-filter:blur(14px) saturate(140%);
   border-bottom:1px solid rgba(38,48,26,.08);
 }
+/* slide the nav out of the way while the immersive scroll-tear scene is pinned, so it can't clip the graph cards */
+.nav.st-away{ transform:translateY(-118%); opacity:0; pointer-events:none; }
 .nav-inner{ display:flex; align-items:center; gap:2.5rem; height:74px; }
 .brand{ display:flex; align-items:center; gap:.6rem; font-weight:900; letter-spacing:.18em; font-size:1.05rem; }
 .brand .gem{ width:30px; height:30px; flex:none; border-radius:7px; background:url(data:image/jpeg;base64,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) center/cover no-repeat; }
@@ -192,20 +194,22 @@ body.is-loading .settle{ animation-play-state:paused; }
 @keyframes float3{ to{ transform:translate(-4vw, -6vw) scale(1.15);} }
 
 /* headline-dominant, airy, left-aligned — like the original */
-.headline-wrap{ flex:1; display:flex; align-items:center; }
+.headline-wrap{ flex:1; display:flex; align-items:center; transform:translateY(3vh); padding-inline:clamp(1rem, 3vw, 1.75rem); }
 .headline{
   font-size:clamp(1.4rem, 7.2vw, 9rem);   /* sized to fill the hero in one line, allowing for the 3.5rem margins + frame */
   line-height:.95; letter-spacing:-.04em; color:var(--ink);
 }
 /* setup line — a touch heavier so it reads clearly */
 .hl-setup{
-  display:block; font-weight:500; font-size:.4em; line-height:1.14;
+  display:block; font-weight:500; font-size:.52em; line-height:1.14;
   letter-spacing:-.005em; color:var(--ink-soft); margin-bottom:.45em;
+  /* sits just above the payoff line */
+  transform:translateY(-3.5vh);
 }
 .hl-q{ font-style:italic; font-weight:500; color:var(--ink); }   /* the quoted output, in Regular Italic */
 /* the heavy payoff, in Black — kept on one line */
-.hl-punch{ display:block; font-weight:900; white-space:nowrap; }
-.hl-punch em{ font-style:italic; }                               /* "everything." in Black Italic */
+.hl-punch{ display:block; font-weight:900; white-space:nowrap; font-size:clamp(1.6rem, 8vw, 12rem); transform:translateY(-3vh); }
+.hl-punch em{ font-style:normal; text-transform:uppercase; }     /* "EVERYTHING." in Black, all caps (not italic) */
 /* gentle blur-in on load — present, not theatrical */
 .settle{ display:inline-block; animation:settle 1.3s cubic-bezier(.2,.7,.2,1) .15s both; }
 @keyframes settle{
@@ -217,6 +221,7 @@ body.is-loading .settle{ animation-play-state:paused; }
   font-size:clamp(1rem, 1.25vw, 1.12rem); line-height:1.6;
   color:var(--ink-faint); max-width:34ch;
   border-left:1.5px solid var(--sage); padding-left:1.1rem;
+  margin-left:0;   /* aligned left */
 }
 .hero-actions{ display:flex; gap:1rem; flex-wrap:wrap; align-items:center; }
 .hero-note{ font-size:.85rem; color:var(--ink-faint); margin-top:1.3rem; }
@@ -309,6 +314,65 @@ body.is-loading .settle{ animation-play-state:paused; }
 .trust-tags span{ font-weight:500; color:var(--ink-soft); font-size:1rem; opacity:.85; }
 .trust-tags span::before{ content:"✦ "; color:var(--leaf-deep); }
 
+
+/* ============================================================
+   SUPPORTED-BY STRIP — quiet trust band of model / framework marks.
+   Mirrors the .trust band rhythm; greyscale marks, a pixel-sparkle
+   divider ties in the hero motif, one quiet green note on hover.
+   ============================================================ */
+.support{ padding-block:2.6rem; border-block:1px solid rgba(38,48,26,.08); }   /* gap moved into .strata-zone above */
+.support-inner{ display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:1rem 1.5rem; }
+
+/* "Supported by" — same eyebrow voice as .kicker (Supera Gothic, uppercase) */
+.support-label{ margin:0; font-family:var(--display); font-size:.86rem; letter-spacing:.16em;
+  text-transform:uppercase; font-weight:700; color:var(--moss); white-space:nowrap; flex:none; }
+
+/* pixel-sparkle divider — same motif as .kicker::before */
+.support-pix{ flex:none; display:inline-block; width:.92rem; height:.92rem; opacity:.85;
+  image-rendering:pixelated; image-rendering:crisp-edges;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 5 5' shape-rendering='crispEdges'%3E%3Crect x='2' width='1' height='5' fill='%23588157'/%3E%3Crect y='2' width='5' height='1' fill='%23588157'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23A3B18A'/%3E%3C/svg%3E") center/contain no-repeat; }
+
+/* row of marks */
+.support-row{ display:flex; align-items:center; justify-content:center; flex-wrap:wrap;
+  gap:1.1rem clamp(1.5rem,3.2vw,2.4rem); min-width:0; }
+
+/* each mark — muted greyscale, scoped to avoid global .logo collisions */
+.support-row .logo{ --logo-h:30px; display:inline-flex; align-items:center;
+  color:var(--ink-soft); opacity:.7; transition:opacity .25s ease, color .25s ease; }
+.support-row .logo svg{ display:block; height:var(--logo-h); width:auto; max-width:120px; fill:currentColor; }
+
+/* per-mark optical sizing — dense/solid marks shrink, airy ones get room (tuned live) */
+.support-row .logo[data-mark="claude"]{ --logo-h:30px; }
+.support-row .logo[data-mark="openai"]{ --logo-h:28px; }
+.support-row .logo[data-mark="mistral"]{ --logo-h:28px; }
+.support-row .logo[data-mark="huggingface"]{ --logo-h:28px; }
+.support-row .logo[data-mark="langchain"]{ --logo-h:28px; }
+.support-row .logo[data-mark="gemini"]{ --logo-h:26px; }
+
+/* hover — a quiet lift + a warm tint toward green (not a full accent flip) */
+.support-row .logo:hover{ opacity:.95; color:color-mix(in srgb, var(--ink-soft) 55%, var(--accent,#588157)); }
+@media (hover:none){ .support-row .logo:hover{ opacity:.7; color:var(--ink-soft); } }
+
+@media (max-width:920px){ .support-row{ gap:1rem clamp(1.3rem,3.2vw,2rem); } }
+
+/* phone — tighten + masked horizontal scroll (first mark never clipped) */
+@media (max-width:680px){
+  .support{ padding-block:1.9rem; }
+  .support-inner{ gap:.85rem 1rem; }
+  .support-label{ font-size:.78rem; letter-spacing:.14em; }
+  .support-pix{ width:.78rem; height:.78rem; }
+  .support-row{ flex-wrap:nowrap; justify-content:flex-start; gap:1.5rem; width:100%;
+    overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding:.1rem .25rem .35rem;
+    -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 1.25rem),transparent);
+            mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 1.25rem),transparent); }
+  .support-row::-webkit-scrollbar{ display:none; }
+  .support-row .logo{ --logo-h:26px; flex:0 0 auto; }
+  .support-row .logo[data-mark="huggingface"]{ --logo-h:26px; }
+  .support-row .logo[data-mark="openai"]{ --logo-h:24px; }
+  .support-row .logo[data-mark="gemini"]{ --logo-h:23px; }
+}
+@media (prefers-reduced-motion:reduce){ .support-row .logo{ transition:none; } }
+
 /* ============================================================
    SECTION SCAFFOLD
    ============================================================ */
@@ -365,6 +429,48 @@ h2 .accent{ font-family:var(--serif); font-style:italic; font-weight:300; color:
 .pillar .glow{ position:absolute; width:120px; height:120px; border-radius:50%; background:var(--leaf); filter:blur(50px); opacity:0; top:-30px; right:-30px; transition:opacity .4s; }
 .pillar:hover .glow{ opacity:.4; }
 
+/* ===== "How it works" — LEDGER (design handoff · study A) =================
+   Oversized faint numerals on a hairline rail; a single thread that warms
+   from barren (grey) to grounded (green) left → right. Adapted from the
+   design's green palette to the page's greyscale + single green accent. */
+.ledger-row{ --p:0; display:grid; grid-template-columns:repeat(3,1fr); gap:0; position:relative; margin-top:1.5rem; }
+/* the rail sits BELOW the numerals (the line never crosses the digits). A faint
+   track; a green fill (::after) draws left -> right driven by scroll (--p 0..1). */
+.ledger-thread{ position:absolute; left:0; right:0; top:103px; height:3px; z-index:0; border-radius:3px;
+  background:#DAD7CD; }                                   /* the line starts light sand */
+.ledger-thread::after{ content:""; position:absolute; inset:0; border-radius:3px;
+  background:var(--accent);                               /* and turns green, left -> right, on scroll */
+  clip-path:inset(0 calc((1 - var(--p)) * 100%) 0 0); transition:clip-path .25s ease-out; }
+.led{ position:relative; z-index:1; padding:0 30px; }
+.led:first-child{ padding-left:0; }
+.led:last-child{ padding-right:0; }
+.led:not(:first-child){ border-left:1px solid rgba(38,48,26,.1); }
+.led-node{ width:11px; height:11px; border-radius:50%; background:#DAD7CD;   /* light sand, matches the line */
+  position:absolute; top:99px; left:30px; box-shadow:0 0 0 5px var(--bg);
+  transition:background .5s ease; }
+.led:first-child .led-node{ left:0; }
+.led.on .led-node{ background:var(--accent); }          /* turns green as the line reaches it */
+.led-num{ font-family:var(--display); font-size:78px; font-weight:300; letter-spacing:-.04em;
+  color:var(--ink); line-height:1; opacity:.16; }   /* 300 = lightest Supera Gothic face that ships */
+.led-step{ font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--moss); margin:48px 0 10px; }   /* pushed below the rail */
+.led h3{ font-weight:600; font-size:1.45rem; letter-spacing:-.01em; margin-bottom:.7rem; color:var(--ink); }
+.led p{ color:var(--ink-faint); font-size:.92rem; line-height:1.65; font-weight:300; max-width:32ch; }
+.led em{ color:var(--ink-soft); font-style:italic; }
+@media (prefers-reduced-motion:reduce){
+  .ledger-thread::after{ clip-path:none; }   /* line fully green */
+  .led-node{ background:var(--accent); }
+}
+@media (max-width:980px){
+  .ledger-row{ grid-template-columns:1fr; gap:30px; }
+  .ledger-thread{ display:none; }
+  .led{ opacity:1; }
+  .led-step{ margin-top:14px; }   /* no rail to clear on mobile */
+  .led:not(:first-child){ border-left:none; border-top:1px solid rgba(38,48,26,.1); padding:30px 0 0; }
+  .led, .led:first-child, .led:last-child{ padding-left:0; padding-right:0; }
+  .led-node{ display:none; }
+}
+
 /* ===== features bento ===== */
 .bento{ display:grid; grid-template-columns:repeat(6,1fr); grid-auto-rows:minmax(150px,auto); gap:1.2rem; }
 .tile{
@@ -382,25 +488,134 @@ h2 .accent{ font-family:var(--serif); font-style:italic; font-weight:300; color:
 .chiprow{ display:flex; gap:.5rem; flex-wrap:wrap; margin-top:auto; }
 .chip{ font-family:var(--mono); font-size:.72rem; padding:.3rem .55rem; border-radius:6px; background:var(--bg-2); color:var(--ink-soft); }
 .tile.dark .chip{ background:rgba(255,255,255,.08); color:#C7D3AC; }
+.tile.span3{ grid-column:span 3; }
+
+/* ===== features bento — enhanced internals ===== */
+.bento{ grid-auto-rows:minmax(170px,auto); }
+.tile{ gap:.45rem; }
+.tile .glow{ position:absolute; width:170px; height:170px; border-radius:50%; background:var(--leaf);
+  filter:blur(62px); opacity:0; top:-46px; right:-46px; transition:opacity .45s ease; pointer-events:none; }
+.tile:hover .glow{ opacity:.13; } .tile.dark:hover .glow{ opacity:.24; }
+.feat-ic{ display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px;
+  border-radius:12px; background:var(--bg-2); color:var(--moss); margin-bottom:.4rem; flex:none; }
+.feat-ic svg{ width:21px; height:21px; }
+.tile.dark .feat-ic{ background:rgba(255,255,255,.07); color:var(--leaf); }
+.feat-eyebrow{ font-family:var(--mono); font-size:.66rem; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--moss); font-weight:600; }
+.tile.dark .feat-eyebrow{ color:var(--leaf); }
+.tile h3{ margin-top:-.1rem; }
+.feat-foot{ margin-top:auto; padding-top:1rem; }
+
+/* judge verdict strip — trace-level analysis */
+.jrow{ display:flex; gap:.5rem; }
+.j{ display:flex; flex-direction:column; gap:.2rem; padding:.55rem .65rem; border-radius:11px; flex:1; min-width:0;
+  background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.09); }
+.j .j-l{ font-family:var(--mono); font-size:.58rem; letter-spacing:.05em; text-transform:uppercase; color:#9DB07F; }
+.j .j-v{ font-family:var(--display); font-weight:700; font-size:1.15rem; line-height:1; }
+.j.good .j-v{ color:#A6D24E; } .j.warn .j-v{ color:#E0A35A; } .j.bad .j-v{ color:#E8836A; }
+.cellbadge{ display:flex; align-items:center; gap:.45rem; margin-top:.7rem; font-family:var(--mono);
+  font-size:.71rem; color:#9DB07F; }
+.cellbadge .arr{ color:#6E7E54; }
+.cellbadge b{ color:#E8836A; font-weight:700; padding:.2rem .5rem; border-radius:6px; background:rgba(232,131,106,.15); }
+
+/* RAG health mini-index */
+.rhmini{ display:flex; gap:1.2rem; align-items:center; }
+.rhmini-idx{ flex:none; text-align:center; padding-right:1.1rem; border-right:1px solid rgba(38,48,26,.1); }
+.rhmini-idx .n{ font-family:var(--display); font-weight:700; font-size:2.4rem; line-height:1; letter-spacing:-.02em; color:var(--ink); }
+.rhmini-idx .l{ font-family:var(--mono); font-size:.56rem; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-faint); margin-top:.3rem; }
+.rhmini-rows{ flex:1; display:flex; flex-direction:column; gap:.55rem; min-width:0; }
+.rhmini-r{ display:grid; grid-template-columns:3.7rem 1fr 2rem; align-items:center; gap:.55rem; }
+.rhmini-r .rl{ font-size:.74rem; color:var(--ink-soft); }
+.rhmini-bar{ height:6px; border-radius:999px; background:var(--bg-2); overflow:hidden; }
+.rhmini-bar > i{ display:block; height:100%; border-radius:999px; }
+.rhmini-r .rv{ font-family:var(--mono); font-size:.72rem; color:var(--ink-soft); text-align:right; }
+
+/* Ver-Advise priority list */
+.va-list{ display:flex; flex-direction:column; gap:.5rem; }
+.va-i{ display:flex; align-items:center; gap:.55rem; font-size:.82rem; color:var(--ink); line-height:1.3; }
+.va-n{ flex:none; width:18px; height:18px; border-radius:6px; background:var(--bg-2); color:var(--ink-soft);
+  font-family:var(--mono); font-size:.64rem; display:flex; align-items:center; justify-content:center; }
+.va-p{ margin-left:auto; flex:none; font-family:var(--mono); font-size:.64rem; padding:.18rem .45rem; border-radius:6px; background:var(--bg-2); color:var(--ink-faint); }
+.va-p.high{ background:rgba(88,129,87,.16); color:var(--leaf-deep); font-weight:600; }
+
+/* Heal flow */
+.heal-flow{ display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; }
+.heal-step{ font-family:var(--mono); font-size:.71rem; padding:.34rem .55rem; border-radius:7px; background:var(--bg-2); color:var(--ink-soft); }
+.heal-step.pr{ background:rgba(88,129,87,.16); color:var(--leaf-deep); font-weight:600; }
+.heal-arr{ color:var(--sage); }
+.tile p .tok{ font-family:var(--mono); font-size:.84em; color:var(--ink); background:var(--bg-2); padding:.06em .38em; border-radius:5px; white-space:nowrap; }
+
+/* Knowledge-gap bars */
+.kg-bars{ display:flex; flex-direction:column; gap:.6rem; }
+.kg-b{ display:grid; grid-template-columns:9.5rem 1fr 1.7rem; align-items:center; gap:.8rem; }
+.kg-b .kl{ font-size:.82rem; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.kg-track{ height:7px; border-radius:999px; background:var(--bg-2); overflow:hidden; }
+.kg-track > i{ display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,var(--leaf-deep),var(--leaf)); }
+.kg-b .kv{ font-family:var(--mono); font-size:.72rem; color:var(--ink-faint); text-align:right; }
+@media (max-width:560px){
+  .jrow{ flex-wrap:wrap; }
+  .kg-b{ grid-template-columns:8rem 1fr 1.7rem; }
+}
 
 /* ===== integration / code ===== */
-.code-grid{ display:grid; grid-template-columns:.85fr 1.15fr; gap:3.5rem; align-items:center; }
-.codecard{ background:var(--obsidian); border-radius:var(--r-lg); overflow:hidden; box-shadow:var(--shadow-soft); }
-.code-tabs{ display:flex; gap:.3rem; padding:.9rem 1rem 0; border-bottom:1px solid rgba(255,255,255,.08); }
-.code-tabs button{ font-family:var(--mono); font-size:.8rem; color:#97A87B; padding:.5rem .9rem; border-radius:8px 8px 0 0; transition:color .2s, background .2s; }
-.code-tabs button.active{ color:#EAEEDD; background:rgba(255,255,255,.06); }
-.codecard pre{ display:none; padding:1.4rem 1.5rem; font-family:var(--mono); font-size:.84rem; line-height:1.75; color:#C7D3AC; overflow-x:auto; }
-.codecard pre.active{ display:block; }
-.tok-kw{ color:#A6D24E; } .tok-str{ color:#E0A35A; } .tok-com{ color:#5E6E47; font-style:italic; }
-.tok-fn{ color:#8FD0E8; } .tok-num{ color:#D98ABF; } .tok-cls{ color:#E8D27A; }
-.dots{ display:flex; gap:.4rem; padding:.9rem 1rem; }
-.dots i{ width:11px; height:11px; border-radius:50%; display:block; }
-.dots i:nth-child(1){ background:#C75C45; } .dots i:nth-child(2){ background:#C9852F; } .dots i:nth-child(3){ background:#5E9A22; }
-.code-points{ display:flex; flex-direction:column; gap:1.4rem; }
-.cp{ display:flex; gap:1rem; }
-.cp .num{ font-family:var(--mono); font-size:.85rem; color:var(--leaf-deep); flex:none; padding-top:.15rem; }
-.cp h3{ font-weight:700; font-size:1.15rem; margin-bottom:.25rem; }
-.cp p{ color:var(--ink-soft); font-size:.95rem; line-height:1.55; }
+#integrate{ position:relative; }
+#integrate .wrap{ position:relative; z-index:1; }
+.ig-mesh{ position:absolute; inset:0; z-index:0; width:100%; height:100%; color:#3A5A40; opacity:.06; pointer-events:none;
+  -webkit-mask-image:linear-gradient(180deg,transparent 4%,#000 20%,#000 42%,transparent 66%);
+  mask-image:linear-gradient(180deg,transparent 4%,#000 20%,#000 42%,transparent 66%); }
+
+.ig-head{ text-align:center; max-width:680px; margin:0 auto; }
+.ig-head .kicker{ display:inline-block; }
+.ig-head h2{ margin:.55rem 0 .9rem; }
+.ig-sub{ color:var(--ink-soft); font-size:1.05rem; line-height:1.6; max-width:54ch; margin:0 auto; }
+
+.ig-steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:2.2rem; max-width:960px; margin:3rem auto 2.8rem; }
+.ig-step{ display:flex; gap:.95rem; align-items:flex-start; }
+.ig-step-num{ font-family:var(--mono); font-size:.72rem; letter-spacing:.04em; color:var(--leaf-deep);
+  width:30px; height:30px; flex:none; display:flex; align-items:center; justify-content:center;
+  border:1px solid rgba(58,90,64,.28); border-radius:50%; }
+.ig-step h3{ font-size:1.02rem; font-weight:700; margin-bottom:.28rem; letter-spacing:-.01em; }
+.ig-step p{ color:var(--ink-soft); font-size:.9rem; line-height:1.55; }
+
+.ig-card{ max-width:1040px; margin:0 auto; border-radius:var(--r-lg); overflow:hidden;
+  background:var(--paper); border:1px solid rgba(52,78,65,.12); box-shadow:var(--shadow-soft); }
+.ig-bar{ display:flex; align-items:center; gap:.8rem; padding:.7rem 1.1rem; background:#F1F3EA; border-bottom:1px solid rgba(52,78,65,.1); }
+.ig-dots{ display:flex; gap:.45rem; flex:none; }
+.ig-dots i{ width:11px; height:11px; border-radius:50%; display:block; opacity:.85; }
+.ig-dots i:nth-child(1){ background:#D08C7E; } .ig-dots i:nth-child(2){ background:#D8B36A; } .ig-dots i:nth-child(3){ background:#8FBF73; }
+.ig-files{ display:flex; gap:.2rem; margin-left:.4rem; }
+.ig-files button{ font-family:var(--mono); font-size:.77rem; color:var(--ink-faint); padding:.4rem .8rem; border-radius:8px; transition:color .2s, background .2s, box-shadow .2s; }
+.ig-files button:hover{ color:var(--ink-soft); }
+.ig-files button.active{ color:var(--ink); background:#fff; box-shadow:inset 0 0 0 1px rgba(52,78,65,.1); }
+.ig-lang{ margin-left:auto; display:flex; align-items:center; gap:.9rem; }
+.ig-lang .lng{ font-family:var(--mono); font-size:.74rem; color:var(--ink-faint); }
+.ig-copy{ font-family:var(--mono); font-size:.7rem; letter-spacing:.04em; color:var(--ink-faint);
+  padding:.3rem .62rem; border:1px solid rgba(52,78,65,.16); border-radius:7px; transition:color .2s, border-color .2s; }
+.ig-copy:hover{ color:var(--ink); border-color:rgba(52,78,65,.4); }
+.ig-copy.copied{ color:var(--leaf); border-color:rgba(88,129,87,.45); }
+
+.ig-body{ display:grid; grid-template-columns:1fr 268px; }
+.ig-code{ position:relative; min-width:0; }
+.ig-pane{ display:none; }
+.ig-pane.active{ display:flex; }
+.ig-gutter{ flex:none; margin:0; padding:1.4rem .85rem 1.5rem 1.3rem; text-align:right;
+  font-family:var(--mono); font-size:.82rem; line-height:1.85; color:#C2CBB4; user-select:none;
+  border-right:1px solid rgba(52,78,65,.07); }
+.ig-src{ flex:1; min-width:0; margin:0; padding:1.4rem 1.5rem 1.5rem; font-family:var(--mono); font-size:.82rem;
+  line-height:1.85; color:#3B4A3F; white-space:pre; overflow-x:auto; }
+
+.ig-aside{ background:#F1F3EA; border-left:1px solid rgba(52,78,65,.1); padding:1.5rem 1.45rem; display:flex; flex-direction:column; gap:1.45rem; }
+.ig-note h4{ display:flex; align-items:center; gap:.55rem; font-size:.9rem; font-weight:700; color:var(--ink); margin-bottom:.32rem; }
+.ig-note h4::before{ content:""; width:7px; height:7px; border-radius:50%; background:var(--leaf); flex:none; }
+.ig-note p{ color:var(--ink-soft); font-size:.83rem; line-height:1.5; padding-left:1.12rem; }
+.ig-mono{ font-family:var(--mono); font-size:.92em; color:var(--leaf-deep); }
+
+.ig-foot{ text-align:center; max-width:640px; margin:1.8rem auto 0; font-family:var(--mono);
+  font-size:.76rem; letter-spacing:.01em; color:var(--ink-faint); line-height:1.6; }
+
+/* light syntax theme — green + clay only, all AA on the paper card */
+.tok-kw{ color:#A05E37; } .tok-str{ color:#5F7A39; } .tok-com{ color:#7E8C6F; font-style:italic; }
+.tok-fn{ color:#2E6B45; } .tok-num{ color:#9C6B23; } .tok-cls{ color:#8A6B22; }
 
 /* ===== playground callout ===== */
 .play{ background:var(--obsidian); border-radius:var(--r-lg); padding:clamp(2.5rem,5vw,4rem); color:#EAEEDD; position:relative; overflow:hidden; }
@@ -433,6 +648,13 @@ h2 .accent{ font-family:var(--serif); font-style:italic; font-weight:300; color:
 .finale h2{ font-size:clamp(2.6rem,6vw,5rem); }
 .finale .lead{ margin:1.3rem auto 2.4rem; }
 .finale .hero-actions{ justify-content:center; }
+/* decorative mossy "ground" closing the page — fades up out of the page, sinks into the footer */
+.finale-ground{ position:relative; width:100%; height:clamp(260px,32vw,480px); overflow:hidden; line-height:0; margin-top:1.5rem;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 38%);
+          mask-image:linear-gradient(180deg,transparent 0,#000 38%);
+  -webkit-mask-size:100% 100%; mask-size:100% 100%; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
+.finale-ground img{ width:100%; height:100%; object-fit:cover; object-position:center 62%; display:block; }
+.finale-ground::after{ content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg,transparent 58%,var(--obsidian) 100%); }
 
 /* ===== footer ===== */
 footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
@@ -450,10 +672,14 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 @media (max-width:980px){
   .demo-inner{ grid-template-columns:1fr; gap:2.5rem; }
   .panel{ max-width:580px; }
-  .problem-grid, .code-grid{ grid-template-columns:1fr; gap:2.5rem; }
+  .problem-grid{ grid-template-columns:1fr; gap:2.5rem; }
   .pillars, .tiers{ grid-template-columns:1fr; }
-  .tile, .tile.wide, .tile.span2, .tile.span4{ grid-column:span 6; }
+  .tile, .tile.wide, .tile.span2, .tile.span3, .tile.span4{ grid-column:span 6; }
   .foot-grid{ grid-template-columns:1fr 1fr; }
+  .ig-steps{ grid-template-columns:1fr; gap:1.4rem; max-width:520px; }
+  .ig-body{ grid-template-columns:1fr; }
+  .ig-aside{ border-left:none; border-top:1px solid rgba(52,78,65,.1); flex-direction:row; flex-wrap:wrap; gap:1.2rem 2rem; }
+  .ig-note{ flex:1 1 210px; }
 }
 @media (max-width:680px){
   :root{ --r-lg:20px; }
@@ -478,7 +704,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 }
 </style>
 </head>
-<body class="is-loading">
+<body class="is-loading" data-theme="light">
 
 <!-- ============================================================
      Moss Reveal — hero background integration (styles)
@@ -488,9 +714,19 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
      sitting over the branch read in the light brand shade (--paper).
      ============================================================ -->
 <style id="moss-reveal-style">
-  .hero .moss-canvas{
+  /* strata contour background spans the hero AND the gap down to "Supported by" */
+  .strata-zone{ position:relative; padding-bottom:2.4rem; }
+  .strata-zone > .hero{ position:relative; z-index:1; }
+  .strata-zone .hero-strata{
     position:absolute; inset:0; width:100%; height:100%;
     z-index:0; display:block; pointer-events:none;
+  }
+  /* the relocated branch now lives in its own band below "Supported by" */
+  .branchband{ position:relative; overflow:hidden; }
+  .branchband .moss-canvas{
+    position:absolute; inset:0; width:100%; height:100%;
+    z-index:0; display:block; pointer-events:none;
+    opacity:.62;   /* lightened branch */
   }
   /* hero text sits above the branch canvas; base text keeps the brand
      dark green from the original rules. */
@@ -511,6 +747,41 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .hero .cream-copy,
   .hero .cream-copy *{ color:var(--paper) !important; border-color:transparent !important; }
   .hero .cream-copy *{ animation:none !important; }
+
+  /* ============================================================
+     PIXEL TRICKLE — spread the hero's pixel-art motif through the page
+     ============================================================ */
+  /* every section kicker gets a little pixel sparkle */
+  .kicker::before{
+    content:""; display:inline-block; width:.82em; height:.82em; margin-right:.55em;
+    vertical-align:-0.04em;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 5 5' shape-rendering='crispEdges'%3E%3Crect x='2' width='1' height='5' fill='%23588157'/%3E%3Crect y='2' width='5' height='1' fill='%23588157'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23A3B18A'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+  /* trust-strip bullets become pixels */
+  .trust-tags span::before{ content:""; display:inline-block; width:.5em; height:.5em; margin-right:.5em; background:var(--moss); vertical-align:.03em; }
+
+  /* ============================================================
+     GREYSCALE THEME — neutralise the palette to greys; keep only a few
+     green accents (VERALITH, EVERYTHING, the revealed moss, the sparkles).
+     ============================================================ */
+  :root{
+    --bg-2:#d8d8d8; --paper:#fafafa;
+    --obsidian:#3a3a3a; --ink:#333333; --ink-soft:#4a4a4a; --ink-faint:#6e6e6e;
+    --moss:#6e6e6e; --sage:#ababab; --pale:#d8d8d8; --leaf:#6e6e6e; --leaf-deep:#4a4a4a;
+    --amber:#8f8f8f; --amber-bg:rgba(143,143,143,.16); --amber-ink:#5e5e5e;
+    --coral:#7a7a7a; --coral-bg:rgba(122,122,122,.16); --coral-ink:#4f4f4f;
+    --ok:#6e6e6e; --ok-bg:rgba(110,110,110,.18); --ok-ink:#333333;
+    --accent:#588157;          /* the single green accent */
+    --accent-lt:#9cc197;       /* lighter green, legible over the grey branch */
+  }
+  .brand .gem{ filter:grayscale(1); }      /* the logo photo -> grey */
+  /* green accents */
+  .brand{ color:var(--accent); }                                  /* VERALITH wordmark */
+  .hl-punch{ color:var(--ink); }                                  /* "We tell you" — dark on the light strata background */
+  .hl-punch em{ color:var(--accent); }                            /* EVERYTHING — green emphasis */
+  /* tone down a couple of stray green highlights to match */
+  .scanline{ background:linear-gradient(180deg, transparent, rgba(150,150,150,.28), transparent) !important; border-top-color:rgba(120,120,120,.5) !important; }
+  .live .pulse{ animation:none; }
 </style>
 
 <noscript><style>
@@ -562,8 +833,9 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 </header>
 
 <!-- ====================== HERO (subtle, like the original) ====================== -->
-<section class="hero" id="hero">
-  <canvas class="moss-canvas" id="mossCanvas" aria-hidden="true"></canvas>
+<div class="strata-zone">
+  <canvas class="hero-strata" data-veralith-strata data-radius="190" aria-hidden="true"></canvas>
+  <section class="hero" id="hero">
   <div class="hero-bg" aria-hidden="true"><span class="hero-glow"></span></div>
 
   <div class="wrap headline-wrap">
@@ -574,53 +846,638 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   </div>
 
   <div class="wrap hero-foot">
-    <p class="subhead rise d2">Detect, diagnose, and correct hallucinations in your RAG pipeline — trace by trace, in real time.</p>
+    <p class="subhead" id="tagline">Detect, diagnose, and correct hallucinations in your RAG pipeline — trace by trace, in real time.</p>
+  </div>
+  </section>
+</div>
+
+<!-- ====================== SUPPORTED BY — quiet trust strip ======================
+     LLMs / frameworks Veralith works with. Monochrome marks, one quiet green note. -->
+<div class="support">
+  <div class="wrap support-inner">
+    <p class="support-label">Supported by</p>
+    <span class="support-pix" aria-hidden="true"></span>
+    <div class="support-row" role="list">
+      <span class="logo" data-mark="claude" role="listitem" aria-label="Claude"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg></span>
+      <span class="logo" data-mark="openai" role="listitem" aria-label="OpenAI Codex"><svg viewBox="0 0 256 260" aria-hidden="true" focusable="false"><path d="M239.184 106.203a64.716 64.716 0 0 0-5.576-53.103C219.452 28.459 191 15.784 163.213 21.74A65.586 65.586 0 0 0 52.096 45.22a64.716 64.716 0 0 0-43.23 31.36c-14.31 24.602-11.061 55.634 8.033 76.74a64.665 64.665 0 0 0 5.525 53.102c14.174 24.65 42.644 37.324 70.446 31.36a64.72 64.72 0 0 0 48.754 21.744c28.481.025 53.714-18.361 62.414-45.481a64.767 64.767 0 0 0 43.229-31.36c14.137-24.558 10.875-55.423-8.083-76.483Zm-97.56 136.338a48.397 48.397 0 0 1-31.105-11.255l1.535-.87 51.67-29.825a8.595 8.595 0 0 0 4.247-7.367v-72.85l21.845 12.636c.218.111.37.32.409.563v60.367c-.056 26.818-21.783 48.545-48.601 48.601Zm-104.466-44.61a48.345 48.345 0 0 1-5.781-32.589l1.534.921 51.722 29.826a8.339 8.339 0 0 0 8.441 0l63.181-36.425v25.221a.87.87 0 0 1-.358.665l-52.335 30.184c-23.257 13.398-52.97 5.431-66.404-17.803ZM23.549 85.38a48.499 48.499 0 0 1 25.58-21.333v61.39a8.288 8.288 0 0 0 4.195 7.316l62.874 36.272-21.845 12.636a.819.819 0 0 1-.767 0L41.353 151.53c-23.211-13.454-31.171-43.144-17.804-66.405v.256Zm179.466 41.695-63.08-36.63L161.73 77.86a.819.819 0 0 1 .768 0l52.233 30.184a48.6 48.6 0 0 1-7.316 87.635v-61.391a8.544 8.544 0 0 0-4.4-7.213Zm21.742-32.69-1.535-.922-51.619-30.081a8.39 8.39 0 0 0-8.492 0L99.98 99.808V74.587a.716.716 0 0 1 .307-.665l52.233-30.133a48.652 48.652 0 0 1 72.236 50.391v.205ZM88.061 139.097l-21.845-12.585a.87.87 0 0 1-.41-.614V65.685a48.652 48.652 0 0 1 79.757-37.346l-1.535.87-51.67 29.825a8.595 8.595 0 0 0-4.246 7.367l-.051 72.697Zm11.868-25.58 28.138-16.217 28.188 16.218v32.434l-28.086 16.218-28.188-16.218-.052-32.434Z"/></svg></span>
+      <span class="logo" data-mark="mistral" role="listitem" aria-label="Mistral"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17.143 3.429v3.428h-3.429v3.429h-3.428V6.857H6.857V3.43H3.43v13.714H0v3.428h10.286v-3.428H6.857v-3.429h3.429v3.429h3.429v-3.429h3.428v3.429h-3.428v3.428H24v-3.428h-3.43V3.429z"/></svg></span>
+      <span class="logo" data-mark="huggingface" role="listitem" aria-label="Hugging Face"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.025 1.13c-5.77 0-10.449 4.647-10.449 10.378 0 1.112.178 2.181.503 3.185.064-.222.203-.444.416-.577a.96.96 0 0 1 .524-.15c.293 0 .584.124.84.284.278.173.48.408.71.694.226.282.458.611.684.951v-.014c.017-.324.106-.622.264-.874s.403-.487.762-.543c.3-.047.596.06.787.203s.31.313.4.467c.15.257.212.468.233.542.01.026.653 1.552 1.657 2.54.616.605 1.01 1.223 1.082 1.912.055.537-.096 1.059-.38 1.572.637.121 1.294.187 1.967.187.657 0 1.298-.063 1.921-.178-.287-.517-.44-1.041-.384-1.581.07-.69.465-1.307 1.081-1.913 1.004-.987 1.647-2.513 1.657-2.539.021-.074.083-.285.233-.542.09-.154.208-.323.4-.467a1.08 1.08 0 0 1 .787-.203c.359.056.604.29.762.543s.247.55.265.874v.015c.225-.34.457-.67.683-.952.23-.286.432-.52.71-.694.257-.16.547-.284.84-.285a.97.97 0 0 1 .524.151c.228.143.373.388.43.625l.006.04a10.3 10.3 0 0 0 .534-3.273c0-5.731-4.678-10.378-10.449-10.378M8.327 6.583a1.5 1.5 0 0 1 .713.174 1.487 1.487 0 0 1 .617 2.013c-.183.343-.762-.214-1.102-.094-.38.134-.532.914-.917.71a1.487 1.487 0 0 1 .69-2.803m7.486 0a1.487 1.487 0 0 1 .689 2.803c-.385.204-.536-.576-.916-.71-.34-.12-.92.437-1.103.094a1.487 1.487 0 0 1 .617-2.013 1.5 1.5 0 0 1 .713-.174m-10.68 1.55a.96.96 0 1 1 0 1.921.96.96 0 0 1 0-1.92m13.838 0a.96.96 0 1 1 0 1.92.96.96 0 0 1 0-1.92M8.489 11.458c.588.01 1.965 1.157 3.572 1.164 1.607-.007 2.984-1.155 3.572-1.164.196-.003.305.12.305.454 0 .886-.424 2.328-1.563 3.202-.22-.756-1.396-1.366-1.63-1.32q-.011.001-.02.006l-.044.026-.01.008-.03.024q-.018.017-.035.036l-.032.04a1 1 0 0 0-.058.09l-.014.025q-.049.088-.11.19a1 1 0 0 1-.083.116 1.2 1.2 0 0 1-.173.18q-.035.029-.075.058a1.3 1.3 0 0 1-.251-.243 1 1 0 0 1-.076-.107c-.124-.193-.177-.363-.337-.444-.034-.016-.104-.008-.2.022q-.094.03-.216.087-.06.028-.125.063l-.13.074q-.067.04-.136.086a3 3 0 0 0-.135.096 3 3 0 0 0-.26.219 2 2 0 0 0-.12.121 2 2 0 0 0-.106.128l-.002.002a2 2 0 0 0-.09.132l-.001.001a1.2 1.2 0 0 0-.105.212q-.013.036-.024.073c-1.139-.875-1.563-2.317-1.563-3.203 0-.334.109-.457.305-.454m.836 10.354c.824-1.19.766-2.082-.365-3.194-1.13-1.112-1.789-2.738-1.789-2.738s-.246-.945-.806-.858-.97 1.499.202 2.362c1.173.864-.233 1.45-.685.64-.45-.812-1.683-2.896-2.322-3.295s-1.089-.175-.938.647 2.822 2.813 2.562 3.244-1.176-.506-1.176-.506-2.866-2.567-3.49-1.898.473 1.23 2.037 2.16c1.564.932 1.686 1.178 1.464 1.53s-3.675-2.511-4-1.297c-.323 1.214 3.524 1.567 3.287 2.405-.238.839-2.71-1.587-3.216-.642-.506.946 3.49 2.056 3.522 2.064 1.29.33 4.568 1.028 5.713-.624m5.349 0c-.824-1.19-.766-2.082.365-3.194 1.13-1.112 1.789-2.738 1.789-2.738s.246-.945.806-.858.97 1.499-.202 2.362c-1.173.864.233 1.45.685.64.451-.812 1.683-2.896 2.322-3.295s1.089-.175.938.647-2.822 2.813-2.562 3.244 1.176-.506 1.176-.506 2.866-2.567 3.49-1.898-.473 1.23-2.037 2.16c-1.564.932-1.686 1.178-1.464 1.53s3.675-2.511 4-1.297c.323 1.214-3.524 1.567-3.287 2.405.238.839 2.71-1.587 3.216-.642.506.946-3.49 2.056-3.522 2.064-1.29.33-4.568 1.028-5.713-.624"/></svg></span>
+      <span class="logo" data-mark="langchain" role="listitem" aria-label="LangChain"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13.796 0a6.93 6.93 0 0 0-4.91 2.019L5.451 5.455l3.273 3.27 3.432-3.432a2.284 2.284 0 0 1 3.277 0 2.28 2.28 0 0 1 0 3.275L12 12.001l3.273 3.273 3.433-3.435c2.692-2.692 2.692-7.127 0-9.82A6.92 6.92 0 0 0 13.796 0m-5.07 8.728-3.433 3.434c-2.692 2.693-2.692 7.126 0 9.819A6.92 6.92 0 0 0 10.203 24a6.93 6.93 0 0 0 4.911-2.02l3.432-3.432-3.271-3.272-3.433 3.433a2.284 2.284 0 0 1-3.277 0 2.28 2.28 0 0 1 0-3.276L12 12z"/></svg></span>
+      <span class="logo" data-mark="gemini" role="listitem" aria-label="Google Gemini"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81"/></svg></span>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== BRANCH BAND (relocated moss-reveal) ======================
+     The interactive pixel branch, moved out of the hero to sit below "Supported by".
+     Hover (or auto-sweep on touch) blooms the moss along the cursor path. -->
+<div class="branchband" id="branchband" aria-hidden="true">
+  <canvas class="moss-canvas" id="mossCanvas"></canvas>
+</div>
+
+<!-- ====================== PILLARS ====================== -->
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">How it works</span>
+      <h2>Three steps, <span class="accent">every answer.</span></h2>
+      <p class="lead">VERALITH diagnoses every answer your RAG ships — claim by claim.</p>
+    </div>
+
+    <div class="ledger-row reveal">
+      <span class="ledger-thread" aria-hidden="true"></span>
+      <div class="led led-1">
+        <span class="led-node" aria-hidden="true"></span>
+        <div class="led-num" aria-hidden="true">01</div>
+        <div class="led-step">Detect</div>
+        <h3>Find every claim</h3>
+        <p>Break the answer into self-contained claims and flag any that retrieval doesn't support — supported, unsupported, or contradicted.</p>
+      </div>
+      <div class="led led-2">
+        <span class="led-node" aria-hidden="true"></span>
+        <div class="led-num" aria-hidden="true">02</div>
+        <div class="led-step">Diagnose</div>
+        <h3>Understand why</h3>
+        <p>See <em>why</em> it failed: missing evidence, weak retrieval, a contradicted source, or parametric drift — down to the exact chunks.</p>
+      </div>
+      <div class="led led-3">
+        <span class="led-node" aria-hidden="true"></span>
+        <div class="led-num" aria-hidden="true">03</div>
+        <div class="led-step">Correct</div>
+        <h3>Ground it</h3>
+        <p>Each flagged claim comes with a recommended fix — re-cite, regenerate, or lower confidence — to apply on your terms. Diagnosed, never blocked.</p>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- ====================== LIVE DEMO (the relocated panel) ====================== -->
-<section class="demo" id="demo">
-  <div class="wrap demo-inner">
-    <div class="demo-head reveal">
-      <span class="kicker">See it work</span>
-      <h2>Every claim, <span class="accent">checked against its source.</span></h2>
-      <p class="lead">VERALITH reads a generated answer in real time, breaks it into atomic claims, and verifies each one against the retrieved context. <em>Placeholder demo — drop your real dashboard graphic in here.</em></p>
+<!-- ====================== SCROLL TEAR (design handoff) ======================
+     Pinned scene: a Q/C/R token cloud disperses from centre while dashboard
+     graphs settle into the margins; a lead line fades out and a resolve message
+     fades in. Adapted from the design's green palette to greyscale + 1 accent. -->
+<style id="scrolltear-style">
+  .scrolltear{ --st-paper:#fafafa; --st-line:rgba(38,48,26,.10); --st-ghost:#9a9a9a;
+    position:relative; background:#f2f2ef; color:var(--ink); }
+  .st-spacer{ position:relative; min-height:80vh; display:flex; align-items:center; justify-content:center; padding:0 8vw; text-align:center; }
+  .st-kicker{ font-family:var(--mono); font-size:12px; letter-spacing:.24em; text-transform:uppercase; color:var(--moss); }
+  .st-spacer h2{ font-size:clamp(34px,6vw,72px); font-weight:600; letter-spacing:-.03em; line-height:1.02; margin-top:18px; max-width:20ch; color:var(--ink); }
+  .st-spacer h2 em, .st-lead h2 em{ font-style:italic; font-weight:300; color:var(--moss); }
+  .st-spacer p{ font-weight:300; font-size:16px; color:var(--ink-faint); max-width:48ch; margin:18px auto 0; line-height:1.6; }
+  .st-cue{ position:absolute; bottom:34px; left:50%; transform:translateX(-50%); font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--st-ghost); display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .st-cue i{ width:1px; height:28px; background:linear-gradient(var(--st-ghost), transparent); }
+
+  .st-scene{ position:relative; height:380vh; }
+  .st-stage{ position:sticky; top:0; height:100vh; overflow:hidden; }
+
+  .st-cloud{ position:absolute; inset:0; z-index:1; pointer-events:none; }
+  .st-tok{ position:absolute; left:0; top:0; display:inline-flex; align-items:center; gap:6px;
+    font-family:var(--mono); font-weight:500; letter-spacing:.02em;
+    padding:5px 11px 5px 9px; border-radius:999px; background:var(--st-paper);
+    border:1px solid var(--st-line); white-space:nowrap; will-change:transform,opacity;
+    box-shadow:0 1px 0 rgba(38,48,26,.03), 0 14px 26px -20px rgba(38,48,26,.5); }
+  .st-tok b{ font-weight:600; }
+  .st-tok .st-led{ width:6px; height:6px; border-radius:50%; flex:none; }   /* own class — avoids the Ledger's global .led */
+  .st-tok.q{ color:var(--ink); }        .st-tok.q .st-led{ background:var(--ink); }
+  .st-tok.c{ color:var(--accent); }     .st-tok.c .st-led{ background:var(--accent); }
+  .st-tok.r{ color:var(--ink-faint); }  .st-tok.r .st-led{ background:var(--ink-faint); }
+
+  .st-scatter{ position:absolute; inset:0; z-index:2; pointer-events:none; }
+  .st-g{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    border-radius:14px; overflow:hidden; background:var(--st-paper);
+    border:1px solid var(--st-line); box-shadow:0 1px 0 rgba(38,48,26,.03), 0 30px 60px -42px rgba(38,48,26,.5);
+    will-change:left,top,transform,opacity; }
+  .st-g img{ display:block; width:100%; height:auto; opacity:.94; filter:grayscale(1); }   /* greyscale to match the theme */
+  .st-g .cap{ position:absolute; left:12px; bottom:10px; font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--st-ghost); background:color-mix(in srgb,var(--st-paper) 80%,transparent); padding:2px 7px; border-radius:5px; }
+
+  .st-resolve{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:6; text-align:center; width:min(440px,80vw); opacity:0; will-change:opacity,transform; }
+  .st-resolve h2{ font-size:clamp(30px,3.8vw,46px); font-weight:600; letter-spacing:-.025em; line-height:1.06; margin-top:16px; color:var(--ink); }
+  .st-resolve h2 em{ font-style:italic; font-weight:300; color:var(--accent); }   /* the green payoff */
+  .st-resolve p{ font-weight:300; font-size:16px; color:var(--ink-faint); margin-top:16px; line-height:1.6; }
+
+  .st-lead{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:5; text-align:center; width:min(520px,80vw); will-change:opacity,transform; }
+  .st-lead h2{ font-size:clamp(24px,3vw,36px); font-weight:600; letter-spacing:-.02em; line-height:1.1; margin-top:12px; color:var(--ink); }
+
+  @media (max-width:760px){
+    .st-g.st-g1{ width:300px !important; } .st-g.st-g4{ width:210px !important; }
+    .st-g.st-g2, .st-g.st-g3{ width:250px !important; } .st-g.st-g5{ width:320px !important; }
+  }
+</style>
+
+<style id="dash-cards-style">
+.gg1{container-type:inline-size;width:100%;aspect-ratio:1.7;position:relative;box-sizing:border-box;padding:6% 6.5% 5%;font-family:ui-monospace,'JetBrains Mono',monospace;color:#36413a;display:flex;flex-direction:column}
+.gg1 *{box-sizing:border-box}
+.gg1-head{display:flex;align-items:center;justify-content:space-between;gap:2cqi}
+.gg1-title{font-family:system-ui,sans-serif;font-size:5cqi;font-weight:600;color:#36413a;letter-spacing:.01em;line-height:1}
+.gg1-meta{font-size:2.6cqi;color:#9aa39a;letter-spacing:.04em;white-space:nowrap}
+.gg1-legrow{display:flex;align-items:center;justify-content:space-between;gap:2cqi;margin-top:3cqi}
+.gg1-legs{display:flex;align-items:center;gap:4.5cqi;flex-wrap:wrap;margin-top:2.8cqi}
+.gg1-leg{display:flex;align-items:center;gap:1.3cqi;font-size:2.9cqi;color:#5f6b60;white-space:nowrap}
+.gg1-leg b{color:#36413a;font-weight:600}
+.gg1-leg span{color:#9aa39a}
+.gg1-sw{display:inline-block;width:3.4cqi;height:0;border-top:2.5px solid #a98b4a;border-radius:2px}
+.gg1-sw.p50{border-top-color:#8a9099}
+.gg1-sw.sla{border-top:2px dashed #c08a86;width:3.8cqi}
+.gg1-toggle{display:inline-flex;align-items:center;background:#f0f1ea;border:1px solid #e2e4d9;border-radius:999px;padding:.6cqi;gap:.4cqi}
+.gg1-toggle b,.gg1-toggle i{font-style:normal;font-size:2.5cqi;padding:.7cqi 2cqi;border-radius:999px;line-height:1}
+.gg1-toggle b{background:#fff;color:#36413a;font-weight:600;box-shadow:0 1px 1.5px rgba(80,80,60,.12)}
+.gg1-toggle i{color:#9aa39a;font-weight:500}
+.gg1-plot{flex:1;margin-top:2.4cqi;min-height:0}
+.gg1-plot svg{display:block;width:100%;height:100%}
+.gg1-cap{margin-top:2.4cqi;font-family:system-ui,sans-serif;font-size:2.7cqi;line-height:1.35;color:#7c857c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gg1-cap b{color:#5f6b60;font-weight:600}
+
+.gg2{width:100%;aspect-ratio:1.6;position:relative;box-sizing:border-box;padding:5.5% 5.5% 4.5%;display:flex;flex-direction:column;background:#fafafa;font-family:ui-monospace,'JetBrains Mono','SFMono-Regular',Menlo,Consolas,monospace;color:#36413a;overflow:hidden}
+.gg2 *{box-sizing:border-box}
+.gg2-head{display:flex;align-items:center;gap:.6em;margin-bottom:.35em}
+.gg2-htext{font-size:1.7cqw;letter-spacing:.12em;font-weight:600;color:#5f6b60;white-space:nowrap}
+.gg2-pill{font-size:1.55cqw;letter-spacing:.1em;font-weight:700;color:#6f7d66;background:#dfe7d4;border:1px solid #c2cbb4;border-radius:999px;padding:.28em 1em;line-height:1;white-space:nowrap}
+.gg2-stat{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-weight:800;font-size:8.6cqw;line-height:.95;letter-spacing:-.01em;color:#36413a;margin:.05em 0 .12em -.02em}
+.gg2-delta{font-size:1.95cqw;letter-spacing:.04em;color:#5f6b60;margin-bottom:1.3em;white-space:nowrap}
+.gg2-delta .gg2-up{color:#6f7d66;font-weight:700}
+.gg2-delta .gg2-num{color:#36413a;font-weight:600}
+.gg2-cap{font-size:1.7cqw;letter-spacing:.05em;color:#9aa39a;margin-bottom:.6em}
+.gg2-chart{flex:1 1 auto;min-height:0;position:relative}
+.gg2-chart svg{display:block;width:100%;height:100%}
+.gg2-xrow{display:flex;justify-content:space-between;font-size:1.6cqw;letter-spacing:.08em;color:#9aa39a;margin-top:.4em}
+
+.gg3{width:100%;aspect-ratio:1.55;position:relative;box-sizing:border-box;padding:2.4% 2.8% 2.2%;display:flex;flex-direction:column;background:#fafafa;font-family:ui-monospace,'JetBrains Mono','SFMono-Regular',Menlo,monospace;color:#36413a;overflow:hidden}
+.gg3 *{box-sizing:border-box}
+.gg3-head{display:flex;align-items:center;gap:.7em;padding-bottom:1.6%;border-bottom:1px solid #e7e9df;margin-bottom:0}
+.gg3-grip{display:grid;grid-template-columns:repeat(2,1fr);gap:.14em;flex:0 0 auto;opacity:.55}
+.gg3-grip i{width:.22em;height:.22em;border-radius:50%;background:#9aa39a;display:block}
+.gg3-title{font-weight:700;font-size:1.18em;letter-spacing:-.01em;color:#36413a;white-space:nowrap}
+.gg3-meta{display:none}
+.gg3-stat{flex:0 0 auto;margin-left:auto;font-size:.95em;display:flex;align-items:baseline;gap:.45em;white-space:nowrap}
+.gg3-stat b{font-family:system-ui,sans-serif;font-weight:800;font-size:1.5em;color:#36413a;letter-spacing:-.02em}
+.gg3-stat .gg3-pct{color:#8a9a7e;font-weight:700}
+.gg3-stat .gg3-h{color:#9aa39a}
+.gg3-plot{flex:1 1 auto;min-height:0;position:relative}
+.gg3-plot svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.gg3-legend{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:.5em 4%;padding-top:1.4%;font-size:.82em;color:#5f6b60}
+.gg3-li{display:flex;align-items:center;gap:.5em;white-space:nowrap;letter-spacing:-.01em}
+.gg3-sw{width:.78em;height:.78em;border-radius:.18em;flex:0 0 auto}
+
+.gg4{width:100%;aspect-ratio:2.7;position:relative;box-sizing:border-box;padding:5.5% 5.5% 4.5%;display:flex;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;color:#36413a}
+.gg4-top{display:flex;align-items:center;justify-content:space-between}
+.gg4-tl{display:flex;align-items:center;gap:.55em}
+.gg4-sw{width:.92em;height:.92em;border-radius:.18em;background:#a3b18a;flex:none}
+.gg4-label{font-size:clamp(11px,3.4cqw,15px);font-weight:500;color:#5f6b60;letter-spacing:.005em}
+.gg4-pill{font-family:ui-monospace,'JetBrains Mono',monospace;font-size:clamp(8px,2.5cqw,11px);font-weight:600;letter-spacing:.07em;color:#c2796f;border:1px solid #e2b4ac;border-radius:999px;padding:.28em .72em;line-height:1;white-space:nowrap}
+.gg4-mid{display:flex;align-items:baseline;justify-content:space-between;margin-top:5.5%}
+.gg4-midl{display:flex;align-items:baseline;gap:.5em}
+.gg4-big{font-size:clamp(20px,7cqw,34px);font-weight:700;color:#8a9a7e;line-height:1;letter-spacing:-.01em}
+.gg4-pct{font-family:ui-monospace,'JetBrains Mono',monospace;font-size:clamp(10px,3cqw,14px);font-weight:500;color:#5f6b60}
+.gg4-delta{font-family:ui-monospace,'JetBrains Mono',monospace;font-size:clamp(10px,3cqw,14px);font-weight:500;color:#6f7d66}
+.gg4-spark{margin-top:auto;width:100%;display:block;padding-top:4%}
+.gg4-spark svg{display:block;width:100%;height:auto}
+
+.gg5{width:100%;aspect-ratio:3;position:relative;box-sizing:border-box;padding:1.6% 1.8% 1.4% 1.8%;font-family:ui-monospace,'JetBrains Mono',monospace;color:#36413a;display:flex;flex-direction:column;background:transparent;container-type:inline-size}
+.gg5 *{box-sizing:border-box}
+.gg5-head{font-size:1.15cqw;color:#5f6b60;letter-spacing:.02em;margin-bottom:1cqw}
+.gg5-legend{display:flex;gap:.7cqw;margin-bottom:.8cqw}
+.gg5-pill{display:inline-flex;align-items:center;gap:.45cqw;border:1px solid #e7e9df;border-radius:999px;padding:.32cqw .8cqw;font-size:1.05cqw;background:#fff}
+.gg5-sw{width:.85cqw;height:.85cqw;border-radius:.18cqw;flex:none}
+.gg5-pill .gg5-lab{color:#5f6b60}
+.gg5-pill .gg5-num{color:#9aa39a}
+.gg5-chartwrap{flex:1 1 auto;min-height:0;position:relative}
+.gg5-svg{display:block;width:100%;height:100%}
+.gg5-foot{display:flex;justify-content:space-between;align-items:center;margin-top:.5cqw;font-size:1.02cqw}
+.gg5-foot .gg5-rng{color:#5f6b60}
+.gg5-foot .gg5-hint{color:#9aa39a}
+/* fixes: cqw cards need a container context; cards fill the figure */
+.gg2,.gg4{ container-type:inline-size; }
+.gg3{ container-type:inline-size; font-size:clamp(7px,2.8cqi,10.5px); }   /* scale header+legend to card so the stat / legend don't clip */
+.st-g > [class^="gg"]{ width:100%; }
+</style>
+<section class="scrolltear" id="scrolltear" aria-label="Every answer, pulled apart and checked">
+  <!-- pinned scene -->
+  <div class="st-scene">
+    <div class="st-stage">
+      <div class="st-cloud" aria-hidden="true"></div>
+      <div class="st-scatter" aria-hidden="true">
+        <figure class="st-g st-g1" data-x="18" data-y="19" data-rot="-5" data-delay="0"    style="width:440px">
+        <div class="gg1">
+  <div class="gg1-head">
+    <div class="gg1-title">Latency over time</div>
+    <div class="gg1-toggle"><b>24h</b><i>7d</i></div>
+  </div>
+
+  <div class="gg1-legs">
+    <span class="gg1-leg"><span class="gg1-sw"></span><b>p95</b>&nbsp;<b>3.2s</b></span>
+    <span class="gg1-leg"><span class="gg1-sw p50"></span><b>p50</b>&nbsp;<b>1.5s</b></span>
+    <span class="gg1-leg"><span class="gg1-sw sla"></span><b>SLA</b>&nbsp;<b>2.5s</b></span>
+  </div>
+
+  <div class="gg1-plot">
+    <svg viewBox="0 0 720 248" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="gg1area" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#a98b4a" stop-opacity="0.18"/>
+          <stop offset="1" stop-color="#a98b4a" stop-opacity="0.02"/>
+        </linearGradient>
+        <clipPath id="gg1clip"><rect x="56" y="8" width="652" height="196"/></clipPath>
+      </defs>
+
+      <!-- plot background tint -->
+      <rect x="56" y="8" width="652" height="196" fill="rgba(120,130,110,.05)"/>
+
+      <!-- peak load band 13:00-16:00 -->
+      <rect x="468" y="8" width="98" height="196" fill="rgba(169,139,74,.10)"/>
+      <text x="517" y="30" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9" letter-spacing="1.2" fill="#9a8a5e">PEAK LOAD</text>
+
+      <!-- y gridlines + ticks (1s, 3s) -->
+      <line x1="56" y1="78" x2="708" y2="78" stroke="#e7e9df" stroke-width="1" vector-effect="non-scaling-stroke"/>
+      <line x1="56" y1="170" x2="708" y2="170" stroke="#e7e9df" stroke-width="1" vector-effect="non-scaling-stroke"/>
+      <text x="48" y="82" text-anchor="end" font-family="ui-monospace,monospace" font-size="11" fill="#9aa39a">3s</text>
+      <text x="48" y="174" text-anchor="end" font-family="ui-monospace,monospace" font-size="11" fill="#9aa39a">1s</text>
+
+      <!-- SLA dashed line (2.5s) -->
+      <line x1="56" y1="101" x2="708" y2="101" stroke="#c08a86" stroke-width="1.4" stroke-dasharray="6 5" vector-effect="non-scaling-stroke"/>
+
+      <g clip-path="url(#gg1clip)">
+        <!-- p95 area fill -->
+        <path d="M56,160 L92,156 L128,168 L164,158 L200,138 L236,118 L272,108 L308,100 L344,96 L380,90 L416,82 L452,68 L488,54 L524,52 L560,64 L596,86 L632,112 L668,132 L704,140 L708,141 L708,204 L56,204 Z" fill="url(#gg1area)"/>
+        <!-- p95 amber line -->
+        <path d="M56,160 L92,156 L128,168 L164,158 L200,138 L236,118 L272,108 L308,100 L344,96 L380,90 L416,82 L452,68 L488,54 L524,52 L560,64 L596,86 L632,112 L668,132 L704,140 L708,141" fill="none" stroke="#a98b4a" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+        <!-- p50 grey line -->
+        <path d="M56,182 L92,181 L128,186 L164,184 L200,176 L236,168 L272,160 L308,156 L344,152 L380,150 L416,146 L452,140 L488,132 L524,128 L560,134 L596,146 L632,158 L668,166 L704,170 L708,170" fill="none" stroke="#8a9099" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+      </g>
+
+      <!-- x axis labels -->
+      <text x="56" y="226" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#9aa39a">00:00</text>
+      <text x="219" y="226" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#9aa39a">04:00</text>
+      <text x="382" y="226" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#9aa39a">08:00</text>
+      <text x="492" y="226" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#9aa39a">12:00</text>
+      <text x="610" y="226" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#9aa39a">20:00</text>
+
+    </svg>
+  </div>
+
+  <div class="gg1-cap">p95 peaks <b>3.2s</b> midday, breaching the 2.5s SLA <b>13:00&ndash;16:00</b>.</div>
+</div>
+      </figure>
+        <figure class="st-g st-g4" data-x="84" data-y="20" data-rot="7"  data-delay="0.06" style="width:300px">
+        <div class="gg4">
+  <div class="gg4-top">
+    <div class="gg4-tl">
+      <span class="gg4-sw"></span>
+      <span class="gg4-label">incomplete &middot; grounded</span>
     </div>
-
-    <!-- live verification panel -->
-    <div class="panel reveal" id="panel" data-i="1" aria-label="Live claim verification demo">
-      <div class="panel-top">
-        <div class="panel-title">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.4 7.7 8 10 4.6-2.3 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
-          claim verification
-        </div>
-        <span class="live"><span class="pulse"></span> LIVE</span>
+    <span class="gg4-pill">FAILURE</span>
+  </div>
+  <div class="gg4-mid">
+    <div class="gg4-midl">
+      <span class="gg4-big">94</span>
+      <span class="gg4-pct">7.3%</span>
+    </div>
+    <span class="gg4-delta">&#9660; 4%</span>
+  </div>
+  <div class="gg4-spark">
+    <svg viewBox="0 0 520 44" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polyline points="2,30 12,18 22,24 32,10 42,20 52,15 62,26 72,21 82,23 92,12 102,22 112,18 122,28 132,24 142,30 152,26 162,32 172,28 182,33 192,29 202,31 212,25 222,30 232,22 242,28 252,20 262,29 272,16 282,26 292,14 302,30 312,18 322,27 332,12 342,24 352,17 362,28 372,15 382,26 392,13 402,29 412,16 422,25 432,11 442,27 452,19 462,30 472,23 482,32 492,27 502,30 512,28 518,29"
+        stroke="#a3b18a" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    </svg>
+  </div>
+</div>
+      </figure>
+        <figure class="st-g st-g2" data-x="86" data-y="48" data-rot="5"  data-delay="0.14" style="width:350px">
+        <div class="gg2">
+  <div class="gg2-head">
+    <span class="gg2-htext">HEALTHY RATE ·</span>
+    <span class="gg2-pill">HEALTHY</span>
+  </div>
+  <div class="gg2-stat">86.9%</div>
+  <div class="gg2-delta"><span class="gg2-up">&#8593; 2.7pp</span> <span style="color:#9aa39a">vs</span> <span class="gg2-num">84.2%</span> yesterday</div>
+  <div class="gg2-cap">// healthy rate · hourly</div>
+  <div class="gg2-chart">
+    <svg viewBox="0 0 600 175" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="gg2fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8a9a7e" stop-opacity="0.18"/>
+          <stop offset="1" stop-color="#8a9a7e" stop-opacity="0.03"/>
+        </linearGradient>
+      </defs>
+      <!-- gridlines: 90% top, 86% mid, 82% lower -->
+      <line x1="38" y1="18" x2="600" y2="18" stroke="#e7e9df" stroke-width="1" vector-effect="non-scaling-stroke"/>
+      <line x1="38" y1="73" x2="600" y2="73" stroke="#e7e9df" stroke-width="1" vector-effect="non-scaling-stroke"/>
+      <line x1="38" y1="118" x2="600" y2="118" stroke="#e7e9df" stroke-width="1" vector-effect="non-scaling-stroke"/>
+      <!-- y axis labels -->
+      <text x="32" y="22" text-anchor="end" font-family="ui-monospace,monospace" font-size="11" fill="#9aa39a">90%</text>
+      <text x="32" y="77" text-anchor="end" font-family="ui-monospace,monospace" font-size="11" fill="#9aa39a">86%</text>
+      <text x="32" y="122" text-anchor="end" font-family="ui-monospace,monospace" font-size="11" fill="#9aa39a">82%</text>
+      <!-- area fill -->
+      <path d="M44,103 L57,98 71,92 84,100 97,95 110,86 124,99 137,93 150,82 163,76 176,72 190,86 203,99 216,94 229,103 242,100 255,92 269,99 282,103 295,97 308,90 321,96 335,103 348,98 361,101 374,93 388,88 401,96 414,103 427,99 441,90 454,84 467,92 481,99 494,95 507,89 521,96 534,100 547,88 560,75 574,66 588,52 L588,135 L44,135 Z" fill="url(#gg2fill)"/>
+      <!-- sparkline -->
+      <polyline points="44,103 57,98 71,92 84,100 97,95 110,86 124,99 137,93 150,82 163,76 176,72 190,86 203,99 216,94 229,103 242,100 255,92 269,99 282,103 295,97 308,90 321,96 335,103 348,98 361,101 374,93 388,88 401,96 414,103 427,99 441,90 454,84 467,92 481,99 494,95 507,89 521,96 534,100 547,88 560,75 574,66 588,52" fill="none" stroke="#6f7d66" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    </svg>
+  </div>
+  <div class="gg2-xrow"><span>12:00 AM</span><span>now</span></div>
+</div>
+      </figure>
+        <figure class="st-g st-g3" data-x="16" data-y="82" data-rot="-6" data-delay="0.2"  style="width:350px">
+        <div class="gg3">
+  <div class="gg3-head">
+    <span class="gg3-grip"><i></i><i></i><i></i><i></i></span>
+    <span class="gg3-title">Failure-cell distribution</span>
+    <span class="gg3-meta">bubble · area ∝ trace count · hourly · last 24h</span>
+    <span class="gg3-stat"><b>1,247</b><span class="gg3-pct">87%</span><span class="gg3-h">healthy</span></span>
+  </div>
+  <div class="gg3-plot">
+    <svg viewBox="0 0 620 300" preserveAspectRatio="xMidYMid meet" font-family="ui-monospace,'JetBrains Mono',monospace">
+      <!-- bubbles: area ∝ count, r ∝ sqrt(count); drawn back-to-front -->
+      <!-- 1,083 (87%) lightest sage, bottom-center, largest -->
+      <g>
+        <circle cx="316" cy="222" r="72" fill="#c2cbb4"/>
+        <text x="316" y="217" text-anchor="middle" font-size="22" font-weight="700" fill="#36413a" font-family="system-ui,sans-serif">1,083</text>
+        <text x="316" y="240" text-anchor="middle" font-size="13" fill="#5f6b60">87%</text>
+      </g>
+      <!-- 87 (7%) light sage, center -->
+      <g>
+        <circle cx="286" cy="120" r="46" fill="#a3b18a"/>
+        <text x="286" y="118" text-anchor="middle" font-size="19" font-weight="700" fill="#36413a" font-family="system-ui,sans-serif">87</text>
+        <text x="286" y="136" text-anchor="middle" font-size="12" fill="#445040">7%</text>
+      </g>
+      <!-- 41 (3%) mid sage, right -->
+      <g>
+        <circle cx="402" cy="158" r="38" fill="#8a9a7e"/>
+        <text x="402" y="157" text-anchor="middle" font-size="17" font-weight="700" fill="#f4f6ef" font-family="system-ui,sans-serif">41</text>
+        <text x="402" y="174" text-anchor="middle" font-size="11" fill="#e6ebdd">3%</text>
+      </g>
+      <!-- 24 (2%) dark sage, left -->
+      <g>
+        <circle cx="200" cy="172" r="33" fill="#6f7d66"/>
+        <text x="200" y="171" text-anchor="middle" font-size="16" font-weight="700" fill="#f4f6ef" font-family="system-ui,sans-serif">24</text>
+        <text x="200" y="187" text-anchor="middle" font-size="10.5" fill="#e2e7d9">2%</text>
+      </g>
+      <!-- 7 (0.6%) darker, top-right -->
+      <g>
+        <circle cx="378" cy="92" r="27" fill="#5a6b54"/>
+        <text x="378" y="91" text-anchor="middle" font-size="14" font-weight="700" fill="#f4f6ef" font-family="system-ui,sans-serif">7</text>
+        <text x="378" y="105" text-anchor="middle" font-size="10" fill="#dde3d3">0.6%</text>
+      </g>
+      <!-- 5 (0.4%) darkest, top-left -->
+      <g>
+        <circle cx="300" cy="58" r="24" fill="#48553f"/>
+        <text x="300" y="57" text-anchor="middle" font-size="13" font-weight="700" fill="#f4f6ef" font-family="system-ui,sans-serif">5</text>
+        <text x="300" y="70" text-anchor="middle" font-size="9.5" fill="#dae0cf">0.4%</text>
+      </g>
+      <!-- center caption -->
+      <text x="310" y="293" text-anchor="middle" font-size="12" fill="#9aa39a">hover a bubble · area ∝ trace count · last 24h</text>
+    </svg>
+  </div>
+  <div class="gg3-legend">
+    <span class="gg3-li"><span class="gg3-sw" style="background:#c2cbb4"></span>complete · grounded</span>
+    <span class="gg3-li"><span class="gg3-sw" style="background:#a3b18a"></span>incomplete · grounded</span>
+    <span class="gg3-li"><span class="gg3-sw" style="background:#8a9a7e"></span>extra · grounded</span>
+    <span class="gg3-li"><span class="gg3-sw" style="background:#6f7d66"></span>complete · ungrounded</span>
+    <span class="gg3-li"><span class="gg3-sw" style="background:#5a6b54"></span>extra · ungrounded</span>
+    <span class="gg3-li"><span class="gg3-sw" style="background:#48553f"></span>incomplete · ungrounded</span>
+  </div>
+</div>
+      </figure>
+        <figure class="st-g st-g5" data-x="62" data-y="85" data-rot="2"  data-delay="0.28" style="width:500px">
+        <div class="gg5">
+  <div class="gg5-head">Bars · complete · incomplete · extra · count per bucket</div>
+  <div class="gg5-legend">
+    <span class="gg5-pill"><span class="gg5-sw" style="background:#dcdfd6"></span><span class="gg5-lab">complete</span><span class="gg5-num">1,119</span></span>
+    <span class="gg5-pill"><span class="gg5-sw" style="background:#8a9a7e"></span><span class="gg5-lab">incomplete</span><span class="gg5-num">96</span></span>
+    <span class="gg5-pill"><span class="gg5-sw" style="background:#454d44"></span><span class="gg5-lab">extra</span><span class="gg5-num">62</span></span>
+  </div>
+  <div class="gg5-chartwrap">
+    <svg class="gg5-svg" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">
+      <!-- gridlines y:0,20,40,60 plotted in band 18(top=60)..258(bottom=0); scale 4px per unit -->
+      <g stroke="#e7e9df" stroke-width="1" vector-effect="non-scaling-stroke">
+        <line x1="40" y1="18" x2="1000" y2="18"/>
+        <line x1="40" y1="98" x2="1000" y2="98"/>
+        <line x1="40" y1="178" x2="1000" y2="178"/>
+        <line x1="40" y1="258" x2="1000" y2="258"/>
+      </g>
+      <!-- y labels -->
+      <g font-family="ui-monospace,'JetBrains Mono',monospace" font-size="11" fill="#9aa39a" text-anchor="end">
+        <text x="32" y="22">60</text>
+        <text x="32" y="102">40</text>
+        <text x="32" y="182">20</text>
+        <text x="32" y="262">0</text>
+      </g>
+      <!-- BARS: 40 stacked. base y=258 (val 0). 4px/unit. width 16, step 24, start x=52.
+           each bar: total ~22-41; extra(dark) tiny top ~1.5, incomplete(sage) ~2-4, complete(grey) remainder -->
+      <g>
+        <!-- helper: complete=light grey, drawn from base up to complete top -->
+        <!-- b0 total36 -->
+        <rect x="52"  y="146" width="16" height="112" fill="#dcdfd6"/><rect x="52"  y="130" width="16" height="16" fill="#8a9a7e"/><rect x="52"  y="124" width="16" height="6"  fill="#454d44"/>
+        <!-- b1 total31 -->
+        <rect x="76"  y="162" width="16" height="96"  fill="#dcdfd6"/><rect x="76"  y="148" width="16" height="14" fill="#8a9a7e"/><rect x="76"  y="142" width="16" height="6"  fill="#454d44"/>
+        <!-- b2 total41 -->
+        <rect x="100" y="120" width="16" height="138" fill="#dcdfd6"/><rect x="100" y="104" width="16" height="16" fill="#8a9a7e"/><rect x="100" y="98"  width="16" height="6"  fill="#454d44"/>
+        <!-- b3 total39 -->
+        <rect x="124" y="130" width="16" height="128" fill="#dcdfd6"/><rect x="124" y="114" width="16" height="16" fill="#8a9a7e"/><rect x="124" y="108" width="16" height="6"  fill="#454d44"/>
+        <!-- b4 total34 -->
+        <rect x="148" y="150" width="16" height="108" fill="#dcdfd6"/><rect x="148" y="136" width="16" height="14" fill="#8a9a7e"/><rect x="148" y="130" width="16" height="6"  fill="#454d44"/>
+        <!-- b5 total39 -->
+        <rect x="172" y="130" width="16" height="128" fill="#dcdfd6"/><rect x="172" y="114" width="16" height="16" fill="#8a9a7e"/><rect x="172" y="108" width="16" height="6"  fill="#454d44"/>
+        <!-- b6 total38 -->
+        <rect x="196" y="134" width="16" height="124" fill="#dcdfd6"/><rect x="196" y="120" width="16" height="14" fill="#8a9a7e"/><rect x="196" y="114" width="16" height="6"  fill="#454d44"/>
+        <!-- b7 total35 -->
+        <rect x="220" y="146" width="16" height="112" fill="#dcdfd6"/><rect x="220" y="132" width="16" height="14" fill="#8a9a7e"/><rect x="220" y="126" width="16" height="6"  fill="#454d44"/>
+        <!-- b8 total31 -->
+        <rect x="244" y="162" width="16" height="96"  fill="#dcdfd6"/><rect x="244" y="150" width="16" height="12" fill="#8a9a7e"/><rect x="244" y="144" width="16" height="6"  fill="#454d44"/>
+        <!-- b9 total24 -->
+        <rect x="268" y="190" width="16" height="68"  fill="#dcdfd6"/><rect x="268" y="178" width="16" height="12" fill="#8a9a7e"/><rect x="268" y="172" width="16" height="6"  fill="#454d44"/>
+        <!-- b10 total31 -->
+        <rect x="292" y="162" width="16" height="96"  fill="#dcdfd6"/><rect x="292" y="150" width="16" height="12" fill="#8a9a7e"/><rect x="292" y="144" width="16" height="6"  fill="#454d44"/>
+        <!-- b11 total35 -->
+        <rect x="316" y="146" width="16" height="112" fill="#dcdfd6"/><rect x="316" y="132" width="16" height="14" fill="#8a9a7e"/><rect x="316" y="126" width="16" height="6"  fill="#454d44"/>
+        <!-- b12 total24 -->
+        <rect x="340" y="190" width="16" height="68"  fill="#dcdfd6"/><rect x="340" y="178" width="16" height="12" fill="#8a9a7e"/><rect x="340" y="172" width="16" height="6"  fill="#454d44"/>
+        <!-- b13 total32 -->
+        <rect x="364" y="158" width="16" height="100" fill="#dcdfd6"/><rect x="364" y="146" width="16" height="12" fill="#8a9a7e"/><rect x="364" y="140" width="16" height="6"  fill="#454d44"/>
+        <!-- b14 total34 -->
+        <rect x="388" y="150" width="16" height="108" fill="#dcdfd6"/><rect x="388" y="136" width="16" height="14" fill="#8a9a7e"/><rect x="388" y="130" width="16" height="6"  fill="#454d44"/>
+        <!-- b15 total23 -->
+        <rect x="412" y="194" width="16" height="64"  fill="#dcdfd6"/><rect x="412" y="182" width="16" height="12" fill="#8a9a7e"/><rect x="412" y="176" width="16" height="6"  fill="#454d44"/>
+        <!-- b16 total25 -->
+        <rect x="436" y="186" width="16" height="72"  fill="#dcdfd6"/><rect x="436" y="174" width="16" height="12" fill="#8a9a7e"/><rect x="436" y="168" width="16" height="6"  fill="#454d44"/>
+        <!-- b17 total28 -->
+        <rect x="460" y="174" width="16" height="84"  fill="#dcdfd6"/><rect x="460" y="162" width="16" height="12" fill="#8a9a7e"/><rect x="460" y="156" width="16" height="6"  fill="#454d44"/>
+        <!-- b18 total26 -->
+        <rect x="484" y="182" width="16" height="76"  fill="#dcdfd6"/><rect x="484" y="170" width="16" height="12" fill="#8a9a7e"/><rect x="484" y="164" width="16" height="6"  fill="#454d44"/>
+        <!-- b19 total33 -->
+        <rect x="508" y="154" width="16" height="104" fill="#dcdfd6"/><rect x="508" y="140" width="16" height="14" fill="#8a9a7e"/><rect x="508" y="134" width="16" height="6"  fill="#454d44"/>
+        <!-- b20 total24 -->
+        <rect x="532" y="190" width="16" height="68"  fill="#dcdfd6"/><rect x="532" y="178" width="16" height="12" fill="#8a9a7e"/><rect x="532" y="172" width="16" height="6"  fill="#454d44"/>
+        <!-- b21 total31 -->
+        <rect x="556" y="162" width="16" height="96"  fill="#dcdfd6"/><rect x="556" y="150" width="16" height="12" fill="#8a9a7e"/><rect x="556" y="144" width="16" height="6"  fill="#454d44"/>
+        <!-- b22 total29 -->
+        <rect x="580" y="170" width="16" height="88"  fill="#dcdfd6"/><rect x="580" y="158" width="16" height="12" fill="#8a9a7e"/><rect x="580" y="152" width="16" height="6"  fill="#454d44"/>
+        <!-- b23 total31 -->
+        <rect x="604" y="162" width="16" height="96"  fill="#dcdfd6"/><rect x="604" y="150" width="16" height="12" fill="#8a9a7e"/><rect x="604" y="144" width="16" height="6"  fill="#454d44"/>
+        <!-- b24 total32 -->
+        <rect x="628" y="158" width="16" height="100" fill="#dcdfd6"/><rect x="628" y="146" width="16" height="12" fill="#8a9a7e"/><rect x="628" y="140" width="16" height="6"  fill="#454d44"/>
+        <!-- b25 total34 -->
+        <rect x="652" y="150" width="16" height="108" fill="#dcdfd6"/><rect x="652" y="136" width="16" height="14" fill="#8a9a7e"/><rect x="652" y="130" width="16" height="6"  fill="#454d44"/>
+        <!-- b26 total24 -->
+        <rect x="676" y="190" width="16" height="68"  fill="#dcdfd6"/><rect x="676" y="178" width="16" height="12" fill="#8a9a7e"/><rect x="676" y="172" width="16" height="6"  fill="#454d44"/>
+        <!-- b27 total39 -->
+        <rect x="700" y="130" width="16" height="128" fill="#dcdfd6"/><rect x="700" y="114" width="16" height="16" fill="#8a9a7e"/><rect x="700" y="108" width="16" height="6"  fill="#454d44"/>
+        <!-- b28 total38 -->
+        <rect x="724" y="134" width="16" height="124" fill="#dcdfd6"/><rect x="724" y="120" width="16" height="14" fill="#8a9a7e"/><rect x="724" y="114" width="16" height="6"  fill="#454d44"/>
+        <!-- b29 total26 -->
+        <rect x="748" y="182" width="16" height="76"  fill="#dcdfd6"/><rect x="748" y="170" width="16" height="12" fill="#8a9a7e"/><rect x="748" y="164" width="16" height="6"  fill="#454d44"/>
+        <!-- b30 total28 -->
+        <rect x="772" y="174" width="16" height="84"  fill="#dcdfd6"/><rect x="772" y="162" width="16" height="12" fill="#8a9a7e"/><rect x="772" y="156" width="16" height="6"  fill="#454d44"/>
+        <!-- b31 total33 -->
+        <rect x="796" y="154" width="16" height="104" fill="#dcdfd6"/><rect x="796" y="140" width="16" height="14" fill="#8a9a7e"/><rect x="796" y="134" width="16" height="6"  fill="#454d44"/>
+        <!-- b32 total35 -->
+        <rect x="820" y="146" width="16" height="112" fill="#dcdfd6"/><rect x="820" y="132" width="16" height="14" fill="#8a9a7e"/><rect x="820" y="126" width="16" height="6"  fill="#454d44"/>
+        <!-- b33 total29 -->
+        <rect x="844" y="170" width="16" height="88"  fill="#dcdfd6"/><rect x="844" y="158" width="16" height="12" fill="#8a9a7e"/><rect x="844" y="152" width="16" height="6"  fill="#454d44"/>
+        <!-- b34 total29 -->
+        <rect x="868" y="170" width="16" height="88"  fill="#dcdfd6"/><rect x="868" y="158" width="16" height="12" fill="#8a9a7e"/><rect x="868" y="152" width="16" height="6"  fill="#454d44"/>
+        <!-- b35 total34 -->
+        <rect x="892" y="150" width="16" height="108" fill="#dcdfd6"/><rect x="892" y="136" width="16" height="14" fill="#8a9a7e"/><rect x="892" y="130" width="16" height="6"  fill="#454d44"/>
+        <!-- b36 total41 -->
+        <rect x="916" y="120" width="16" height="138" fill="#dcdfd6"/><rect x="916" y="104" width="16" height="16" fill="#8a9a7e"/><rect x="916" y="98"  width="16" height="6"  fill="#454d44"/>
+        <!-- b37 total31 -->
+        <rect x="940" y="162" width="16" height="96"  fill="#dcdfd6"/><rect x="940" y="148" width="16" height="14" fill="#8a9a7e"/><rect x="940" y="142" width="16" height="6"  fill="#454d44"/>
+        <!-- b38 total37 -->
+        <rect x="964" y="138" width="16" height="120" fill="#dcdfd6"/><rect x="964" y="124" width="16" height="14" fill="#8a9a7e"/><rect x="964" y="118" width="16" height="6"  fill="#454d44"/>
+      </g>
+      <!-- baseline -->
+      <line x1="40" y1="258" x2="1000" y2="258" stroke="#c2cbb4" stroke-width="1" vector-effect="non-scaling-stroke"/>
+      <!-- x time labels -->
+      <g font-family="ui-monospace,'JetBrains Mono',monospace" font-size="11" fill="#9aa39a" text-anchor="middle">
+        <text x="60"  y="276">14:18</text>
+        <text x="204" y="276">17:18</text>
+        <text x="348" y="276">20:18</text>
+        <text x="492" y="276">23:18</text>
+        <text x="636" y="276">02:18</text>
+        <text x="780" y="276">05:18</text>
+        <text x="924" y="276">08:18</text>
+        <text x="996" y="276" text-anchor="end">11:18</text>
+      </g>
+    </svg>
+  </div>
+  <!-- scrubber / brush strip -->
+  <svg class="gg5-svg" viewBox="0 0 1000 44" preserveAspectRatio="none" style="height:3.6cqw;flex:none;margin-top:.4cqw" aria-hidden="true">
+    <rect x="2" y="3" width="996" height="38" rx="9" fill="#dcdfd6"/>
+    <path d="M14 30 Q60 22 110 27 T210 26 T310 30 T410 25 T510 28 T610 24 T710 29 T810 25 T910 27 T986 28 L986 41 L14 41 Z" fill="rgba(120,130,110,.18)"/>
+    <path d="M14 30 Q60 22 110 27 T210 26 T310 30 T410 25 T510 28 T610 24 T710 29 T810 25 T910 27 T986 28" fill="none" stroke="#9aa39a" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <rect x="2" y="3" width="14" height="38" rx="7" fill="#8a9a7e"/>
+    <rect x="984" y="3" width="14" height="38" rx="7" fill="#8a9a7e"/>
+    <line x1="9" y1="16" x2="9" y2="28" stroke="#fafafa" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <line x1="991" y1="16" x2="991" y2="28" stroke="#fafafa" stroke-width="1" vector-effect="non-scaling-stroke"/>
+  </svg>
+  <div class="gg5-foot">
+    <span class="gg5-rng">14:00 – 14:00</span>
+    <span class="gg5-hint">drag the edges to zoom the time axis</span>
+  </div>
+</div>
+      </figure>
       </div>
-
-      <div class="qa">
-        <p class="q"><b>Q</b> &nbsp;What were Northwind's Q3 results?</p>
-        <p class="answer" id="answer">
-          <span class="claim" data-status="supported">Northwind reported $4.2B in Q3 revenue<span class="tag src">✓ 10-Q · p.4</span></span>,
-          <span class="claim" data-status="supported">up 12% year over year<span class="tag src">✓ press release · ¶2</span></span>.
-          <span class="claim" data-status="unsupported">The CFO credited the result to a new defense contract<span class="tag warn">⚠ no evidence</span></span>,
-          <span class="claim" data-status="supported">while operating margin held at 18%<span class="tag src">✓ 10-Q · p.6</span></span>.
-        </p>
-        <span class="scanline" aria-hidden="true"></span>
-
-        <div class="fix">
-          <b>Diagnosis</b> — “a new defense contract” appears in <span class="mono">0 / 14</span> retrieved chunks. Likely parametric fabrication.<br>
-          <b>Correction</b> &nbsp;→&nbsp; remove the clause, or regenerate with <span class="mono">require_citation=true</span>.
-        </div>
+      <div class="st-lead">
+        <span class="st-kicker">A sky full of answers</span>
+        <h2>Thousands of <em>Q · C · R</em> a minute.</h2>
       </div>
-
-      <div class="panel-foot">
-        <span class="stat"><span class="sw" style="background:var(--ok)"></span><b>3</b> supported</span>
-        <span class="stat"><span class="sw" style="background:var(--amber)"></span><b>1</b> unsupported</span>
-        <span class="stat">checked in <b>240ms</b></span>
+      <div class="st-resolve">
+        <span class="st-kicker">That's the whole picture</span>
+        <h2>Every answer, <em>pulled apart and checked.</em></h2>
+        <p>Claims, grounding, latency, failure cells, volume — resolved the moment a response ships.</p>
       </div>
     </div>
   </div>
+
+  <!-- outro -->
+  <div class="st-spacer">
+    <div>
+      <span class="st-kicker">That's the loop</span>
+      <h2>Detect. Diagnose. <em>Correct.</em></h2>
+      <p>Wire it in once and every answer gets the same scrutiny — before your user ever reads it.</p>
+    </div>
+  </div>
 </section>
+
+<script>
+(function () {
+  const root = document.getElementById('scrolltear');
+  if (!root) return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const scene = root.querySelector('.st-scene');
+  const cloud = root.querySelector('.st-cloud');
+  const leadmid = root.querySelector('.st-lead');
+  const resolve = root.querySelector('.st-resolve');
+  const graphs = [...root.querySelectorAll('.st-g')];
+  const nav = document.getElementById('nav');
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+  const easeInOut = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  let seed = 1337;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+
+  const KINDS = [
+    { cls: 'q', label: 'Q', pool: ['Q3 results?', 'Refund window?', 'Who approved?', 'SOC2 status?', 'Churn rate?', 'Uptime SLA?', 'Pricing tiers?', 'Net retention?'] },
+    { cls: 'c', label: 'C', pool: ['10-Q · p.4', 'press release', 'SOC2 report', 'MSA · §7', 'pricing.md', 'earnings call', 'onboarding doc', 'support ticket'] },
+    { cls: 'r', label: 'R', pool: ['$4.2B revenue', 'up 12% YoY', '30-day refunds', '99.95% uptime', 'no defense deal', 'margin held 18%', 'renewed in Q2', 'fully grounded'] },
+  ];
+  const N = 46;
+  const toks = [];
+  for (let i = 0; i < N; i++) {
+    const k = KINDS[i % 3];
+    const el = document.createElement('span');
+    el.className = 'st-tok ' + k.cls;
+    const showText = rnd() > 0.32;
+    const content = k.pool[Math.floor(rnd() * k.pool.length)];
+    el.innerHTML = '<span class="st-led"></span><b>' + k.label + '</b>' + (showText ? '<span style="opacity:.7">' + content + '</span>' : '');
+    cloud.appendChild(el);
+    const depth = 0.35 + rnd() * 0.65;
+    toks.push({ el, bx: 6 + rnd() * 88, by: 6 + rnd() * 88, depth, rot: (rnd() - 0.5) * 24, baseOp: 0.32 + depth * 0.6 });
+  }
+
+  function progress() {
+    const rect = scene.getBoundingClientRect();
+    const total = scene.offsetHeight - window.innerHeight;
+    return clamp(-rect.top / total, 0, 1);
+  }
+
+  function draw(p) {
+    const w = window.innerWidth, h = window.innerHeight;
+    const disp = easeInOut(clamp((p - 0.02) / 0.46, 0, 1));
+    const cloudFade = 1 - clamp((p - 0.06) / 0.36, 0, 1);
+    for (const t of toks) {
+      const ox = (t.bx - 50), oy = (t.by - 50);
+      const push = 1 + disp * (0.7 + t.depth * 1.1);
+      const cx = 50 + ox * push, cy = 50 + oy * push;
+      const sc = (0.7 + t.depth * 0.5) * (1 - disp * 0.15);
+      t.el.style.transform = 'translate(' + (cx / 100 * w).toFixed(1) + 'px, ' + (cy / 100 * h).toFixed(1) + 'px) translate(-50%,-50%) rotate(' + t.rot + 'deg) scale(' + sc.toFixed(3) + ')';
+      t.el.style.opacity = (t.baseOp * cloudFade).toFixed(3);
+    }
+    const leadOp = 1 - clamp((p - 0.04) / 0.24, 0, 1);
+    leadmid.style.opacity = leadOp.toFixed(3);
+    leadmid.style.transform = 'translate(-50%,-50%) scale(' + (1 - (1 - leadOp) * 0.06).toFixed(3) + ')';
+    graphs.forEach((g) => {
+      const rx = +g.dataset.x, ry = +g.dataset.y, rot = +g.dataset.rot, delay = +g.dataset.delay;
+      const gp = easeOut(clamp((p - 0.05 - delay * 0.7) / 0.32, 0, 1));   /* settle finishes ~p0.57, before the resolve text appears */
+      g.style.left = (50 + (rx - 50) * gp) + '%';
+      g.style.top = (50 + (ry - 50) * gp) + '%';
+      g.style.transform = 'translate(-50%,-50%) rotate(' + (rot * gp).toFixed(2) + 'deg) scale(' + (0.5 + 0.5 * gp).toFixed(3) + ')';
+      g.style.opacity = clamp(gp / 0.3, 0, 1).toFixed(3);
+    });
+    const rp = clamp((p - 0.28) / 0.29, 0, 1);   /* resolve reveals in step with the cards settling (last card lands ~p0.57) */
+    const re = easeOut(rp);
+    resolve.style.opacity = re.toFixed(3);
+    resolve.style.transform = 'translate(-50%,-50%) scale(' + (0.78 + 0.22 * re).toFixed(3) + ')';   /* zoom in from centre */
+    if (nav && !reduce) nav.classList.toggle('st-away', p > 0.015 && p < 0.985);   /* hide the sticky nav while the scene is pinned */
+  }
+
+  let ticking = false;
+  function onScroll() {
+    if (!ticking && !reduce) { ticking = true; requestAnimationFrame(() => { draw(progress()); ticking = false; }); }
+  }
+  draw(reduce ? 0.75 : progress());
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', () => draw(progress()));
+})();
+</script>
 
 <!-- ====================== TRUST ====================== -->
 <div class="trust">
@@ -630,106 +1487,199 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   </div>
 </div>
 
-<!-- ====================== PROBLEM ====================== -->
-<section class="problem" id="problem">
-  <div class="wrap problem-grid">
-    <div class="reveal">
-      <span class="kicker">The problem</span>
-      <p class="pull">Retrieval grounds your model — <b>it doesn't guarantee the answer stays grounded.</b> Models still paraphrase loosely, blend in parametric memory, and cite passages that don't actually support the claim.</p>
-      <p class="lead">RAG reduced hallucinations. It didn't end them. The dangerous ones are subtle: a confident sentence, a real-looking citation, a fact that was never in the source. VERALITH catches those — at the level of the individual claim.</p>
-    </div>
-
-    <div class="problem-card reveal" data-i="1">
-      <div class="bar-row"><span class="lbl">Unsupported claims</span><span class="bar b1"><i></i></span><span class="val">31%</span></div>
-      <div class="bar-row"><span class="lbl">Wrong citation</span><span class="bar b2"><i></i></span><span class="val">18%</span></div>
-      <div class="bar-row"><span class="lbl">After VERALITH</span><span class="bar b3"><i></i></span><span class="val">9%</span></div>
-      <p class="card-note">Illustrative — span-level error rates vary by corpus, retriever, and model. The point: grounding alone leaves a long tail.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ====================== PILLARS ====================== -->
-<section id="how">
-  <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="kicker">How it works</span>
-      <h2>Three steps, <span class="accent">every answer.</span></h2>
-      <p class="lead">VERALITH sits between your retriever and your user. It decomposes each response into atomic claims and runs them through the loop — before the answer ever ships.</p>
-    </div>
-
-    <div class="pillars">
-      <article class="pillar reveal" data-i="0">
-        <span class="glow"></span>
-        <span class="num">01</span>
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <h3>Detect</h3>
-        <p>Break the answer into self-contained claims and flag any that retrieval doesn't support — supported, unsupported, or directly contradicted.</p>
-      </article>
-
-      <article class="pillar reveal" data-i="1">
-        <span class="glow"></span>
-        <span class="num">02</span>
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="4.5"/></svg>
-        <h3>Diagnose</h3>
-        <p>See <em>why</em> it failed: missing evidence, weak retrieval, a contradicted source, or parametric drift — with the exact chunks that were and weren't relevant.</p>
-      </article>
-
-      <article class="pillar reveal" data-i="2">
-        <span class="glow"></span>
-        <span class="num">03</span>
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 12a8 8 0 0 1-14 5.3L4 15"/><path d="M20 4v5h-5M4 20v-5h5"/></svg>
-        <h3>Correct</h3>
-        <p>Auto-revise the offending claim, force a citation, lower confidence, or block the response — your policy, applied inline before it reaches the user.</p>
-      </article>
-    </div>
-  </div>
-</section>
-
 <!-- ====================== FEATURES (bento) ====================== -->
 <section id="features">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Capabilities</span>
-      <h2>Verification that fits <span class="accent">how you build.</span></h2>
+      <h2>From a failing answer <span class="accent">to a merged fix.</span></h2>
+      <p class="lead">Veralith diagnoses every RAG answer at the claim level, measures the health of your whole system, tells you what to do about it — and closes the loop inside your own codebase.</p>
+    </div>
+
+    <!-- ===== Query & Response judge showcase (claim-level verdicts) ===== -->
+    <style id="qr-style">
+      /* Live, crisp dashboard view (not a raster) — smaller type, faded at the
+         bottom so it reads as a glimpse into a deeper product. */
+      .qr{ margin-top:2.4rem; position:relative;
+        -webkit-mask-image:linear-gradient(180deg,#000 60%,transparent 100%);
+                mask-image:linear-gradient(180deg,#000 60%,transparent 100%);
+        -webkit-mask-size:100% 100%;   mask-size:100% 100%;
+        -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
+      .qr-bar{ display:flex; align-items:baseline; justify-content:space-between; gap:.5rem 1.4rem; flex-wrap:wrap; margin-bottom:1rem; padding-inline:.2rem; }
+      .qr-eyebrow{ font-family:var(--mono); font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-soft); font-weight:600; }
+      .qr-sub{ font-size:.68rem; color:var(--ink-faint); margin-left:.6rem; }
+      .qr-legend{ display:flex; gap:1rem; font-size:.64rem; color:var(--ink-faint); }
+      .qr-leg{ display:inline-flex; align-items:center; gap:.4rem; }
+      .qr-leg::before{ content:""; width:10px; height:10px; border-radius:3px; }
+      .qr-leg.g::before{ background:rgba(88,129,87,.14); box-shadow:inset 0 0 0 1px rgba(88,129,87,.5); }
+      .qr-leg.u::before{ background:rgba(178,80,58,.12); box-shadow:inset 0 0 0 1px rgba(178,80,58,.45); }
+      .qr-grid{ display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; align-items:stretch; }
+      .qr-card{ background:var(--paper); border:1px solid rgba(38,48,26,.1); border-radius:var(--r-lg);
+        box-shadow:var(--shadow-soft); padding:1.35rem 1.45rem; }
+      .qr-head{ display:flex; align-items:center; gap:.5rem; font-size:.88rem; font-weight:600; color:var(--ink); margin-bottom:.95rem; }
+      .qr-tag{ display:inline-grid; place-items:center; width:1.45rem; height:1.45rem; border-radius:7px;
+        background:var(--bg-2); color:var(--ink-soft); font-family:var(--mono); font-size:.62rem; font-weight:600; }
+      .qr-meta{ margin-left:auto; font-family:var(--mono); font-size:.6rem; color:var(--ink-faint); font-weight:400; }
+      .qr-query{ font-size:.85rem; line-height:1.55; color:var(--ink); }
+      .qr-subhead{ font-family:var(--mono); font-size:.55rem; letter-spacing:.12em; text-transform:uppercase; color:#9a9a9a;
+        margin:1.2rem 0 .75rem; border-top:1px dashed rgba(38,48,26,.16); padding-top:1rem; }
+      .qr-sq{ border-radius:11px; border:1px solid; padding:.8rem .9rem; margin-bottom:.75rem; }
+      .qr-sq.pass{ background:rgba(88,129,87,.04); border-color:rgba(88,129,87,.17); }
+      .qr-sq.uncov{ background:rgba(178,80,58,.03); border-color:rgba(178,80,58,.15); }
+      .qr-sq-top{ display:flex; align-items:center; gap:.55rem; margin-bottom:.45rem; }
+      .qr-sq-no{ font-family:var(--mono); font-size:.6rem; color:var(--ink-faint); }
+      .qr-sq-q{ font-weight:600; font-size:.76rem; color:var(--ink); flex:1; }
+      .qr-badge{ font-family:var(--mono); font-size:.52rem; font-weight:600; letter-spacing:.06em; padding:.24em .58em; border-radius:5px; white-space:nowrap; }
+      .qr-badge.pass{ background:rgba(88,129,87,.14); color:#436b48; }
+      .qr-badge.uncov{ background:rgba(178,80,58,.12); color:#925040; }
+      .qr-judge{ font-size:.68rem; line-height:1.5; color:var(--ink-faint); }
+      .qr-judge b{ color:var(--ink-soft); font-weight:600; }
+      .qr-supp{ font-family:var(--mono); font-size:.6rem; color:#9a9a9a; margin-top:.4rem; }
+      .qr-response{ font-size:.86rem; line-height:1.9; color:var(--ink); }
+      .qr-claim{ border-radius:5px; padding:.06em .18em; position:relative; cursor:help; transition:background .25s; }
+      .qr-claim.g{ background:rgba(88,129,87,.07); box-shadow:inset 0 -2px 0 rgba(88,129,87,.3); }
+      .qr-claim.u{ background:rgba(178,80,58,.06); box-shadow:inset 0 -2px 0 rgba(178,80,58,.26); }
+      .qr-claim.g:hover{ background:rgba(88,129,87,.15); }
+      .qr-claim.u:hover{ background:rgba(178,80,58,.13); }
+      .qr-rtag{ font-family:var(--mono); font-size:.5rem; font-weight:600; padding:.12em .42em; border-radius:4px; margin-left:.3em; vertical-align:middle; white-space:nowrap; }
+      .qr-claim.g .qr-rtag{ background:rgba(88,129,87,.12); color:#4a6b50; }
+      .qr-claim.u .qr-rtag{ background:rgba(178,80,58,.1); color:#925040; }
+      .qr-claim::after{ content:attr(data-r); position:absolute; left:0; bottom:calc(100% + 9px); z-index:6;
+        width:max-content; max-width:260px; background:#2b2b2b; color:#f1f1ec;
+        font-family:var(--mono); font-size:.64rem; line-height:1.5; font-weight:400; letter-spacing:.005em; text-transform:none;
+        padding:.55rem .7rem; border-radius:9px; box-shadow:0 16px 34px -18px rgba(0,0,0,.55);
+        opacity:0; transform:translateY(5px); pointer-events:none; transition:opacity .2s ease, transform .2s ease; }
+      .qr-claim:hover::after{ opacity:1; transform:none; }
+      @media (max-width:860px){ .qr-grid{ grid-template-columns:1fr; } .qr-sub{ display:block; margin-left:0; margin-top:.3rem; } }
+    </style>
+    <div class="qr reveal">
+      <div class="qr-bar">
+        <div><span class="qr-eyebrow">Query &amp; Response</span><span class="qr-sub">claims highlighted by judge verdict · hover any claim for reasoning</span></div>
+        <div class="qr-legend"><span class="qr-leg g">grounded claim</span><span class="qr-leg u">ungrounded claim</span></div>
+      </div>
+      <div class="qr-grid">
+        <div class="qr-card">
+          <div class="qr-head"><span class="qr-tag">Q</span> Query <span class="qr-meta">2 sub-questions · 123 chars</span></div>
+          <p class="qr-query">Explain compounding frequency tradeoffs for monthly vs annual, and how this changes the doubling time under the Rule of 72.</p>
+          <div class="qr-subhead">Sub-questions (decomposed by judge)</div>
+          <div class="qr-sq pass">
+            <div class="qr-sq-top"><span class="qr-sq-no">Q0</span><span class="qr-sq-q">How does the Rule of 72 estimate doubling time?</span><span class="qr-badge pass">PASS</span></div>
+            <p class="qr-judge"><b>Judge:</b> Directly defined in chunk #0 (similarity 0.82). Sufficient context to answer.</p>
+            <p class="qr-supp">Supporting: #0, #2</p>
+          </div>
+          <div class="qr-sq uncov">
+            <div class="qr-sq-top"><span class="qr-sq-no">Q1</span><span class="qr-sq-q">What are the tradeoffs of monthly vs annual compounding?</span><span class="qr-badge uncov">UNCOVERED</span></div>
+            <p class="qr-judge"><b>Judge:</b> No retrieved chunk discusses compounding frequency tradeoffs. All chunks cover the Rule of 72 itself, not periodic compounding.</p>
+            <p class="qr-supp">Supporting: none</p>
+          </div>
+        </div>
+        <div class="qr-card">
+          <div class="qr-head"><span class="qr-tag">R</span> Response <span class="qr-meta">5 claims · 2 grounded · 3 ungrounded</span></div>
+          <p class="qr-response">
+            <span class="qr-claim g" data-r="Matches chunk #0 — the Rule of 72 definition (similarity 0.82).">The Rule of 72 estimates doubling time by dividing 72 by the annual interest rate.<span class="qr-rtag">R0</span></span>
+            <span class="qr-claim g" data-r="72 ÷ 6 = 12. Arithmetic consistent with chunk #0.">At a 6% return, the formula gives roughly 12 years to double.<span class="qr-rtag">R1</span></span>
+            <span class="qr-claim u" data-r="No retrieved chunk covers monthly compounding doubling time — fabricated figure.">Monthly compounding produces a doubling time of about 11.6 years at the same nominal rate.<span class="qr-rtag">R2</span></span>
+            <span class="qr-claim u" data-r="No evidence on bank preferences or operational overhead in the retrieved context.">Banks generally prefer annual compounding because it reduces operational overhead.<span class="qr-rtag">R3</span></span>
+            <span class="qr-claim u" data-r="No chunk discusses daily compounding or diminishing returns.">Daily compounding offers diminishing returns above 12 periods per year.<span class="qr-rtag">R4</span></span>
+          </p>
+        </div>
+      </div>
     </div>
 
     <div class="bento">
-      <div class="tile wide dark reveal" data-i="0">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h10M4 17h7"/></svg>
-        <h3>Claim-level granularity</h3>
-        <p>Not a single pass/fail score. Every atomic claim gets its own verdict and the precise source span behind it — so you fix sentences, not whole answers.</p>
-        <div class="chiprow"><span class="chip">entailed</span><span class="chip">unsupported</span><span class="chip">contradicted</span></div>
+      <!-- 1 · Trace-level analysis (the diagnosis) -->
+      <div class="tile span3 dark reveal" data-i="0">
+        <span class="glow"></span>
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h11M4 12h7M4 18h9"/><circle cx="17.5" cy="16.5" r="3"/><path d="m22 21-2.2-2.2"/></svg></span>
+        <span class="feat-eyebrow">The diagnosis</span>
+        <h3>Trace-level analysis</h3>
+        <p>Every answer is split into atomic claims, then scored by three LLM judges — Sufficiency, Faithfulness, Completeness — and routed into one of six failure cells. You see which sentence broke, and why.</p>
+        <div class="feat-foot">
+          <div class="jrow">
+            <div class="j warn"><span class="j-l">Sufficiency</span><span class="j-v">0.83</span></div>
+            <div class="j bad"><span class="j-l">Faithfulness</span><span class="j-v">0.20</span></div>
+            <div class="j good"><span class="j-l">Completeness</span><span class="j-v">✓</span></div>
+          </div>
+          <div class="cellbadge">failure cell <span class="arr">→</span> <b>complete · ungrounded</b></div>
+        </div>
       </div>
 
-      <div class="tile span2 reveal" data-i="1">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
-        <h3>Streaming checks</h3>
-        <p>Verify tokens as they generate. Catch a hallucination mid-stream and stop it before the user reads it.</p>
+      <!-- 2 · RAG health (observability) -->
+      <div class="tile span3 reveal" data-i="1">
+        <span class="glow"></span>
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5 7 4-15 3 8H21"/></svg></span>
+        <span class="feat-eyebrow">Observability</span>
+        <h3>RAG health</h3>
+        <p>One composite index — the mean of your three judges — tracked over time. Slice by route, model, or document set and watch the line climb as you tune.</p>
+        <div class="feat-foot rhmini">
+          <div class="rhmini-idx"><div class="n">0.80</div><div class="l">health · 7d</div></div>
+          <div class="rhmini-rows">
+            <div class="rhmini-r"><span class="rl">Suff</span><span class="rhmini-bar"><i style="width:81%;background:var(--leaf)"></i></span><span class="rv">0.81</span></div>
+            <div class="rhmini-r"><span class="rl">Faith</span><span class="rhmini-bar"><i style="width:88%;background:var(--leaf)"></i></span><span class="rv">0.88</span></div>
+            <div class="rhmini-r"><span class="rl">Comp</span><span class="rhmini-bar"><i style="width:72%;background:var(--amber)"></i></span><span class="rv">0.72</span></div>
+          </div>
+        </div>
       </div>
 
+      <!-- 3 · Ver-Advise (guidance) -->
       <div class="tile span2 reveal" data-i="2">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
-        <h3>Source attribution</h3>
-        <p>Every supported claim links back to the exact chunk, page, and offset it relies on.</p>
+        <span class="glow"></span>
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-5 2-2 5 5-2z"/></svg></span>
+        <span class="feat-eyebrow">Guidance</span>
+        <h3>Ver-Advise</h3>
+        <p>A prescriptive advisor over all your traces. It reads the week's failures and tells you where the next fix pays off most — ranked, with the expected lift.</p>
+        <div class="feat-foot va-list">
+          <div class="va-i"><span class="va-n">1</span>Close the billing-refund gap<span class="va-p high">+3.1pp</span></div>
+          <div class="va-i"><span class="va-n">2</span>Audit completeness on long queries<span class="va-p">med</span></div>
+        </div>
       </div>
 
+      <!-- 4 · Heal (close the loop) -->
       <div class="tile span2 reveal" data-i="3">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 20a8 8 0 1 0-8-8"/><path d="M4 4v4h4"/></svg>
-        <h3>Auto-correction</h3>
-        <p>Rewrite, re-cite, or regenerate unsupported claims with policies you control.</p>
+        <span class="glow"></span>
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="18" cy="8" r="2.4"/><path d="M6 8.4v7.2M18 10.4v1.6a4 4 0 0 1-4 4H8.4"/></svg></span>
+        <span class="feat-eyebrow">Close the loop</span>
+        <h3>Heal</h3>
+        <p>Hand the diagnosis to your own Claude Code over MCP. It reads your repo, makes the edit, and opens a PR — you review and merge. Failures cluster by root cause, so one fix clears many.</p>
+        <div class="feat-foot heal-flow">
+          <span class="heal-step">diagnose</span><span class="heal-arr">→</span>
+          <span class="heal-step">edit</span><span class="heal-arr">→</span>
+          <span class="heal-step pr">open PR</span>
+        </div>
       </div>
 
-      <div class="tile span4 reveal" data-i="4">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        <h3>Observability dashboards</h3>
-        <p>Track hallucination rate, retrieval quality, and per-source reliability over time. Slice by route, model, or document set — and watch the line go down as you tune.</p>
+      <!-- 5 · Source attribution (evidence) -->
+      <div class="tile span2 reveal" data-i="4">
+        <span class="glow"></span>
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></span>
+        <span class="feat-eyebrow">Evidence</span>
+        <h3>Source attribution</h3>
+        <p>Every supported claim links back to the exact chunk it leans on. Every unsupported one is flagged with the evidence it's missing.</p>
+        <div class="chiprow"><span class="chip">supported</span><span class="chip">unsupported</span><span class="chip">chunk&nbsp;#3&nbsp;·&nbsp;p.12</span></div>
+      </div>
+
+      <!-- 6 · Knowledge-gap clusters (patterns) -->
+      <div class="tile span4 reveal" data-i="5">
+        <span class="glow"></span>
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2.3"/><circle cx="17" cy="6" r="2.3"/><circle cx="8.5" cy="17.5" r="2.3"/><circle cx="18" cy="16" r="2.3"/></svg></span>
+        <span class="feat-eyebrow">Patterns</span>
+        <h3>Knowledge-gap clusters</h3>
+        <p>Failing queries roll up into the topics your corpus can't answer — ranked by volume and trend. You learn which docs to write next, not just that something broke.</p>
+        <div class="feat-foot kg-bars">
+          <div class="kg-b"><span class="kl">Billing &amp; refunds</span><span class="kg-track"><i style="width:100%"></i></span><span class="kv">42</span></div>
+          <div class="kg-b"><span class="kl">SSO / SAML setup</span><span class="kg-track"><i style="width:81%"></i></span><span class="kv">34</span></div>
+          <div class="kg-b"><span class="kl">API rate limits</span><span class="kg-track"><i style="width:71%"></i></span><span class="kv">30</span></div>
+        </div>
+      </div>
+
+      <!-- 7 · Open-source core (yours to run) -->
+      <div class="tile span2 reveal" data-i="6">
+        <span class="glow"></span>
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17 9 12 4 7"/><path d="M12 19h8"/></svg></span>
+        <span class="feat-eyebrow">Yours to run</span>
+        <h3>Open-source core</h3>
+        <p><span class="tok">pip install veralith</span> — the judges, classifier, and suggester are open source. Bring your own LLM keys; your traces never leave your boundary.</p>
         <div class="chiprow"><span class="chip">LangChain</span><span class="chip">LlamaIndex</span><span class="chip">Haystack</span><span class="chip">raw API</span></div>
-      </div>
-
-      <div class="tile span2 reveal" data-i="5">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2 4 6v6c0 5 3.4 7.7 8 10 4.6-2.3 8-5 8-10V6z"/></svg>
-        <h3>Private &amp; in-VPC</h3>
-        <p>Self-host the verifier. Your documents and answers never leave your boundary.</p>
       </div>
     </div>
   </div>
@@ -737,67 +1687,125 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 
 <!-- ====================== INTEGRATION ====================== -->
 <section id="integrate">
-  <div class="wrap code-grid">
-    <div class="reveal">
-      <span class="kicker">Drop-in</span>
+  <svg class="ig-mesh" aria-hidden="true">
+    <defs>
+      <pattern id="ig-tri" width="60" height="52" patternUnits="userSpaceOnUse">
+        <path d="M30 0 L60 52 L0 52 Z" fill="none" stroke="currentColor" stroke-width="1"/>
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#ig-tri)"/>
+  </svg>
+
+  <div class="wrap">
+    <div class="ig-head reveal">
+      <span class="kicker">Integrate in minutes</span>
       <h2>One call <span class="accent">around your answer.</span></h2>
-      <div class="code-points" style="margin-top:2rem">
-        <div class="cp"><span class="num">→</span><div><h3>Wrap, don't rebuild</h3><p>Pass the generated answer plus the chunks you retrieved. Keep your stack exactly as it is.</p></div></div>
-        <div class="cp"><span class="num">→</span><div><h3>Get structured verdicts</h3><p>A report of claims, each with a verdict, sources, and a suggested fix.</p></div></div>
-        <div class="cp"><span class="num">→</span><div><h3>Act inline</h3><p>Correct, annotate, or block — synchronously, in ~250ms.</p></div></div>
-      </div>
     </div>
 
-    <div class="codecard reveal" data-i="1">
-      <div class="dots"><i></i><i></i><i></i></div>
-      <div class="code-tabs">
-        <button class="active" data-tab="py">Python</button>
-        <button data-tab="ts">TypeScript</button>
-        <button data-tab="curl">cURL</button>
+    <div class="ig-steps reveal">
+      <div class="ig-step"><span class="ig-step-num">01</span><div class="ig-step-body"><h3>Send</h3><p>Pass the user query, your retrieved context, and the LLM response — in a single call.</p></div></div>
+      <div class="ig-step"><span class="ig-step-num">02</span><div class="ig-step-body"><h3>Verify</h3><p>Veralith splits the response into atomic claims and cross-checks each against the context.</p></div></div>
+      <div class="ig-step"><span class="ig-step-num">03</span><div class="ig-step-body"><h3>Act</h3><p>Read the failure cell, per-claim verdicts, and suggested fix — then route, gate, or heal.</p></div></div>
+    </div>
+
+    <div class="ig-card reveal">
+      <div class="ig-bar">
+        <div class="ig-dots"><i></i><i></i><i></i></div>
+        <div class="ig-files" role="tablist" aria-label="Code examples">
+          <button class="active" id="igtab-py" data-tab="py" role="tab" aria-selected="true" aria-controls="igpane-py" tabindex="0">check.py</button>
+          <button id="igtab-json" data-tab="json" role="tab" aria-selected="false" aria-controls="igpane-json" tabindex="-1">response.json</button>
+        </div>
+        <div class="ig-lang">
+          <span class="lng">&gt;_ <span class="lng-name">python</span></span>
+          <button class="ig-copy" type="button" aria-label="Copy code">copy</button>
+        </div>
       </div>
 
-      <pre class="active" data-pane="py"><span class="tok-kw">from</span> veralith <span class="tok-kw">import</span> <span class="tok-cls">Veralith</span>
+      <div class="ig-body">
+        <div class="ig-code">
+          <div class="ig-pane active" id="igpane-py" data-pane="py" role="tabpanel" aria-labelledby="igtab-py" tabindex="0">
+<pre class="ig-gutter" aria-hidden="true">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16</pre>
+<pre class="ig-src"><span class="tok-kw">import</span> veralith
 
-vera <span class="tok-kw">=</span> <span class="tok-cls">Veralith</span>()
-
-<span class="tok-com"># wrap your RAG answer with the chunks you retrieved</span>
-report <span class="tok-kw">=</span> vera.<span class="tok-fn">verify</span>(
-    answer<span class="tok-kw">=</span>answer,
-    context<span class="tok-kw">=</span>retrieved_chunks,
-    mode<span class="tok-kw">=</span><span class="tok-str">"realtime"</span>,
+<span class="tok-com"># the (query, context, response) your RAG stack already produces</span>
+result = veralith.<span class="tok-fn">evaluate</span>(
+    query=<span class="tok-str">"What is the refund policy?"</span>,     <span class="tok-com"># user's question</span>
+    context=knowledge_base,                 <span class="tok-com"># your retrieved chunks</span>
+    response=llm_output,                    <span class="tok-com"># the answer your LLM gave</span>
+    persist=<span class="tok-kw">False</span>,
 )
 
-<span class="tok-kw">for</span> claim <span class="tok-kw">in</span> report.claims:
-    <span class="tok-fn">print</span>(claim.text, claim.verdict, claim.sources)
+<span class="tok-com"># a named failure cell — not a yes/no flag</span>
+<span class="tok-fn">print</span>(result.diagnosis.failure_cell.value)     <span class="tok-com"># → 'incomplete_ungrounded'</span>
 
-<span class="tok-com"># auto-fix anything not supported by the evidence</span>
-clean_answer <span class="tok-kw">=</span> report.<span class="tok-fn">correct</span>()</pre>
+<span class="tok-com"># per-claim faithfulness, plus the one fix to apply next</span>
+<span class="tok-fn">print</span>(result.faithfulness[<span class="tok-num">0</span>].verdict.value)    <span class="tok-com"># → 'N'</span>
+<span class="tok-fn">print</span>(result.suggestion.actions[<span class="tok-num">0</span>])</pre>
+          </div>
+          <div class="ig-pane" id="igpane-json" data-pane="json" role="tabpanel" aria-labelledby="igtab-json" tabindex="0">
+<pre class="ig-gutter" aria-hidden="true">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18</pre>
+<pre class="ig-src">{
+  <span class="tok-fn">"diagnosis"</span>: {
+    <span class="tok-fn">"failure_cell"</span>: <span class="tok-str">"incomplete_ungrounded"</span>,
+    <span class="tok-fn">"sufficiency_level"</span>: <span class="tok-str">"low"</span>
+  },
+  <span class="tok-fn">"faithfulness"</span>: [
+    { <span class="tok-fn">"claim_id"</span>: <span class="tok-num">1</span>, <span class="tok-fn">"verdict"</span>: <span class="tok-str">"N"</span>, <span class="tok-fn">"grounding_chunk_ranks"</span>: [] },
+    { <span class="tok-fn">"claim_id"</span>: <span class="tok-num">2</span>, <span class="tok-fn">"verdict"</span>: <span class="tok-str">"Y"</span>, <span class="tok-fn">"grounding_chunk_ranks"</span>: [<span class="tok-num">0</span>] }
+  ],
+  <span class="tok-fn">"suggestion"</span>: {
+    <span class="tok-fn">"title"</span>: <span class="tok-str">"Worst-case failure"</span>,
+    <span class="tok-fn">"actions"</span>: [
+      <span class="tok-str">"Fix retrieval first: bump K, audit the corpus, re-chunk, re-embed."</span>,
+      <span class="tok-str">"Add an abort path: if Sufficiency is low at eval time, return a refusal instead of the generated answer."</span>,
+      <span class="tok-str">"Tighten the generator prompt to refuse when context is thin."</span>
+    ]
+  }
+}</pre>
+          </div>
+        </div>
 
-      <pre data-pane="ts"><span class="tok-kw">import</span> { <span class="tok-cls">Veralith</span> } <span class="tok-kw">from</span> <span class="tok-str">"veralith"</span>;
-
-<span class="tok-kw">const</span> vera <span class="tok-kw">=</span> <span class="tok-kw">new</span> <span class="tok-cls">Veralith</span>();
-
-<span class="tok-kw">const</span> report <span class="tok-kw">=</span> <span class="tok-kw">await</span> vera.<span class="tok-fn">verify</span>({
-  answer,
-  context: retrievedChunks,
-  mode: <span class="tok-str">"realtime"</span>,
-});
-
-report.claims
-  .<span class="tok-fn">filter</span>((c) <span class="tok-kw">=></span> c.verdict <span class="tok-kw">!==</span> <span class="tok-str">"supported"</span>)
-  .<span class="tok-fn">forEach</span>((c) <span class="tok-kw">=></span> <span class="tok-fn">console</span>.warn(c.text, c.sources));
-
-<span class="tok-kw">const</span> cleanAnswer <span class="tok-kw">=</span> <span class="tok-kw">await</span> report.<span class="tok-fn">correct</span>();</pre>
-
-      <pre data-pane="curl"><span class="tok-fn">curl</span> https://api.veralith.com/v1/verify \
-  -H <span class="tok-str">"Authorization: Bearer $VERALITH_KEY"</span> \
-  -H <span class="tok-str">"Content-Type: application/json"</span> \
-  -d <span class="tok-str">'{
-    "answer": "Northwind reported $4.2B ...",
-    "context": ["chunk-1 ...", "chunk-2 ..."],
-    "mode": "realtime"
-  }'</span></pre>
+        <aside class="ig-aside">
+          <div class="ig-note"><h4>Wrap</h4><p>One import, any RAG stack — or the <span class="ig-mono">@veralith.trace</span> decorator for zero reshape.</p></div>
+          <div class="ig-note"><h4>Evaluate</h4><p>Query + context + response in a single call. Runs on your keys, ~5 LLM calls per trace.</p></div>
+          <div class="ig-note"><h4>Diagnose</h4><p>A named failure cell, per-claim faithfulness, and a ranked, concrete fix.</p></div>
+        </aside>
+      </div>
     </div>
+
+    <p class="ig-foot reveal">MIT-licensed core · bring your own keys · also via the <span class="ig-mono">@veralith.trace</span> decorator, the LangChain adapter, or the hosted REST API.</p>
   </div>
 </section>
 
@@ -886,6 +1894,8 @@ report.claims
     </div>
   </div>
 </section>
+
+<div class="finale-ground" aria-hidden="true"><img src="/finale-ground.jpg" alt="" loading="lazy" decoding="async" width="2400" height="1340"></div>
 
 <!-- ====================== FOOTER ====================== -->
 <footer>
@@ -979,49 +1989,50 @@ document.querySelectorAll('.reveal').forEach(el => {
 /* ============================================================
    3. Code tabs
    ============================================================ */
-const tabs = document.querySelectorAll('.code-tabs button');
-const panes = document.querySelectorAll('.codecard pre');
-tabs.forEach(btn => btn.addEventListener('click', () => {
-  tabs.forEach(b => b.classList.remove('active'));
-  panes.forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelector(`pre[data-pane="${btn.dataset.tab}"]`).classList.add('active');
-}));
-
-/* ============================================================
-   4. Live claim-verification loop (the hero centerpiece)
-   - sweeps a scan line, then resolves each claim's verdict
-   - pauses when off-screen; static final state for reduced motion
-   ============================================================ */
-const panel  = document.getElementById('panel');
-const answer = document.getElementById('answer');
-const claims = [...answer.querySelectorAll('.claim')];
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-function paint(claim){ claim.classList.add(claim.dataset.status); }   // colour + verdict tag
-function resetClaims(){ claims.forEach(c => c.className = 'claim'); panel.classList.remove('scanning'); answer.classList.remove('resolved'); }
-
-let timers = [];
-function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
-
-function runCycle(){
-  resetClaims();
-  panel.classList.add('scanning');                 // start scan-line sweep
-  // resolve each claim sequentially as the line passes over it
-  claims.forEach((c, i) => timers.push(setTimeout(() => paint(c), 600 + i * 430)));
-  timers.push(setTimeout(() => answer.classList.add('resolved'), 600 + claims.length * 430)); // reveal tags + diagnosis
-  timers.push(setTimeout(runCycle, 6200));          // loop
+const tabs = [...document.querySelectorAll('.ig-files button')];
+const panes = document.querySelectorAll('.ig-pane');
+const langName = document.querySelector('.ig-lang .lng-name');
+const langOf = { py: 'python', json: 'json' };
+function selectTab(btn, focus) {
+  const key = btn.dataset.tab;
+  tabs.forEach(b => {
+    const on = b === btn;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+    b.tabIndex = on ? 0 : -1;            // roving tabindex
+  });
+  panes.forEach(p => p.classList.toggle('active', p.dataset.pane === key));
+  if (langName) langName.textContent = langOf[key] || key;
+  if (focus) btn.focus();
 }
+tabs.forEach((btn, i) => {
+  btn.addEventListener('click', () => selectTab(btn));
+  btn.addEventListener('keydown', e => {                // arrow-key navigation
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const next = (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+    selectTab(tabs[next], true);
+  });
+});
 
-let running = false;
-const playIO = new IntersectionObserver(([en]) => {
-  if (reduce){                                      // static, fully-resolved state
-    claims.forEach(paint); answer.classList.add('resolved'); return;
-  }
-  if (en.isIntersecting && !running){ running = true; runCycle(); }
-  else if (!en.isIntersecting && running){ running = false; clearTimers(); }
-}, { threshold:0.4 });
-playIO.observe(panel);
+const copyBtn = document.querySelector('.ig-copy');
+if (copyBtn) {
+  copyBtn.addEventListener('click', async () => {
+    const src = document.querySelector('.ig-pane.active .ig-src');
+    if (!src) return;
+    try {
+      await navigator.clipboard.writeText(src.innerText.trim());
+      copyBtn.textContent = 'copied';
+      copyBtn.setAttribute('aria-label', 'Code copied to clipboard');
+      copyBtn.classList.add('copied');
+    } catch { /* clipboard blocked — no-op */ }
+    setTimeout(() => {
+      copyBtn.textContent = 'copy';
+      copyBtn.setAttribute('aria-label', 'Copy code');
+      copyBtn.classList.remove('copied');
+    }, 1400);
+  });
+}
 </script>
 
 <!-- ============================================================
@@ -1038,7 +2049,7 @@ playIO.observe(panel);
 (() => {
   "use strict";
 
-  const stage  = document.getElementById("hero");
+  const stage  = document.getElementById("branchband");
   const canvas = document.getElementById("mossCanvas");
   if (!stage || !canvas) return;
   const ctx = canvas.getContext("2d");
@@ -1056,6 +2067,35 @@ playIO.observe(panel);
   const mossKeyed = document.createElement("canvas");
   let imgReady = 0;
   const IMG_AR = 2752 / 1536;    // native aspect of both layers
+
+  // --- pixel-art styling: downscale each keyed layer, then map every pixel to a
+  //     tight on-brand palette by brightness (driftwood for the bare wood, brand
+  //     sage greens for the moss) and draw it back up nearest-neighbour. ---
+  const PIX_W = 170;             // pixel-art source width in px (lower = chunkier)
+  const WOOD_RAMP = [[40, 40, 40], [82, 82, 82], [132, 132, 132], [190, 190, 190]]; // greyscale, dark -> light
+  const MOSS_RAMP = [[58, 90, 64], [88, 129, 87], [163, 177, 138], [218, 215, 205]]; // brand sage 3A5A40 → DAD7CD
+  let barePix = null, mossPix = null;
+  function pixelate(src) {
+    const pw = Math.max(1, PIX_W);
+    const ph = Math.max(1, Math.round(PIX_W / IMG_AR));
+    const c = document.createElement("canvas");
+    c.width = pw; c.height = ph;
+    const cx = c.getContext("2d");
+    cx.imageSmoothingEnabled = true;            // average colours while downscaling
+    cx.drawImage(src, 0, 0, pw, ph);
+    const id = cx.getImageData(0, 0, pw, ph);
+    const d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 96) { d[i + 3] = 0; continue; }   // hard pixel edge (no soft alpha)
+      const r = d[i], g = d[i + 1], b = d[i + 2];
+      const lum = r * 0.299 + g * 0.587 + b * 0.114;
+      const ramp = (g > r + 8 && g > b + 8) ? MOSS_RAMP : WOOD_RAMP;   // moss vs bare wood
+      const px = ramp[Math.min(ramp.length - 1, Math.floor((lum / 256) * ramp.length))];
+      d[i] = px[0]; d[i + 1] = px[1]; d[i + 2] = px[2]; d[i + 3] = 255;
+    }
+    cx.putImageData(id, 0, 0);
+    return c;
+  }
 
   function keyWhite(img, dst) {
     dst.width = img.naturalWidth;
@@ -1104,7 +2144,12 @@ playIO.observe(panel);
   const onLoad = (img, dst) => {
     keyWhite(img, dst);
     imgReady++;
-    if (imgReady >= 2) { buildSample(); buildBranchMask(); }
+    if (imgReady >= 2) {
+      barePix = pixelate(bareKeyed);
+      mossPix = pixelate(mossKeyed);
+      buildSample();
+      buildBranchMask();
+    }
   };
   bareImg.onload = () => onLoad(bareImg, bareKeyed);
   mossImg.onload = () => onLoad(mossImg, mossKeyed);
@@ -1121,11 +2166,15 @@ playIO.observe(panel);
   const smooth = { x: -9999, y: -9999 };
   const prev   = { x: -9999, y: -9999 };
   let active = false;
-  let brushR = 78;
-  const LERP = 0.15;
-  const BRUSH_MIN = 78;
-  const BRUSH_MAX = 170;
+  let brushR = 130;
+  const LERP = 0.45;            // snappier follow — less lag/trail behind the cursor
+  const BRUSH_MIN = 130;        // bigger reveal patch
+  const BRUSH_MAX = 280;
   const DECAY = 0.03;           // destination-out alpha / frame (~ *0.97)
+
+  // last cursor position in viewport coords, re-projected into hero space every
+  // frame so the reveal stays under the cursor while the page scrolls.
+  let clientX = -9999, clientY = -9999, havePointer = false;
 
   const noHover = window.matchMedia("(hover: none), (pointer: coarse)").matches;
 
@@ -1167,10 +2216,9 @@ playIO.observe(panel);
   }
 
   function setTarget(e) {
-    const r = stage.getBoundingClientRect();
-    target.x = e.clientX - r.left;
-    target.y = e.clientY - r.top;
-    if (smooth.x < -9000) { smooth.x = target.x; smooth.y = target.y; }
+    clientX = e.clientX;
+    clientY = e.clientY;
+    havePointer = true;
     active = true;
   }
   stage.addEventListener("pointermove", setTarget);
@@ -1182,7 +2230,7 @@ playIO.observe(panel);
   // For each hero text element we drop in an absolutely-positioned clone in the
   // cream brand colour, then clip that clone to the branch silhouette with a CSS
   // mask. Base text stays dark green; only the branch-overlapping glyphs flip.
-  const invTargets = [stage.querySelector(".headline"), stage.querySelector(".subhead")].filter(Boolean);
+  const invTargets = [];   // branch band has no overlaid text — cream inversion disabled
   const creamCopies = [];
   for (const el of invTargets) {
     const copy = document.createElement("span");
@@ -1200,25 +2248,46 @@ playIO.observe(panel);
   // cream only sits on the actually-visible branch; text elsewhere stays dark
   // green and readable (no cream-on-white over un-revealed grass).
   function buildBranchMask() {
-    if (imgReady < 2 || !W || !H) return;
+    if (imgReady < 2 || !W || !H || !creamCopies.length) return;   // no text over branch -> no cream mask
     const mc = document.createElement("canvas");
     mc.width = Math.max(1, Math.round(W));
     mc.height = Math.max(1, Math.round(H));
     const mx = mc.getContext("2d");
     mx.clearRect(0, 0, mc.width, mc.height);
-    // mask = the visible bare-branch silhouette, matched precisely (two light
-    // draws firm up thin/translucent pixels without expanding onto white, so a
-    // glyph's descender is cream where it sits on the branch and green where it
-    // crosses off onto white — no invisible cream-on-white gap).
-    mx.filter = "blur(0.7px)";
-    mx.drawImage(bareKeyed, rect.x, rect.y, rect.w, rect.h);
-    mx.drawImage(bareKeyed, rect.x, rect.y, rect.w, rect.h);
-    mx.filter = "none";
-    mx.globalCompositeOperation = "source-in";                 // recolour silhouette -> white
-    mx.fillStyle = "#fff";
-    mx.fillRect(0, 0, mc.width, mc.height);
-    mx.globalCompositeOperation = "source-over";
-    branchMaskUrl = mc.toDataURL();
+    // mask = the pixelated bare-branch silhouette, drawn nearest-neighbour so the
+    // cream/green colour split steps along the same chunky pixel edge as the art.
+    mx.imageSmoothingEnabled = false;
+    mx.drawImage(barePix, rect.x, rect.y, rect.w, rect.h);
+    // Build a CLEAN solid silhouette of the branch *body* for the cream /
+    // light-green overlay. A naive per-pixel threshold leaves a chunky mosaic
+    // punched across the glyphs (the branch's interspersed light pixels show as
+    // holes). Instead: weight each pixel by darkness, BLUR to merge the scattered
+    // dark/light chunks into solid regions, then re-threshold to a hard edge.
+    // The solid trunk survives; the faint outer fringe blurs away and is dropped,
+    // so anything not solidly over the branch stays dark green (--accent).
+    const md = mx.getImageData(0, 0, mc.width, mc.height);
+    const mp = md.data;
+    for (let i = 0; i < mp.length; i += 4) {
+      const dark = mp[i + 3] > 10 ? (255 - mp[i]) : 0;     // darkness -> weight
+      mp[i] = mp[i + 1] = mp[i + 2] = 255; mp[i + 3] = dark;
+    }
+    mx.putImageData(md, 0, 0);
+    // blur on a scratch canvas, then snap back to a clean solid mask
+    const blurCv = document.createElement("canvas");
+    blurCv.width = mc.width; blurCv.height = mc.height;
+    const bx = blurCv.getContext("2d");
+    bx.filter = "blur(9px)";
+    bx.drawImage(mc, 0, 0);
+    bx.filter = "none";
+    const bd = bx.getImageData(0, 0, mc.width, mc.height);
+    const bp = bd.data;
+    const MASK_THRESH = 85;   // post-blur alpha cutoff: in = cream, out = dark green
+    for (let i = 0; i < bp.length; i += 4) {
+      bp[i] = bp[i + 1] = bp[i + 2] = 255;
+      bp[i + 3] = bp[i + 3] >= MASK_THRESH ? 255 : 0;
+    }
+    bx.putImageData(bd, 0, 0);
+    branchMaskUrl = blurCv.toDataURL();
     for (const copy of creamCopies) {
       copy.style.webkitMaskImage = "url(" + branchMaskUrl + ")";
       copy.style.maskImage = "url(" + branchMaskUrl + ")";
@@ -1255,9 +2324,15 @@ playIO.observe(panel);
       const s = Math.sin(now * 0.00035) * 0.5 + 0.5;
       target.x = rect.x + (0.04 + s * 0.92) * rect.w;
       target.y = rect.y + rect.h * (0.40 + 0.08 * Math.sin(now * 0.00035 * 2.0));
-      if (smooth.x < -9000) { smooth.x = target.x; smooth.y = target.y; }
       active = true;
+    } else if (havePointer) {
+      // re-project the cursor into hero space from the LIVE rect, so the reveal
+      // tracks the cursor even when the page scrolls (no pointermove fires then).
+      const r = stage.getBoundingClientRect();
+      target.x = clientX - r.left;
+      target.y = clientY - r.top;
     }
+    if (smooth.x < -9000 && (havePointer || noHover)) { smooth.x = target.x; smooth.y = target.y; }
 
     if (smooth.x > -9000) {
       smooth.x += (target.x - smooth.x) * LERP * dt;
@@ -1276,7 +2351,7 @@ playIO.observe(panel);
     const vx = smooth.x - prev.x, vy = smooth.y - prev.y;
     const speed = Math.hypot(vx, vy);
     const targetR = Math.min(BRUSH_MAX, BRUSH_MIN + speed * 1.5);
-    brushR += (targetR - brushR) * 0.04 * dt;
+    brushR += (targetR - brushR) * 0.08 * dt;
 
     if (active && smooth.x > -9000) {
       maskCtx.globalCompositeOperation = "lighter";
@@ -1329,16 +2404,18 @@ playIO.observe(panel);
     // composite reveal: mossLayer ∩ revealBuffer
     tmpCtx.globalCompositeOperation = "source-over";
     tmpCtx.clearRect(0, 0, W, H);
-    if (imgReady >= 2) tmpCtx.drawImage(mossKeyed, rect.x, rect.y, rect.w, rect.h);
+    tmpCtx.imageSmoothingEnabled = false;                                          // chunky moss pixels
+    if (imgReady >= 2) tmpCtx.drawImage(mossPix, rect.x, rect.y, rect.w, rect.h);
     tmpCtx.globalCompositeOperation = "destination-in";
-    tmpCtx.imageSmoothingEnabled = true;
+    tmpCtx.imageSmoothingEnabled = true;                                           // soft reveal edge
     tmpCtx.drawImage(maskCv, 0, 0, W, H);
     tmpCtx.globalCompositeOperation = "source-over";
 
     // paint frame — transparent bg so it overlays the white hero
     ctx.clearRect(0, 0, W, H);
-    if (imgReady >= 2) ctx.drawImage(bareKeyed, rect.x, rect.y, rect.w, rect.h);   // Layer A base
-    ctx.drawImage(tmpCv, 0, 0, W, H);                                              // Layer B reveal
+    ctx.imageSmoothingEnabled = false;                                            // chunky branch pixels
+    if (imgReady >= 2) ctx.drawImage(barePix, rect.x, rect.y, rect.w, rect.h);    // Layer A base
+    ctx.drawImage(tmpCv, 0, 0, W, H);                                             // Layer B reveal
 
     requestAnimationFrame(frame);
   }
@@ -1349,6 +2426,223 @@ playIO.observe(panel);
   window.addEventListener("resize", resize);
   resize();
   requestAnimationFrame(frame);
+})();
+</script>
+
+<!-- ============================================================
+     Strata background — topographic contour survey behind the hero. Faint
+     contours at rest; a soft radial pool follows the cursor (darkens in this
+     light theme). Auto-mounts on <canvas data-veralith-strata>.
+     ============================================================ -->
+<script>
+(function () {
+  'use strict';
+
+  var SAGE  = [163, 177, 138];   // #A3B18A — accent, lights up in dark theme
+  var STONE = [90, 96, 86];      // resting contour grey
+  var INK   = [22, 26, 20];      // deep shade the pool darkens toward in light theme
+
+  var reduce = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+
+  function fit(canvas) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = canvas.getBoundingClientRect();
+    var w = Math.max(1, Math.round(r.width));
+    var h = Math.max(1, Math.round(r.height));
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvas.__w = w; canvas.__h = h;
+    return ctx;
+  }
+
+  function noise(x, y) {
+    return Math.sin(x * 0.9 + 1.7) * Math.cos(y * 1.1 - 0.4)
+      + 0.5 * Math.sin(x * 2.1 - y * 1.3)
+      + 0.5 * Math.cos(y * 0.5 + x * 0.3);
+  }
+
+  function mount(canvas, opts) {
+    opts = opts || {};
+    var inten = opts.intensity != null ? opts.intensity : 1;
+    var R = opts.radius != null ? opts.radius : 150;
+    var step = opts.step || 4;
+    var levels = 9;
+
+    var ctx = fit(canvas);
+    var raf, t = 0;
+    var px = -1e4, py = -1e4, tx = -1e4, ty = -1e4, active = false, cX = -1e4, cY = -1e4, havePtr = false;
+
+    function host() { return canvas.parentElement || canvas; }
+
+    function pointer(e) {
+      cX = (e.touches ? e.touches[0].clientX : e.clientX);
+      cY = (e.touches ? e.touches[0].clientY : e.clientY);
+      havePtr = true;
+      var r = canvas.getBoundingClientRect();
+      tx = cX - r.left; ty = cY - r.top;
+      if (!active) { active = true; px = tx; py = ty; }
+    }
+    function leave() { active = false; }
+
+    function bind() {
+      var p = host();
+      p.addEventListener('mousemove', pointer);
+      p.addEventListener('mouseleave', leave);
+      p.addEventListener('touchmove', pointer, { passive: true });
+      p.addEventListener('touchend', leave);
+    }
+    function unbind() {
+      var p = host();
+      p.removeEventListener('mousemove', pointer);
+      p.removeEventListener('mouseleave', leave);
+      p.removeEventListener('touchmove', pointer);
+      p.removeEventListener('touchend', leave);
+    }
+    bind();
+
+    function frame() {
+      var w = canvas.__w, h = canvas.__h;
+      if (havePtr) {                                  // re-project the cursor each frame so the
+        var rr = canvas.getBoundingClientRect();      // pool tracks it while the page scrolls
+        tx = cX - rr.left; ty = cY - rr.top;
+      }
+      ctx.clearRect(0, 0, w, h);
+      px += (tx - px) * 0.16; py += (ty - py) * 0.16;
+      var isLight = document.body.dataset.theme === 'light';
+
+      for (var gy = 0; gy < h; gy += step) {
+        for (var gx = 0; gx < w; gx += step) {
+          var n = noise(gx / 90, gy / 90 + t * 0.0008);
+          var band = (n * levels) % 1;
+          var edge = Math.abs(band) < 0.06 || Math.abs(band) > 0.94;
+          if (!edge) continue;
+
+          var near = active ? Math.max(0, 1 - Math.hypot(gx - px, gy - py) / R) : 0;
+          var col, a;
+          if (isLight) {
+            col = near > 0.02 ? INK : STONE;
+            a = (near > 0.02 ? 0.10 + near * 0.45 : 0.13) * inten;
+          } else {
+            col = near > 0.02 ? SAGE : STONE;
+            a = (near > 0.02 ? 0.08 + near * 0.42 : 0.05) * inten;
+          }
+          ctx.fillStyle = rgba(col, a);
+          ctx.fillRect(gx, gy, step, step);
+        }
+      }
+      t += reduce ? 0 : 1;
+      if (!reduce) raf = requestAnimationFrame(frame);
+    }
+    frame();
+
+    var rt;
+    function onResize() {
+      clearTimeout(rt);
+      rt = setTimeout(function () { ctx = fit(canvas); if (reduce) frame(); }, 160);
+    }
+    window.addEventListener('resize', onResize);
+
+    return { stop: function () { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); unbind(); } };
+  }
+
+  function auto(root) {
+    var nodes = (root || document).querySelectorAll('canvas[data-veralith-strata]');
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].__strata) continue;
+      nodes[i].__strata = mount(nodes[i], {
+        intensity: parseFloat(nodes[i].dataset.intensity || '1'),
+        radius: parseFloat(nodes[i].dataset.radius || '150')
+      });
+    }
+  }
+
+  window.VeralithStrata = { mount: mount, auto: auto };
+
+  if (document.readyState !== 'loading') auto();
+  else document.addEventListener('DOMContentLoaded', function () { auto(); });
+})();
+</script>
+
+<!-- ============================================================
+     Ledger "How it works": the black rail turns green from left to right as the
+     section scrolls into view; each node greens as the colour reaches it.
+     Gradual; tracks scroll in both directions. Reduced motion shows it fully green.
+     ============================================================ -->
+<script>
+(() => {
+  const row = document.querySelector(".ledger-row");
+  if (!row) return;
+  const leds = [...row.querySelectorAll(".led")];
+  const at = [0.02, 0.38, 0.72];   // colour fraction at which each node greens
+  const light = (p) => {
+    row.style.setProperty("--p", p.toFixed(3));
+    leds.forEach((led, i) => led.classList.toggle("on", p >= at[i]));   // greens / un-greens both ways
+  };
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { light(1); return; }
+  const update = () => {
+    const r = row.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    let p = (vh * 0.88 - r.top) / (vh * 0.72);   // gradual; tracks scroll in BOTH directions
+    p = Math.max(0, Math.min(1, p));
+    light(p);
+  };
+  window.addEventListener("scroll", update, { passive: true });
+  window.addEventListener("resize", update);
+  update();
+})();
+</script>
+
+<!-- ============================================================
+     Tagline typewriter-on-scroll: the subhead "types" itself out as it scrolls
+     up the page, fully revealed by the time it sits ~1/3 up from the bottom of
+     the screen. Monotonic (never un-types) and quick — not a slow crawl.
+     ============================================================ -->
+<script>
+(() => {
+  const el = document.getElementById("tagline");
+  if (!el) return;
+
+  // split into per-character spans (preserves spaces/layout)
+  const full = el.textContent;
+  el.textContent = "";
+  const chars = [];
+  for (const ch of full) {
+    const s = document.createElement("span");
+    s.textContent = ch;
+    el.appendChild(s);
+    chars.push(s);
+  }
+
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    for (const s of chars) s.style.opacity = "1";
+    return;
+  }
+  for (const s of chars) s.style.opacity = "0";
+
+  let revealed = 0, queued = false;
+  function update() {
+    queued = false;
+    const r = el.getBoundingClientRect();
+    const vh = window.innerHeight || 1;
+    // 0 when the line's top is at the bottom of the screen; 1 when it reaches
+    // ~1/3 up from the bottom (top === vh*2/3).
+    const p = Math.max(0, Math.min(1, (vh - r.top) / (vh / 3)));
+    const n = Math.round(p * chars.length);
+    if (n > revealed) {                       // monotonic — only ever reveal more
+      for (let i = revealed; i < n; i++) chars[i].style.opacity = "1";
+      revealed = n;
+    }
+  }
+  function onScroll() { if (!queued) { queued = true; requestAnimationFrame(update); } }
+  addEventListener("scroll", onScroll, { passive: true });
+  addEventListener("resize", onScroll);
+  window.addEventListener("load", update);
+  update();
 })();
 </script>
 </body>
