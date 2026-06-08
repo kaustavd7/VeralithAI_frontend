@@ -627,7 +627,7 @@ h2 .accent{ font-family:var(--serif); font-style:italic; font-weight:300; color:
 .play .blob{ position:absolute; opacity:.4; }
 .play h2{ color:#F2F4EA; } .play .lead{ color:#B7C49B; }
 .play-inner{ position:relative; z-index:1; display:flex; align-items:flex-end; justify-content:space-between; gap:2rem; flex-wrap:wrap; }
-.btn-leaf{ background:var(--leaf); color:var(--obsidian); }
+.btn-leaf{ background:var(--accent); color:#F2F4EA; }
 .btn-leaf:hover{ transform:translateY(-2px); box-shadow:0 14px 30px -12px rgba(166,210,78,.6); }
 .btn-line{ border:1.5px solid rgba(255,255,255,.25); color:#EAEEDD; }
 .btn-line:hover{ border-color:#EAEEDD; transform:translateY(-2px); }
@@ -820,7 +820,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
     <nav class="nav-links" aria-label="Primary">
       <a href="#features">Product</a>
       <a href="#pricing">Pricing</a>
-      <a href="#integrate">Docs</a>
+      <a href="/docs.html">Docs</a>
       <a href="#playground">Playground</a>
     </nav>
 
@@ -833,7 +833,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
     </div>
   </div>
   <div class="wrap mobile-menu" id="mobileMenu">
-    <a href="#features">Product</a><a href="#pricing">Pricing</a><a href="#integrate">Docs</a><a href="#playground">Playground</a><a href="https://app.veralithai.com/login">Log in</a><a href="https://app.veralithai.com/login?mode=signup">Start free</a>
+    <a href="#features">Product</a><a href="#pricing">Pricing</a><a href="/docs.html">Docs</a><a href="#playground">Playground</a><a href="https://app.veralithai.com/login">Log in</a><a href="https://app.veralithai.com/login?mode=signup">Start free</a>
   </div>
 </header>
 
@@ -922,10 +922,12 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
      fades in. Adapted from the design's green palette to greyscale + 1 accent. -->
 <style id="scrolltear-style">
   .scrolltear{ --st-paper:#fafafa; --st-line:rgba(38,48,26,.10); --st-ghost:#9a9a9a; --st-bg:#f2f2ef;
-    position:relative; background:var(--st-bg); color:var(--ink); }   /* tinted so the light cards + their shadows read */
-  /* the outro line fades the tint into the page/hero bg below */
-  .st-spacer{ position:relative; min-height:42vh; display:flex; align-items:center; justify-content:center; padding:5vh 8vw; text-align:center;
-    background:linear-gradient(180deg, var(--st-bg) 0%, var(--bg) 72%); }
+    position:relative; background:var(--bg); color:var(--ink); }   /* hero/page white — continuous with the page; cards read via border + shadow */
+  /* outro sits on the same page bg now — no grey island to fade out of */
+  /* generous clean strips of bare page bg above + below the outro line, so the
+     background reads as one continuous canvas with the heading layered on top */
+  .st-spacer{ position:relative; min-height:62vh; display:flex; align-items:center; justify-content:center; padding:18vh 8vw; text-align:center;
+    background:transparent; }
   .st-kicker{ font-family:var(--mono); font-size:12px; letter-spacing:.24em; text-transform:uppercase; color:var(--moss); }
   .st-spacer h2{ font-size:clamp(34px,6vw,72px); font-weight:600; letter-spacing:-.03em; line-height:1.02; margin-top:18px; max-width:20ch; color:var(--ink); }
   .st-spacer h2 em, .st-lead h2 em{ font-style:italic; font-weight:300; color:var(--moss); }
@@ -933,8 +935,11 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .st-cue{ position:absolute; bottom:34px; left:50%; transform:translateX(-50%); font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--st-ghost); display:flex; flex-direction:column; align-items:center; gap:8px; }
   .st-cue i{ width:1px; height:28px; background:linear-gradient(var(--st-ghost), transparent); }
 
-  .st-scene{ position:relative; height:200vh; }
-  .st-stage{ position:sticky; top:0; height:100vh; overflow:hidden; background:var(--st-bg); }
+  .st-scene{ position:relative; height:260vh; }   /* taller = more scroll distance, so the cards emerge slower */
+  /* overflow visible + plain white (no tinted aura) so card drop-shadows fade out
+     smoothly into the page with NO hard clip line; the page film-grain still applies.
+     horizontal runaway is already contained by body{ overflow-x:hidden } */
+  .st-stage{ position:sticky; top:0; height:100vh; overflow:visible; background:var(--bg); }
 
   .st-cloud{ position:absolute; inset:0; z-index:1; pointer-events:none; }
   .st-tok{ position:absolute; left:0; top:0; display:inline-flex; align-items:center; gap:6px;
@@ -951,10 +956,18 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .st-scatter{ position:absolute; inset:0; z-index:2; pointer-events:none; }
   .st-g{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
     border-radius:14px; overflow:hidden; background:var(--st-paper);
-    border:1px solid var(--st-line); box-shadow:0 1px 0 rgba(38,48,26,.03), 0 30px 60px -42px rgba(38,48,26,.5);
+    border:2.5px solid rgba(38,48,26,.42);                     /* thicker, bolder edge so cards read on the light bg */
+    box-shadow:0 1px 0 rgba(38,48,26,.05),
+               0 5px 14px -6px rgba(38,48,26,.22),             /* close contact shadow */
+               0 26px 54px -28px rgba(38,48,26,.55);           /* deep drop — visible, no longer clipped */
     will-change:left,top,transform,opacity; }
   .st-g img{ display:block; width:100%; height:auto; opacity:.94; filter:grayscale(1); }   /* greyscale to match the theme */
   .st-g .cap{ position:absolute; left:12px; bottom:10px; font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--st-ghost); background:color-mix(in srgb,var(--st-paper) 80%,transparent); padding:2px 7px; border-radius:5px; }
+
+  /* "cooking" particle field — a canvas of green/grey bubbles + faint connecting
+     lines that drift (alive), then stream into the centre as the cards materialise.
+     mix-blend multiply so overlaps deepen, matching the reference. Driven by draw(). */
+  .st-cook{ position:absolute; inset:0; width:100%; height:100%; z-index:3; pointer-events:none; mix-blend-mode:multiply; }
 
   .st-resolve{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:6; text-align:center; width:min(440px,80vw); opacity:0; will-change:opacity,transform; }
   .st-resolve h2{ font-size:clamp(30px,3.8vw,46px); font-weight:600; letter-spacing:-.025em; line-height:1.06; margin-top:16px; color:var(--ink); }
@@ -964,7 +977,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .st-lead{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:5; text-align:center; width:min(520px,80vw); will-change:opacity,transform; }
   /* soft backdrop so the floating tokens don't bleed through the lead text */
   .st-lead::before{ content:""; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:165%; height:320%; z-index:-1; pointer-events:none;
-    background:radial-gradient(50% 50% at 50% 50%, var(--st-bg) 52%, rgba(242,242,239,0) 82%); }
+    background:radial-gradient(50% 50% at 50% 50%, var(--bg) 52%, rgba(255,255,255,0) 82%); }
   .st-lead h2{ font-size:clamp(24px,3vw,36px); font-weight:600; letter-spacing:-.02em; line-height:1.1; margin-top:12px; color:var(--ink); }
 
   @media (max-width:760px){
@@ -1058,6 +1071,112 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 .gg2,.gg4{ container-type:inline-size; }
 .gg3{ container-type:inline-size; font-size:clamp(7px,2.8cqi,10.5px); }   /* scale header+legend to card so the stat / legend don't clip */
 .st-g > [class^="gg"]{ width:100%; }
+</style>
+<style id="responsive-overrides">
+/* =========================================================================
+   RESPONSIVE PASS — unified scale: <=900 tablet · <=600 phone · <=400 small
+   Placed last in source so these win over earlier equal-specificity rules.
+   ========================================================================= */
+
+/* layout-correctness, all widths: keep the finale's animated blobs inside the box */
+.finale{ overflow:hidden; }
+
+/* global safety net: no media or wide block can ever exceed the viewport width
+   (the body has overflow-x:hidden, but that *clips* — these prevent the overflow
+   in the first place so content isn't silently cut off on small screens) */
+img, svg, canvas, video, iframe, table, pre{ max-width:100%; }
+
+/* ---- <=1080 : pull the scroll-tear edge cards in so they don't clip on small laptops ---- */
+@media (max-width:1080px){
+  .st-g.st-g1{ width:380px !important; }
+  .st-g.st-g2{ width:300px !important; }
+  .st-g.st-g4{ width:270px !important; }
+}
+
+/* ---- <=900 : tablet ---- */
+@media (max-width:900px){
+  /* hero: the big payoff line MUST wrap (not clip) from tablet down. It is
+     white-space:nowrap by default and used to only un-wrap at <=600, so it was
+     clipped right across the 600–900 tablet / large-phone range. */
+  .hl-punch{ white-space:normal; font-size:clamp(1.9rem,9vw,4.6rem); }
+  .hl-punch em{ display:block; }
+  .headline{ overflow-wrap:anywhere; }
+
+  /* nav → hamburger early enough to avoid the 681–900 overflow dead-zone */
+  .nav-links, .nav-cta .login, .nav-cta .btn-ghost{ display:none; }
+  .nav-toggle{ display:flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:10px; border:1px solid rgba(38,48,26,.15); margin-left:auto; }
+  .nav-cta{ margin-left:0; }
+  .mobile-menu{ display:none; flex-direction:column; gap:.2rem; padding:0 0 1rem; }
+  .mobile-menu.open{ display:flex; }
+  .mobile-menu a{ padding:.85rem .2rem; border-bottom:1px solid rgba(38,48,26,.07); color:var(--ink-soft); min-height:44px; display:flex; align-items:center; }
+
+  /* any future bento tile without a span class still collapses to full width */
+  .tile{ grid-column:span 6; }
+
+  /* scroll-tear → clean static stacked layout (the viewport-% pinned animation
+     can't fit fixed-px cards below ~1000px, and the 260vh rAF pin is janky on touch) */
+  .st-scene{ height:auto; }
+  .st-stage{ position:static; height:auto; min-height:auto; overflow:visible; padding:7vh 0;
+    display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .st-cloud{ display:none; }
+  .st-scatter{ position:static; inset:auto; order:0; width:100%;
+    display:flex; flex-direction:column; align-items:center; gap:26px; padding:0 5vw; }
+  .st-g{ position:static !important; left:auto !important; top:auto !important;
+    transform:none !important; opacity:1 !important; width:min(92vw,440px) !important; margin:0 auto; }
+  .st-lead{ position:static; transform:none !important; opacity:1 !important; width:min(92vw,520px); margin:0 auto 8px; order:-1; }
+  .st-lead::before{ display:none; }
+  .st-resolve{ position:static; transform:none !important; opacity:1 !important; width:min(92vw,520px); margin:24px auto 0; order:1; }
+}
+
+/* ---- <=600 : phone ---- */
+@media (max-width:600px){
+  /* nav: drop the redundant in-bar CTA (already present in the open menu) */
+  .nav-cta .btn-dark{ display:none; }
+
+  /* hero: tighten the payoff line on phones (wrap already enabled at <=900) */
+  .hl-punch{ font-size:clamp(1.9rem,11vw,4rem); }
+
+  /* tighter side gutters reclaim width on small phones */
+  .wrap{ padding-inline:clamp(1rem,4.5vw,3.5rem); }
+
+  /* scroll-tear outro: cap the tall clean strips on short screens */
+  .st-spacer{ padding:10vh 6vw; min-height:auto; }
+
+  /* features + playground: keep claim-reasoning tooltips inside the viewport */
+  .qr-claim::after,
+  .pg-claim::after{ max-width:min(80vw,240px); left:auto; right:0; }
+
+  /* playground: stack the console + relax inner padding on phones */
+  .pg-trace, .pg-verdict{ padding:1rem 1.05rem; }
+  .pg-tabs{ gap:.4rem; }
+  .pg-tab{ padding:.34rem .7rem; }
+
+  /* integrate: wrap the code toolbar so the copy button stays reachable */
+  .ig-bar{ flex-wrap:wrap; gap:.5rem .6rem; padding:.6rem .8rem; }
+  .ig-lang{ margin-left:0; width:100%; justify-content:flex-end; }
+  .ig-files button{ padding:.6rem .8rem; min-height:40px; display:flex; align-items:center; }
+  .ig-copy{ padding:.55rem .7rem; min-height:40px; display:inline-flex; align-items:center; }
+
+  /* finale rhythm + footer tap targets */
+  .finale{ padding:4.2rem 0; }
+  .foot-col a{ padding:.7rem 0; }
+}
+
+/* ---- <=400 : small phone ---- */
+@media (max-width:400px){
+  .nav-inner{ gap:1rem; }
+  .brand{ font-size:.95rem; letter-spacing:.12em; }
+  .hl-punch{ font-size:clamp(1.6rem,12vw,2.6rem); }
+  .led-num{ font-size:48px; }
+  .kg-b{ grid-template-columns:6.5rem 1fr 1.6rem; gap:.55rem; }
+  .preloader{ overflow:hidden; }
+  .pl-inner{ gap:14vw; padding-left:8vw; }
+}
+
+/* ---- landscape / short viewports: don't let the outro strips overflow ---- */
+@media (max-height:520px){
+  .st-spacer{ padding:8vh 6vw; min-height:auto; }
+}
 </style>
 <section class="scrolltear" id="scrolltear" aria-label="Every answer, pulled apart and checked">
   <!-- pinned scene -->
@@ -1410,6 +1529,8 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 (function () {
   const root = document.getElementById('scrolltear');
   if (!root) return;
+  const mobileScene = () => matchMedia('(max-width: 900px)').matches;
+  if (mobileScene()) return;   /* tablet/phone: scene is a static stacked layout (responsive CSS) — skip the pinned rAF animation */
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const scene = root.querySelector('.st-scene');
   const cloud = root.querySelector('.st-cloud');
@@ -1444,6 +1565,72 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
     toks.push({ el, bx: 6 + rnd() * 88, by: 6 + rnd() * 88, depth, rot: (rnd() - 0.5) * 24, baseOp: 0.32 + depth * 0.6 });
   }
 
+  /* the "cooking" particle field — green/grey bubbles + faint connecting lines on a
+     canvas. They drift while alive, then stream into the centre as the cards
+     materialise. draw() sets cookStrength (visibility) and converge (pull to centre);
+     a rAF loop (only while the scene is on screen) does the continuous drift + lines. */
+  const canvas = document.createElement('canvas');
+  canvas.className = 'st-cook';
+  canvas.setAttribute('aria-hidden', 'true');
+  (root.querySelector('.st-stage') || scene).appendChild(canvas);
+  const cookCtx = canvas.getContext('2d');
+  const COOK_COLORS = [[88,129,87],[111,143,78],[138,153,112],[154,163,154],[95,107,96],[163,177,138]];
+  const parts = [];
+  for (let i = 0; i < 36; i++) {
+    const ang = rnd() * Math.PI * 2, rad = rnd() * 205;
+    parts.push({
+      x: Math.cos(ang) * rad, y: Math.sin(ang) * rad,
+      vx: (rnd() - 0.5) * 1.3, vy: (rnd() - 0.5) * 1.3,
+      r: 2 + rnd() * 10, col: COOK_COLORS[Math.floor(rnd() * COOK_COLORS.length)], a: 0.4 + rnd() * 0.45,
+    });
+  }
+  let cookStrength = 0, converge = 0, rafCook = 0, cdpr = 1;
+  function sizeCook() {
+    const st = canvas.parentNode;
+    cdpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.max(1, Math.round(st.clientWidth * cdpr));
+    canvas.height = Math.max(1, Math.round(st.clientHeight * cdpr));
+  }
+  function cookFrame() {
+    rafCook = requestAnimationFrame(cookFrame);
+    const cw = canvas.width, ch = canvas.height;
+    cookCtx.clearRect(0, 0, cw, ch);
+    if (cookStrength < 0.01) return;
+    const cx = cw / 2, cy = ch / 2, k = cdpr, spread = 1 - converge, pts = [];
+    for (const p of parts) {
+      /* lively wander + a gentle spring toward the centre so the whole cluster
+         stays put (it used to random-walk off to one side over time). */
+      p.vx = (p.vx - p.x * 0.0007 + (rnd() - 0.5) * 0.85) * 0.9;
+      p.vy = (p.vy - p.y * 0.0007 + (rnd() - 0.5) * 0.85) * 0.9;
+      p.x += p.vx; p.y += p.vy;
+      const rr = Math.sqrt(p.x * p.x + p.y * p.y);   // hard bound so nothing drifts out of the cluster
+      if (rr > 230) { p.x = p.x / rr * 230; p.y = p.y / rr * 230; p.vx *= 0.4; p.vy *= 0.4; }
+      pts.push({ x: cx + p.x * spread * k, y: cy + p.y * spread * k, p });
+    }
+    const maxD = 140 * k;
+    for (let i = 0; i < pts.length; i++) {
+      for (let j = i + 1; j < pts.length; j++) {
+        const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y, d = Math.sqrt(dx * dx + dy * dy);
+        if (d < maxD) {
+          cookCtx.strokeStyle = 'rgba(120,132,108,' + ((1 - d / maxD) * 0.24 * cookStrength * spread).toFixed(3) + ')';
+          cookCtx.lineWidth = k;
+          cookCtx.beginPath(); cookCtx.moveTo(pts[i].x, pts[i].y); cookCtx.lineTo(pts[j].x, pts[j].y); cookCtx.stroke();
+        }
+      }
+    }
+    for (const pt of pts) {
+      const p = pt.p, r = Math.max(0.5, p.r * k * (0.45 + 0.55 * cookStrength) * (1 - converge * 0.6));
+      cookCtx.fillStyle = 'rgba(' + p.col[0] + ',' + p.col[1] + ',' + p.col[2] + ',' + (p.a * cookStrength).toFixed(3) + ')';
+      cookCtx.beginPath(); cookCtx.arc(pt.x, pt.y, r, 0, 6.2832); cookCtx.fill();
+    }
+  }
+  sizeCook();
+  new IntersectionObserver((ents) => {
+    const on = ents[0] && ents[0].isIntersecting;
+    if (on && !rafCook && !reduce) { sizeCook(); cookFrame(); }
+    else if (!on && rafCook) { cancelAnimationFrame(rafCook); rafCook = 0; cookCtx.clearRect(0, 0, canvas.width, canvas.height); }
+  }, { threshold: 0 }).observe(root);
+
   function progress() {
     const rect = scene.getBoundingClientRect();
     const total = scene.offsetHeight - window.innerHeight;
@@ -1455,7 +1642,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 
     /* ---- SUCTION (p 0 → 0.40): the Q/C/R tokens are vacuumed into the centre
        and snuffed out, leaving a single point the dashboard is born from. ---- */
-    const suck = easeIn(clamp(p / 0.40, 0, 1));
+    const suck = easeIn(clamp(p / 0.34, 0, 1));
     for (const t of toks) {
       const ox = (t.bx - 50), oy = (t.by - 50);
       const pull = 1 - suck;                                  // spread (1) → centre (0)
@@ -1472,14 +1659,29 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
     leadmid.style.opacity = leadOp.toFixed(3);
     leadmid.style.transform = 'translate(-50%,-50%) scale(' + (1 - (1 - leadOp) * 0.06).toFixed(3) + ')';
 
-    /* ---- the cards EMERGE from that centre point (p 0.42 → ~0.90) ---- */
+    /* ---- "cooking" bridge: the circle cluster swells out of the collapse point
+       as the tokens vanish (~p 0.28), holds through the gap, and dissolves as the
+       first cards rise (~p 0.54) — so the scroll between never feels dead. ---- */
+    const cookIn = clamp((p - 0.27) / 0.09, 0, 1);
+    const cookOut = 1 - clamp((p - 0.40) / 0.10, 0, 1);
+    cookStrength = cookIn * cookOut;                       // visibility of the bubble field
+    converge = clamp((p - 0.40) / 0.11, 0, 1);             // 0 = spread · 1 = streamed into the centre
+
+    /* ---- the cards EMERGE from that centre point (p 0.46 → ~0.99), after the
+       cooking bridge. easeInOut (gentle in + gentle out) so they don't snap out
+       of the point; the slower opacity fade-in removes the old glitchy flash. ---- */
     graphs.forEach((g) => {
       const rx = +g.dataset.x, ry = +g.dataset.y, rot = +g.dataset.rot, delay = +g.dataset.delay;
-      const gp = easeOut(clamp((p - 0.42 - delay * 0.5) / 0.34, 0, 1));
+      /* start as the bubbles converge (~0.42) so there's no white gap between the
+         collapse and the cards. opacity rides the LINEAR progress (visible fast),
+         while position + blur ride easeInOut so the motion still feels smooth. */
+      const lin = clamp((p - 0.42 - delay * 0.34) / 0.46, 0, 1);
+      const gp = easeInOut(lin);
       g.style.left = (50 + (rx - 50) * gp) + '%';
       g.style.top = (50 + (ry - 50) * gp) + '%';
-      g.style.transform = 'translate(-50%,-50%) rotate(' + (rot * gp).toFixed(2) + 'deg) scale(' + (0.4 + 0.6 * gp).toFixed(3) + ')';
-      g.style.opacity = clamp(gp / 0.22, 0, 1).toFixed(3);
+      g.style.transform = 'translate(-50%,-50%) rotate(' + (rot * gp).toFixed(2) + 'deg) scale(' + (0.52 + 0.48 * gp).toFixed(3) + ')';
+      g.style.opacity = clamp(lin / 0.26, 0, 1).toFixed(3);
+      g.style.filter = gp < 0.985 ? 'blur(' + ((1 - gp) * 16).toFixed(1) + 'px)' : 'none';   /* focus-in: blurry → sharp as it materialises */
     });
 
     /* resolve zoom-reveals in step with the cards settling */
@@ -1492,11 +1694,11 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 
   let ticking = false;
   function onScroll() {
-    if (!ticking && !reduce) { ticking = true; requestAnimationFrame(() => { draw(progress()); ticking = false; }); }
+    if (!ticking && !reduce && !mobileScene()) { ticking = true; requestAnimationFrame(() => { draw(progress()); ticking = false; }); }
   }
   draw(reduce ? 0.95 : progress());
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', () => draw(progress()));
+  window.addEventListener('resize', () => { if (mobileScene()) { nav && nav.classList.remove('st-away'); return; } sizeCook(); draw(progress()); });
 })();
 </script>
 
@@ -1831,25 +2033,259 @@ result = veralith.<span class="tok-fn">evaluate</span>(
 </section>
 
 <!-- ====================== PLAYGROUND ====================== -->
+<style id="pg-style">
+  .pg{ position:relative; z-index:1; }
+  .pg-head{ max-width:56ch; }
+  .pg-console{ margin-top:1.9rem; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.13);
+    border-radius:var(--r-lg); overflow:hidden; }
+  .pg-tabs{ display:flex; align-items:center; gap:.5rem; padding:.7rem .8rem; border-bottom:1px solid rgba(255,255,255,.1); flex-wrap:wrap; }
+  .pg-tab{ font-family:var(--mono); font-size:.73rem; letter-spacing:.01em; color:#B7C49B; padding:.36rem .85rem;
+    border-radius:999px; border:1px solid rgba(255,255,255,.14); transition:color .15s, background .15s, border-color .15s; }
+  .pg-tab:hover{ color:#fff; border-color:rgba(255,255,255,.32); }
+  .pg-tab.active{ background:var(--accent); color:#F2F4EA; border-color:var(--accent); font-weight:600; }
+  .pg-run{ margin-left:auto; font-family:var(--mono); font-size:.78rem; font-weight:600; color:#F2F4EA;
+    background:var(--accent); padding:.45rem .95rem; border-radius:8px; display:inline-flex; align-items:center; gap:.45rem;
+    transition:transform .15s, box-shadow .2s, opacity .15s; }
+  .pg-run svg{ width:13px; height:13px; }
+  .pg-run:hover{ transform:translateY(-1px); box-shadow:0 10px 22px -10px rgba(166,210,78,.6); }
+  .pg-run[disabled]{ opacity:.55; cursor:default; transform:none; box-shadow:none; }
+  .pg-body{ display:grid; grid-template-columns:1.45fr .95fr; }
+  .pg-trace{ padding:1.2rem 1.3rem; border-right:1px solid rgba(255,255,255,.1); min-width:0; }
+  .pg-field{ margin-bottom:1.05rem; } .pg-field:last-child{ margin-bottom:0; }
+  .pg-label{ display:block; font-family:var(--mono); font-size:.62rem; letter-spacing:.14em; text-transform:uppercase;
+    color:#aab99f; margin-bottom:.42rem; }
+  .pg-label em{ font-style:normal; color:#6f7d66; letter-spacing:.06em; }
+  .pg-query{ color:#EAEEDD; font-size:.94rem; line-height:1.55; }
+  .pg-context{ display:flex; flex-direction:column; gap:.4rem; }
+  .pg-chunk{ display:flex; gap:.6rem; font-size:.81rem; color:#B7C49B; line-height:1.5; background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08); border-radius:9px; padding:.5rem .7rem; }
+  .pg-chunk .rk{ font-family:var(--mono); font-size:.64rem; color:#aab99f; flex:none; padding-top:.15rem; }
+  .pg-response{ background:var(--paper); color:var(--ink); border-radius:11px; padding:.9rem 1.05rem; font-size:.95rem; line-height:1.75; }
+  .pg-claim{ border-radius:5px; padding:.05em .16em; position:relative; cursor:help;
+    transition:background .45s ease, box-shadow .45s ease; }
+  .pg-claim.show.g{ background:rgba(88,129,87,.14); box-shadow:inset 0 -2px 0 rgba(88,129,87,.5); }
+  .pg-claim.show.u{ background:rgba(178,80,58,.12); box-shadow:inset 0 -2px 0 rgba(178,80,58,.5); }
+  .pg-claim[data-r]::after{ content:attr(data-r); position:absolute; left:0; bottom:calc(100% + 8px); z-index:6;
+    width:max-content; max-width:240px; background:#2b2b2b; color:#f1f1ec; font-family:var(--mono); font-size:.64rem;
+    line-height:1.5; font-weight:400; text-transform:none; letter-spacing:0; padding:.5rem .68rem; border-radius:8px;
+    box-shadow:0 16px 34px -18px rgba(0,0,0,.6); opacity:0; transform:translateY(4px); pointer-events:none; transition:opacity .2s, transform .2s; }
+  .pg-claim.show:hover::after{ opacity:1; transform:none; }
+  .pg-rtag{ font-family:var(--mono); font-size:.5rem; font-weight:600; padding:.1em .4em; border-radius:4px; margin-left:.25em;
+    vertical-align:middle; white-space:nowrap; opacity:0; transition:opacity .3s; }
+  .pg-claim.show .pg-rtag{ opacity:1; }
+  .pg-claim.g .pg-rtag{ background:rgba(88,129,87,.18); color:#4a6b50; }
+  .pg-claim.u .pg-rtag{ background:rgba(178,80,58,.16); color:#925040; }
+  .pg-verdict{ padding:1.2rem 1.3rem; display:flex; flex-direction:column; gap:.95rem; min-width:0; }
+  .pg-status{ font-family:var(--mono); font-size:.78rem; color:#B7C49B; line-height:1.6; }
+  .pg-status b{ color:#EAEEDD; font-weight:600; }
+  .pg-status .blink{ color:var(--accent-lt); animation:pgblink 1s steps(2,end) infinite; }
+  @keyframes pgblink{ 50%{ opacity:.25; } }
+  .pg-cellbadge{ display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono); font-size:.76rem; font-weight:700;
+    letter-spacing:.04em; padding:.42rem .72rem; border-radius:8px; align-self:flex-start; }
+  .pg-cellbadge .nm{ opacity:.7; font-weight:400; }
+  .pg-cellbadge.ok{ background:rgba(88,129,87,.2); color:#c4e2b6; border:1px solid rgba(88,129,87,.5); }
+  .pg-cellbadge.bad{ background:rgba(178,80,58,.16); color:#ecb6a8; border:1px solid rgba(178,80,58,.45); }
+  .pg-meters{ display:flex; flex-direction:column; gap:.5rem; }
+  .pg-meter{ display:flex; align-items:baseline; gap:.55rem; font-size:.76rem; color:#9fb091; }
+  .pg-meter .mn{ font-family:var(--mono); font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:#aab99f; width:5.6rem; flex:none; }
+  .pg-meter .mv{ color:#EAEEDD; font-weight:600; font-family:var(--mono); font-size:.78rem; }
+  .pg-meter .mv.no{ color:#ecae9d; }
+  .pg-subq{ display:flex; flex-direction:column; gap:.3rem; }
+  .pg-subq-row{ display:flex; gap:.5rem; font-size:.75rem; color:#9fb091; line-height:1.4; }
+  .pg-subq-row .yn{ font-family:var(--mono); font-weight:700; flex:none; font-size:.7rem; padding-top:.05rem; }
+  .pg-subq-row .yn.y{ color:#9cc197; } .pg-subq-row .yn.n{ color:#ecae9d; }
+  .pg-suggest{ border-top:1px solid rgba(255,255,255,.1); padding-top:.9rem; }
+  .pg-suggest .st{ font-weight:600; color:#F2F4EA; font-size:.9rem; margin-bottom:.45rem; }
+  .pg-suggest ul{ margin:0; padding-left:1.05rem; list-style:none; } .pg-suggest li{ font-size:.79rem; color:#B7C49B; line-height:1.55; margin:.32rem 0; position:relative; }
+  .pg-suggest li::before{ content:"\2192"; position:absolute; left:-1.05rem; color:var(--accent-lt); }
+  .pg-cta{ display:flex; gap:1rem; margin-top:1.7rem; flex-wrap:wrap; align-items:center; }
+  .pg-cta .note{ font-size:.8rem; color:#aab99f; }
+  .pg-reveal{ animation:pgfade .45s ease both; } @keyframes pgfade{ from{ opacity:0; transform:translateY(6px); } }
+  @media (max-width:760px){
+    .pg-body{ grid-template-columns:1fr; }
+    .pg-trace{ border-right:none; border-bottom:1px solid rgba(255,255,255,.1); }
+    .pg-run{ margin-left:0; }
+  }
+  @media (prefers-reduced-motion:reduce){ .pg-claim,.pg-status .blink,.pg-reveal{ animation:none !important; transition:none !important; } }
+</style>
 <section id="playground">
   <div class="wrap">
     <div class="play reveal">
-      <span class="blob a" style="width:320px;height:320px;background:var(--leaf);top:-120px;right:-60px;filter:blur(80px)"></span>
+      <span class="blob a" style="width:320px;height:320px;background:var(--accent);top:-120px;right:-60px;filter:blur(80px)"></span>
       <span class="blob b" style="width:260px;height:260px;background:var(--sage);bottom:-120px;left:-40px;filter:blur(80px)"></span>
-      <div class="play-inner">
-        <div>
-          <span class="kicker" style="color:var(--leaf)">Playground</span>
-          <h2>Paste an answer. <span class="accent" style="color:var(--leaf)">Watch it get checked.</span></h2>
-          <p class="lead">Drop in a question, its retrieved context, and a generated answer — VERALITH highlights every claim live, no signup. The fastest way to feel the difference.</p>
+      <div class="pg">
+        <div class="pg-head">
+          <span class="kicker" style="color:var(--accent-lt)">Playground</span>
+          <h2>Pick an answer. <span class="accent" style="color:var(--accent-lt)">Watch it get checked.</span></h2>
+          <p class="lead">A question, its retrieved context, and a generated answer. Run the check and Veralith decomposes the answer into claims, grounds each one against the context, and tells you exactly what failed — live, no signup.</p>
         </div>
-        <div class="hero-actions">
-          <a class="btn btn-leaf btn-lg" href="#">Open the Playground</a>
-          <a class="btn btn-line btn-lg" href="#integrate">Read the docs</a>
+
+        <div class="pg-console" id="pgConsole">
+          <div class="pg-tabs" role="tablist" aria-label="Example traces">
+            <button class="pg-tab active" data-s="0" role="tab">Grounded</button>
+            <button class="pg-tab" data-s="1" role="tab">Hallucination</button>
+            <button class="pg-tab" data-s="2" role="tab">Retrieval gap</button>
+            <button class="pg-run" id="pgRun" aria-label="Run the check">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg> Run check
+            </button>
+          </div>
+          <div class="pg-body">
+            <div class="pg-trace">
+              <div class="pg-field"><span class="pg-label">Query</span><div class="pg-query" id="pgQuery"></div></div>
+              <div class="pg-field"><span class="pg-label">Context <em id="pgCtxN"></em></span><div class="pg-context" id="pgContext"></div></div>
+              <div class="pg-field"><span class="pg-label">Response</span><div class="pg-response" id="pgResponse"></div></div>
+            </div>
+            <aside class="pg-verdict" id="pgVerdict" aria-live="polite"></aside>
+          </div>
+        </div>
+
+        <div class="pg-cta">
+          <a class="btn btn-leaf btn-lg" href="https://app.veralithai.com/login?mode=signup">Start free</a>
+          <a class="btn btn-line btn-lg" href="/docs.html">Read the docs</a>
+          <span class="note">Illustrative — verdicts shown are pre-computed.</span>
         </div>
       </div>
     </div>
   </div>
 </section>
+<script>
+(function () {
+  const root = document.getElementById('playground');
+  if (!root) return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const escA = s => esc(s).replace(/"/g, '&quot;');
+
+  const S = [
+    {
+      cell: 'complete_grounded', label: 'HEALTHY', tone: 'ok',
+      query: 'What is a P/E ratio?',
+      context: [
+        "The price-to-earnings (P/E) ratio is a company’s share price divided by its earnings per share (EPS).",
+        "A high P/E ratio can signal that investors expect higher earnings growth."
+      ],
+      response: [
+        { t: 'A P/E ratio is a company’s share price divided by its earnings per share', c: { v: 'g', r: 'Grounded — matches the definition in chunk #0.' } },
+        { t: '. ' },
+        { t: 'A high P/E often signals investors expect higher growth', c: { v: 'g', r: 'Grounded — supported by chunk #1.' } },
+        { t: '.' }
+      ],
+      subq: [{ q: 'What is a P/E ratio?', s: 'Y' }],
+      suff: 'high', faith: '2 / 2', comp: 'complete',
+      suggestion: { title: 'Healthy trace', actions: ['No action needed — the answer is complete and every claim is grounded in the retrieved context.'] }
+    },
+    {
+      cell: 'complete_ungrounded', label: 'HALLUCINATION', tone: 'bad',
+      query: 'What is a P/E ratio, and what was Apple’s P/E in 2023?',
+      context: [
+        "The price-to-earnings (P/E) ratio is a company’s share price divided by its earnings per share."
+      ],
+      response: [
+        { t: 'A P/E ratio divides share price by earnings per share', c: { v: 'g', r: 'Grounded — matches chunk #0.' } },
+        { t: '. ' },
+        { t: 'Apple’s P/E in 2023 was 42.7', c: { v: 'u', r: 'Ungrounded — ‘42.7’ appears in no retrieved chunk. Likely recalled from training data.' } },
+        { t: '.' }
+      ],
+      subq: [{ q: 'What is a P/E ratio?', s: 'Y' }, { q: 'What was Apple’s P/E in 2023?', s: 'N' }],
+      suff: 'low', faith: '1 / 2', comp: 'complete',
+      suggestion: { title: 'Hallucinated answer over weak retrieval', actions: ['Retrieval never surfaced Apple’s 2023 P/E — fix retrieval first (add the source, raise top-K).', 'Then tighten the generator prompt to refuse when the context can’t support an answer.'] }
+    },
+    {
+      cell: 'incomplete_grounded', label: 'RETRIEVAL GAP', tone: 'bad',
+      query: 'What are the refund window and the cancellation fee?',
+      context: [
+        "Customers may request a refund within 30 days of purchase."
+      ],
+      response: [
+        { t: 'You can request a refund within 30 days of purchase', c: { v: 'g', r: 'Grounded — supported by chunk #0.' } },
+        { t: '.' }
+      ],
+      subq: [{ q: 'What is the refund window?', s: 'Y' }, { q: 'What is the cancellation fee?', s: 'N' }],
+      suff: 'low', faith: '1 / 1', comp: 'incomplete',
+      suggestion: { title: 'Retrieval gap', actions: ['The cancellation-fee document was never retrieved — raise top-K or re-chunk the corpus.', 'What the model did answer is fully grounded; this is a retrieval problem, not a generation one.'] }
+    }
+  ];
+
+  const elQuery = root.querySelector('#pgQuery');
+  const elCtxN = root.querySelector('#pgCtxN');
+  const elCtx = root.querySelector('#pgContext');
+  const elResp = root.querySelector('#pgResponse');
+  const elVerdict = root.querySelector('#pgVerdict');
+  const runBtn = root.querySelector('#pgRun');
+  const tabs = [...root.querySelectorAll('.pg-tab')];
+  let idx = 0, running = false, timer = null;
+
+  function renderTrace() {
+    const s = S[idx];
+    elQuery.textContent = s.query;
+    elCtxN.textContent = '· ' + s.context.length + ' chunk' + (s.context.length > 1 ? 's' : '');
+    elCtx.innerHTML = s.context.map((c, i) =>
+      '<div class="pg-chunk"><span class="rk">#' + i + '</span><span>' + esc(c) + '</span></div>').join('');
+    elResp.innerHTML = s.response.map(seg => seg.c
+      ? '<span class="pg-claim ' + seg.c.v + '" data-r="' + escA(seg.c.r) + '">' + esc(seg.t) +
+        '<span class="pg-rtag">' + (seg.c.v === 'g' ? 'grounded' : 'ungrounded') + '</span></span>'
+      : esc(seg.t)).join('');
+    elVerdict.innerHTML = '<div class="pg-status">Press <b>Run check</b> to evaluate this trace — hover any highlighted claim afterwards for the judge’s reasoning.</div>';
+  }
+
+  function renderVerdict() {
+    const s = S[idx];
+    const fa = s.faith.split('/');
+    const faithIncomplete = fa[0].trim() !== fa[1].trim();
+    const rows = s.subq.map(q =>
+      '<div class="pg-subq-row"><span class="yn ' + (q.s === 'Y' ? 'y' : 'n') + '">' + q.s + '</span><span>' + esc(q.q) + '</span></div>').join('');
+    const actions = s.suggestion.actions.map(a => '<li>' + esc(a) + '</li>').join('');
+    elVerdict.innerHTML =
+      '<div class="pg-cellbadge ' + s.tone + ' pg-reveal">' + s.label + ' <span class="nm">' + s.cell + '</span></div>' +
+      '<div class="pg-meters pg-reveal">' +
+        '<div class="pg-meter"><span class="mn">Sufficiency</span><span class="mv ' + (s.suff === 'low' ? 'no' : '') + '">' + s.suff.toUpperCase() + '</span><span>retrieval level</span></div>' +
+        '<div class="pg-meter"><span class="mn">Faithfulness</span><span class="mv ' + (faithIncomplete ? 'no' : '') + '">' + s.faith + '</span><span>claims grounded</span></div>' +
+        '<div class="pg-meter"><span class="mn">Completeness</span><span class="mv ' + (s.comp !== 'complete' ? 'no' : '') + '">' + s.comp + '</span></div>' +
+      '</div>' +
+      '<div class="pg-subq pg-reveal">' + rows + '</div>' +
+      '<div class="pg-suggest pg-reveal"><div class="st">' + esc(s.suggestion.title) + '</div><ul>' + actions + '</ul></div>';
+  }
+
+  function revealClaims() {
+    const claims = [...elResp.querySelectorAll('.pg-claim')];
+    claims.forEach((el, i) => setTimeout(() => el.classList.add('show'), reduce ? 0 : 120 + i * 170));
+  }
+
+  function run() {
+    if (running) return;
+    running = true; runBtn.disabled = true;
+    const s = S[idx];
+    const nClaims = s.response.filter(seg => seg.c).length;
+    const steps = [
+      'Decomposing query → ' + s.subq.length + ' sub-question' + (s.subq.length > 1 ? 's' : '') + '…',
+      'Decomposing response → ' + nClaims + ' claim' + (nClaims > 1 ? 's' : '') + '…',
+      'Running 3 judges (sufficiency · faithfulness · completeness)…',
+      'Classifying failure cell…'
+    ];
+    let i = 0;
+    function tick() {
+      if (i < steps.length) {
+        elVerdict.innerHTML = '<div class="pg-status">' + steps[i] + ' <span class="blink">█</span></div>';
+        i++; timer = setTimeout(tick, reduce ? 0 : 430);
+      } else {
+        renderVerdict(); revealClaims();
+        running = false; runBtn.disabled = false;
+      }
+    }
+    tick();
+  }
+
+  tabs.forEach(t => t.addEventListener('click', () => {
+    if (timer) { clearTimeout(timer); timer = null; }
+    running = false; runBtn.disabled = false;
+    idx = +t.dataset.s;
+    tabs.forEach(x => x.classList.toggle('active', x === t));
+    renderTrace();
+  }));
+  runBtn.addEventListener('click', run);
+  renderTrace();
+})();
+</script>
 
 <!-- ====================== PRICING ====================== -->
 <section id="pricing">
@@ -1908,7 +2344,7 @@ result = veralith.<span class="tok-fn">evaluate</span>(
   <div class="hero-bg" aria-hidden="true"><span class="blob a" style="opacity:.35"></span><span class="blob b" style="opacity:.35"></span></div>
   <div class="wrap">
     <h2 class="reveal">Stop shipping <span class="accent">hallucinations.</span></h2>
-    <p class="lead reveal" data-i="1">Turn every answer into something you can stand behind — grounded, cited, and checked before it leaves your pipeline.</p>
+    <p class="lead reveal" data-i="1">Make &rsquo;em grounded!</p>
     <div class="hero-actions reveal" data-i="2">
       <a class="btn btn-dark btn-lg" href="https://app.veralithai.com/login?mode=signup">Start free</a>
       <a class="btn btn-ghost btn-lg" href="#playground">See it live →</a>
@@ -1930,7 +2366,7 @@ result = veralith.<span class="tok-fn">evaluate</span>(
         <p>Truth made solid. Real-time hallucination guardrails for retrieval-augmented generation.</p>
       </div>
       <div class="foot-col"><h4>Product</h4><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#playground">Playground</a><a href="#how">How it works</a></div>
-      <div class="foot-col"><h4>Developers</h4><a href="#integrate">Docs</a><a href="#">API reference</a><a href="#">SDKs</a><a href="#">Status</a></div>
+      <div class="foot-col"><h4>Developers</h4><a href="/docs.html">Docs</a><a href="/docs.html#result-object">API reference</a><a href="#">SDKs</a><a href="#">Status</a></div>
       <div class="foot-col"><h4>Company</h4><a href="#">About</a><a href="#">Blog</a><a href="#">Careers</a><a href="#">Contact</a></div>
       <div class="foot-col"><h4>Legal</h4><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Security</a><a href="#">SOC-2</a></div>
     </div>
