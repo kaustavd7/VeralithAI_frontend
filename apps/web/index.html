@@ -2418,13 +2418,18 @@ result = veralith.<span class="tok-fn">evaluate</span>(
   const body = document.body;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // Play the loader only ONCE per browser session — so returning to the home page
+  // (e.g. navigating back from /docs) never replays it. Read-then-set the flag.
+  let seen = false;
+  try { seen = sessionStorage.getItem('vth-loaded') === '1'; sessionStorage.setItem('vth-loaded', '1'); } catch (e) {}
+
   function reveal(){
     pl.classList.add('lift');               // screen fades out
     body.classList.remove('is-loading');    // release hero entrance + restore scroll
     pl.addEventListener('transitionend', () => pl.remove(), { once:true });
   }
 
-  if (reduce){                              // skip the count for reduced motion
+  if (reduce || seen){                      // skip the count (reduced motion, or already seen this session)
     num.textContent = 100; body.classList.remove('is-loading'); pl.remove(); return;
   }
 
