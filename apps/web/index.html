@@ -710,6 +710,19 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 </style>
 </head>
 <body class="is-loading" data-theme="light">
+<!-- pixel icon sprite (Streamline Pixel, recolored via currentColor) -->
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden" focusable="false">
+<symbol id="pix-detect" viewBox="0 0 32 32" fill="currentColor"><path d="M30.47 19.045H32v6.09h-1.53Z"/><path d="M28.95 25.135h1.52v1.53h-1.52Z"/><path d="m27.43 15.995 0 1.53 1.52 0 0 1.52 1.52 0 0 -6.1 -1.52 0 0 3.05 -1.52 0z"/><path d="M27.43 26.665h1.52v1.52h-1.52Z"/><path d="M27.43 8.375h1.52v4.57h-1.52Z"/><path d="m27.43 17.525 -6.1 0 0 1.52 4.57 0 0 1.52 -1.52 0 0 1.53 -1.53 0 0 1.52 -1.52 0 0 -4.57 -1.52 0 0 6.09 1.52 0 0 1.53 6.1 0 0 -1.53 1.52 0 0 -6.09 -1.52 0 0 -1.52z"/><path d="M25.9 3.805h1.53v4.57H25.9Z"/><path d="M21.33 28.185h6.1v1.53h-6.1Z"/><path d="M21.33 14.475h6.1v1.52h-6.1Z"/><path d="M19.81 26.665h1.52v1.52h-1.52Z"/><path d="M19.81 15.995h1.52v1.53h-1.52Z"/><path d="M18.28 2.285h7.62v1.52h-7.62Z"/><path d="M18.28 25.135h1.53v1.53h-1.53Z"/><path d="m18.28 19.045 1.53 0 0 -1.52 -3.05 0 0 7.61 1.52 0 0 -6.09z"/><path d="m19.81 11.425 -1.53 0 0 -1.52 -4.57 0 0 1.52 -1.52 0 0 1.52 1.52 0 0 1.53 4.57 0 0 -1.53 1.53 0 0 -1.52z"/><path d="M15.24 15.995h1.52v1.53h-1.52Z"/><path d="m13.71 8.375 4.57 0 0 -4.57 -1.52 0 0 3.05 -1.52 0 0 -3.05 -1.53 0 0 4.57z"/><path d="M12.19 25.135h1.52v1.53h-1.52Z"/><path d="m12.19 19.045 1.52 0 0 6.09 1.53 0 0 -7.61 -3.05 0 0 1.52z"/><path d="M10.66 26.665h1.53v1.52h-1.53Z"/><path d="M10.66 15.995h1.53v1.53h-1.53Z"/><path d="m10.66 17.525 -6.09 0 0 1.52 4.57 0 0 1.52 -1.52 0 0 1.53 -1.53 0 0 1.52 -1.52 0 0 -4.57 -1.52 0 0 6.09 1.52 0 0 1.53 6.09 0 0 -1.53 1.53 0 0 -6.09 -1.53 0 0 -1.52z"/><path d="M4.57 28.185h6.09v1.53H4.57Z"/><path d="M6.09 2.285h7.62v1.52H6.09Z"/><path d="M4.57 14.475h6.09v1.52H4.57Z"/><path d="M4.57 3.805h1.52v4.57H4.57Z"/><path d="M3.05 26.665h1.52v1.52H3.05Z"/><path d="M3.05 8.375h1.52v4.57H3.05Z"/><path d="M1.52 25.135h1.53v1.53H1.52Z"/><path d="m3.05 17.525 1.52 0 0 -1.53 -1.52 0 0 -3.05 -1.53 0 0 6.1 1.53 0 0 -1.52z"/><path d="M0 19.045h1.52v6.09H0Z"/></symbol>
+<symbol id="pix-diagnose" viewBox="0 0 32 32" fill="currentColor"><path d="m28.19 27.43 1.53 0 0 -1.52 1.52 0 0 -19.81 -1.52 0 0 1.52 -1.53 0 0 1.52 -4.57 0 0 1.53 -15.24 0 0 1.52 13.72 0 0 7.62 1.52 0 0 -1.52 4.57 0 0 -1.53 1.53 0 0 1.53 -1.53 0 0 1.52 -4.57 0 0 1.52 -1.52 0 0 7.62 -13.72 0 0 1.53 15.24 0 0 -1.53 4.57 0 0 -1.52z"/><path d="M26.67 4.57h3.05V6.1h-3.05Z"/><path d="M22.1 3.05h4.57v1.52H22.1Z"/><path d="M8.38 19.81H22.1v1.52H8.38Z"/><path d="M9.91 24.38h4.57v1.53H9.91Z"/><path d="M9.91 15.24h4.57v1.52H9.91Z"/><path d="M9.91 1.52H22.1v1.53H9.91Z"/><path d="M3.81 27.43h4.57v1.52H3.81Z"/><path d="M3.81 18.29h4.57v1.52H3.81Z"/><path d="M3.81 9.14h4.57v1.53H3.81Z"/><path d="M5.33 3.05h4.58v1.52H5.33Z"/><path d="M3.81 21.33h3.05v3.05H3.81Z"/><path d="M3.81 12.19h3.05v3.05H3.81Z"/><path d="M2.29 4.57h3.04V6.1H2.29Z"/><path d="M2.29 25.91h1.52v1.52H2.29Z"/><path d="m2.29 18.29 1.52 0 0 -1.53 -1.52 0 0 -7.62 1.52 0 0 -1.52 -1.52 0 0 -1.52 -1.53 0 0 19.81 1.53 0 0 -7.62z"/></symbol>
+<symbol id="pix-correct" viewBox="0 0 32 32" fill="currentColor"><path d="M30.48 22.86H32v4.57h-1.52Z"/><path d="M30.48 4.57H32v4.58h-1.52Z"/><path d="M28.96 27.43h1.52v1.53h-1.52Z"/><path d="M28.96 21.34h1.52v1.52h-1.52Z"/><path d="M28.96 9.15h1.52v1.52h-1.52Z"/><path d="M28.96 3.05h1.52v1.52h-1.52Z"/><path d="M27.43 28.96h1.53v1.52h-1.53Z"/><path d="M27.43 24.38h1.53v1.53h-1.53Z"/><path d="M27.43 19.81h1.53v1.53h-1.53Z"/><path d="M27.43 10.67h1.53v1.52h-1.53Z"/><path d="M27.43 1.53h1.53v1.52h-1.53Z"/><path d="M25.91 18.29h1.52v1.52h-1.52Z"/><path d="M25.91 12.19h1.52v1.53h-1.52Z"/><path d="M25.91 7.62h1.52v1.53h-1.52Z"/><path d="M22.86 30.48h4.57V32h-4.57Z"/><path d="M24.39 27.43h1.52v1.53h-1.52Z"/><path d="M24.39 24.38h1.52v1.53h-1.52Z"/><path d="M24.39 21.34h1.52v1.52h-1.52Z"/><path d="M24.39 13.72h1.52v1.52h-1.52Z"/><path d="M22.86 0h4.57v1.53h-4.57Z"/><path d="M22.86 10.67h1.53v1.52h-1.53Z"/><path d="M22.86 7.62h1.53v1.53h-1.53Z"/><path d="M22.86 4.57h1.53V6.1h-1.53Z"/><path d="M21.34 28.96h1.52v1.52h-1.52Z"/><path d="M21.34 24.38h1.52v1.53h-1.52Z"/><path d="M22.86 13.72h-1.52v-1.53h-1.53v-1.52h-1.52V9.15h-1.52V7.62h-1.53V6.1h-1.52v3.05H12.2v1.52h-1.53v1.52H9.15v1.53H6.1v1.52h1.52v1.53h1.53v1.52h1.52v1.52h1.53v1.53h1.52v1.52h1.52v1.52h1.53v1.53h1.52v-3.05h1.52v-1.52h1.53v-1.53h1.52v-1.52h3.05v-1.52h-1.52v-1.53h-1.53Zm-3.05 3.05h-1.52v1.52h-1.52v1.52h-1.53v-1.52h-1.52v-1.52H12.2v-3.05h1.52v-1.53h1.52v1.53h1.53v-1.53h1.52v1.53h1.52Z"/><path d="M21.34 1.53h1.52v1.52h-1.52Z"/><path d="M19.81 27.43h1.53v1.53h-1.53Z"/><path d="M19.81 7.62h1.53v1.53h-1.53Z"/><path d="M19.81 3.05h1.53v1.52h-1.53Z"/><path d="M18.29 25.91h1.52v1.52h-1.52Z"/><path d="M18.29 4.57h1.52V6.1h-1.52Z"/><path d="M16.77 6.1h1.52v1.52h-1.52Z"/><path d="M13.72 24.38h1.52v1.53h-1.52Z"/><path d="M12.2 25.91h1.52v1.52H12.2Z"/><path d="M12.2 4.57h1.52V6.1H12.2Z"/><path d="M10.67 27.43h1.53v1.53h-1.53Z"/><path d="M10.67 22.86h1.53v1.52h-1.53Z"/><path d="M10.67 3.05h1.53v1.52h-1.53Z"/><path d="M9.15 28.96h1.52v1.52H9.15Z"/><path d="M9.15 6.1h1.52v1.52H9.15Z"/><path d="M9.15 1.53h1.52v1.52H9.15Z"/><path d="M7.62 25.91h1.53v1.52H7.62Z"/><path d="M7.62 22.86h1.53v1.52H7.62Z"/><path d="M7.62 19.81h1.53v1.53H7.62Z"/><path d="M4.58 30.48h4.57V32H4.58Z"/><path d="M6.1 16.77h1.52v1.52H6.1Z"/><path d="M6.1 9.15h1.52v1.52H6.1Z"/><path d="M6.1 6.1h1.52v1.52H6.1Z"/><path d="M6.1 3.05h1.52v1.52H6.1Z"/><path d="M4.58 0h4.57v1.53H4.58Z"/><path d="M4.58 22.86H6.1v1.52H4.58Z"/><path d="M4.58 18.29H6.1v1.52H4.58Z"/><path d="M4.58 12.19H6.1v1.53H4.58Z"/><path d="M3.05 28.96h1.53v1.52H3.05Z"/><path d="M3.05 19.81h1.53v1.53H3.05Z"/><path d="M3.05 10.67h1.53v1.52H3.05Z"/><path d="M3.05 6.1h1.53v1.52H3.05Z"/><path d="M3.05 1.53h1.53v1.52H3.05Z"/><path d="M1.53 27.43h1.52v1.53H1.53Z"/><path d="M1.53 21.34h1.52v1.52H1.53Z"/><path d="M1.53 9.15h1.52v1.52H1.53Z"/><path d="M1.53 3.05h1.52v1.52H1.53Z"/><path d="M0 22.86h1.53v4.57H0Z"/><path d="M0 4.57h1.53v4.58H0Z"/></symbol>
+<symbol id="pix-check" viewBox="0 0 32 32" fill="currentColor"><path d="M23.62 20.57H22.1v1.52h-1.53v1.53h-3.04v1.52h3.04v1.52h1.53v1.53h1.52v1.52h1.52v1.53h4.58v-1.53h1.52v-4.57h-1.52v-1.52h-1.53v-1.53h-1.52v-1.52h-1.53v-3.05h-1.52Zm1.52 3.05h1.53v1.52h1.52v1.52h1.53v1.53h-1.53v-1.53h-1.52v-1.52h-1.53Z"/><path d="M25.14 9.9h1.53v7.62h-1.53Z"/><path d="M23.62 6.85h1.52V9.9h-1.52Z"/><path d="M22.1 5.33h1.52v1.52H22.1Z"/><path d="M20.57 3.81h1.53v1.52h-1.53Z"/><path d="M17.53 2.28h3.04v1.53h-3.04Z"/><path d="m5.34 16 1.52 0 0 1.52 1.52 0 0 1.52 1.53 0 0 1.53 3.04 0 0 -1.53 1.53 0 0 -1.52 1.52 0L16 16l1.53 0 0 -1.53 1.52 0 0 -1.52 1.52 0 0 -1.52 1.53 0 0 -1.53 -1.53 0 0 -1.52 -1.52 0 0 1.52 -1.52 0 0 1.53 -1.53 0 0 1.52 -1.52 0 0 1.52 -1.53 0 0 1.53 -3.04 0 0 -1.53 -1.53 0 0 -1.52 -1.52 0 0 1.52 -1.52 0 0 1.53z"/><path d="M9.91 25.14h7.62v1.52H9.91Z"/><path d="M9.91 0.76h7.62v1.52H9.91Z"/><path d="M6.86 23.62h3.05v1.52H6.86Z"/><path d="M6.86 2.28h3.05v1.53H6.86Z"/><path d="M5.34 22.09h1.52v1.53H5.34Z"/><path d="M5.34 3.81h1.52v1.52H5.34Z"/><path d="M3.81 20.57h1.53v1.52H3.81Z"/><path d="M3.81 5.33h1.53v1.52H3.81Z"/><path d="M2.29 17.52h1.52v3.05H2.29Z"/><path d="M2.29 6.85h1.52V9.9H2.29Z"/><path d="M0.76 9.9h1.53v7.62H0.76Z"/></symbol>
+<symbol id="pix-remove" viewBox="0 0 32 32" fill="currentColor"><path d="M23.62 20.57H22.1v1.52h-1.53v1.53h-3.04v1.52h3.04v1.52h1.53v1.53h1.52v1.52h1.52v1.53h4.58v-1.53h1.52v-4.57h-1.52v-1.52h-1.53v-1.53h-1.52v-1.52h-1.53v-3.05h-1.52Zm1.52 3.05h1.53v1.52h1.52v1.52h1.53v1.53h-1.53v-1.53h-1.52v-1.52h-1.53Z"/><path d="M25.14 9.9h1.53v7.62h-1.53Z"/><path d="M23.62 6.85h1.52V9.9h-1.52Z"/><path d="M22.1 5.33h1.52v1.52H22.1Z"/><path d="M20.57 3.81h1.53v1.52h-1.53Z"/><path d="m8.38 20.57 1.53 0 0 -1.53 1.52 0 0 -1.52 1.52 0 0 -1.52 1.53 0 0 1.52 1.52 0 0 1.52 1.53 0 0 1.53 1.52 0 0 -1.53 1.52 0 0 -1.52 -1.52 0 0 -1.52 -1.52 0 0 -1.53 -1.53 0 0 -1.52 1.53 0 0 -1.52 1.52 0 0 -1.53 1.52 0 0 -1.52 -1.52 0 0 -1.53 -1.52 0 0 1.53 -1.53 0 0 1.52 -1.52 0 0 1.53 -1.53 0 0 -1.53 -1.52 0 0 -1.52 -1.52 0 0 -1.53 -1.53 0 0 1.53 -1.52 0 0 1.52 1.52 0 0 1.53 1.53 0 0 1.52 1.52 0 0 1.52 -1.52 0 0 1.53 -1.53 0 0 1.52 -1.52 0 0 1.52 1.52 0 0 1.53z"/><path d="M17.53 2.28h3.04v1.53h-3.04Z"/><path d="M9.91 25.14h7.62v1.52H9.91Z"/><path d="M9.91 0.76h7.62v1.52H9.91Z"/><path d="M6.86 23.62h3.05v1.52H6.86Z"/><path d="M6.86 2.28h3.05v1.53H6.86Z"/><path d="M5.34 22.09h1.52v1.53H5.34Z"/><path d="M5.34 3.81h1.52v1.52H5.34Z"/><path d="M3.81 20.57h1.53v1.52H3.81Z"/><path d="M3.81 5.33h1.53v1.52H3.81Z"/><path d="M2.29 17.52h1.52v3.05H2.29Z"/><path d="M2.29 6.85h1.52V9.9H2.29Z"/><path d="M0.76 9.9h1.53v7.62H0.76Z"/></symbol>
+<symbol id="pix-startup" viewBox="0 0 32 32" fill="currentColor"><path d="M28.95 28.95H32v1.53h-3.05Z"/><path d="M27.43 30.48h1.52V32h-1.52Z"/><path d="m27.43 19.81 -1.53 0 0 1.52 1.53 0 0 1.53 1.52 0 0 -7.62 -1.52 0 0 4.57z"/><path d="M24.38 28.95h3.05v1.53h-3.05Z"/><path d="M25.9 13.72h1.53v1.52H25.9Z"/><path d="M21.33 27.43h3.05v1.52h-3.05Z"/><path d="m22.86 21.33 1.52 0 0 -1.52 1.52 0 0 -1.52 -1.52 0 0 -4.57 1.52 0 0 -1.53 -1.52 0 0 -4.57 -1.52 0 0 13.71z"/><path d="M19.81 30.48h1.52V32h-1.52Z"/><path d="M19.81 18.29h1.52v1.52h-1.52Z"/><path d="M19.81 15.24h1.52v1.52h-1.52Z"/><path d="M18.28 27.43h1.53v3.05h-1.53Z"/><path d="M13.71 24.38h6.1v1.53h-6.1Z"/><path d="M18.28 1.52h1.53v1.53h-1.53Z"/><path d="M15.24 0h3.04v1.52h-3.04Z"/><path d="m19.81 9.14 -1.53 0 0 -1.52 -3.04 0 0 1.52 1.52 0 0 1.53 -1.52 0 0 -1.53 -1.53 0 0 3.05 1.53 0 0 1.53 3.04 0 0 -1.53 1.53 0 0 -3.05z"/><path d="M13.71 27.43h1.53v3.05h-1.53Z"/><path d="m10.66 22.86 1.53 0 0 1.52 1.52 0 0 -1.52 6.1 0 0 1.52 1.52 0 0 -1.52 1.53 0 0 -1.53 -12.2 0 0 1.53z"/><path d="M13.71 1.52h1.53v1.53h-1.53Z"/><path d="M12.19 30.48h1.52V32h-1.52Z"/><path d="M9.14 27.43h3.05v1.52H9.14Z"/><path d="m13.71 4.57 0 -1.52 -1.52 0 0 1.52 -1.53 0 0 3.05 1.53 0 0 -1.52 9.14 0 0 1.52 1.53 0 0 -3.05 -1.53 0 0 -1.52 -1.52 0 0 1.52 -6.1 0z"/><path d="m10.66 7.62 -1.52 0 0 4.57 -1.52 0 0 1.53 1.52 0 0 4.57 -1.52 0 0 1.52 1.52 0 0 1.52 1.52 0 0 -13.71z"/><path d="M6.09 28.95h3.05v1.53H6.09Z"/><path d="M6.09 13.72h1.53v1.52H6.09Z"/><path d="M4.57 30.48h1.52V32H4.57Z"/><path d="m6.09 15.24 -1.52 0 0 7.62 1.52 0 0 -1.53 1.53 0 0 -1.52 -1.53 0 0 -4.57z"/><path d="M1.52 28.95h3.05v1.53H1.52Z"/><path d="M0 30.48h1.52V32H0Z"/></symbol>
+<symbol id="pix-price" viewBox="0 0 32 32" fill="currentColor"><path d="M30.47 18.29H32v1.52h-1.53Z"/><path d="M28.95 19.81h1.52v1.52h-1.52Z"/><path d="M28.95 16.76h1.52v1.53h-1.52Z"/><path d="M27.43 21.33h1.52v1.53h-1.52Z"/><path d="M27.43 15.24h1.52v1.52h-1.52Z"/><path d="M25.9 22.86h1.53v1.52H25.9Z"/><path d="M25.9 13.72h1.53v1.52H25.9Z"/><path d="M24.38 24.38h1.52v1.53h-1.52Z"/><path d="M24.38 12.19h1.52v1.53h-1.52Z"/><path d="M22.86 25.91h1.52v1.52h-1.52Z"/><path d="M22.86 10.67h1.52v1.52h-1.52Z"/><path d="M21.33 27.43h1.53v1.52h-1.53Z"/><path d="M21.33 21.33h1.53v1.53h-1.53Z"/><path d="M21.33 16.76h1.53v3.05h-1.53Z"/><path d="M21.33 9.14h1.53v1.53h-1.53Z"/><path d="M19.81 28.95h1.52v1.53h-1.52Z"/><path d="M19.81 19.81h1.52v1.52h-1.52Z"/><path d="M18.28 15.24h3.05v1.52h-3.05Z"/><path d="M19.81 7.62h1.52v1.52h-1.52Z"/><path d="M18.28 30.48h1.53V32h-1.53Z"/><path d="M18.28 18.29h1.53v1.52h-1.53Z"/><path d="M18.28 6.1h1.53v1.52h-1.53Z"/><path d="M16.76 28.95h1.52v1.53h-1.52Z"/><path d="M16.76 21.33h3.05v1.53h-3.05Z"/><path d="M16.76 16.76h1.52v1.53h-1.52Z"/><path d="M15.24 12.19h3.04v1.53h-3.04Z"/><path d="M16.76 4.57h1.52V6.1h-1.52Z"/><path d="M15.24 27.43h1.52v1.52h-1.52Z"/><path d="M15.24 15.24h1.52v1.52h-1.52Z"/><path d="M15.24 3.05h1.52v1.52h-1.52Z"/><path d="M13.71 25.91h1.53v1.52h-1.53Z"/><path d="M13.71 18.29h3.05v1.52h-3.05Z"/><path d="M13.71 13.72h1.53v1.52h-1.53Z"/><path d="M12.19 24.38h1.52v1.53h-1.52Z"/><path d="M12.19 15.24h1.52v3.05h-1.52Z"/><path d="M12.19 12.19h1.52v1.53h-1.52Z"/><path d="M10.66 22.86h1.53v1.52h-1.53Z"/><path d="M9.14 21.33h1.52v1.53H9.14Z"/><path d="m9.14 7.62 -1.52 0 0 1.52 -1.53 0 0 -1.52 -1.52 0 0 3.05 6.09 0 0 -6.1 -3.04 0 0 1.53 1.52 0 0 1.52z"/><path d="M7.62 19.81h1.52v1.52H7.62Z"/><path d="M6.09 18.29h1.53v1.52H6.09Z"/><path d="M6.09 6.1h1.53v1.52H6.09Z"/><path d="M4.57 1.52h10.67v1.53H4.57Z"/><path d="M4.57 16.76h1.52v1.53H4.57Z"/><path d="M4.57 4.57h1.52V6.1H4.57Z"/><path d="M3.05 15.24h1.52v1.52H3.05Z"/><path d="M3.05 3.05h1.52v1.52H3.05Z"/><path d="M1.52 4.57h1.53v10.67H1.52Z"/><path d="M1.52 1.52h1.53v1.53H1.52Z"/><path d="M0 0h1.52v1.52H0Z"/></symbol>
+<symbol id="pix-global" viewBox="0 0 32 32" fill="currentColor"><path d="m22.85 7.62 0 3.05 -1.52 0 0 4.57 1.52 0 0 1.52 1.53 0 0 1.53 -4.57 0 0 1.52 -1.53 0 0 1.52 4.57 0 0 3.05 -1.52 0 0 3.05 1.52 0 0 1.52 3.05 0 0 -1.52 1.53 0 0 -1.53 1.52 0 0 -3.04 1.52 0 0 -3.05 1.53 0 0 -7.62 -1.53 0 0 -3.05 -1.52 0 0 -3.04 -1.52 0 0 1.52 -4.58 0z"/><path d="M25.9 4.57h1.53V6.1H25.9Z"/><path d="M22.85 3.05h3.05v1.52h-3.05Z"/><path d="M19.81 28.95h3.04v1.53h-3.04Z"/><path d="M19.81 1.52h3.04v1.53h-3.04Z"/><path d="m16.76 28.95 -1.52 0 0 -1.52 -4.58 0 0 1.52 -1.52 0 0 1.53 3.05 0 0 1.52 7.62 0 0 -1.52 -3.05 0 0 -1.53z"/><path d="M12.19 0h7.62v1.52h-7.62Z"/><path d="m10.66 16.76 1.53 0 0 1.53 1.52 0 0 -4.58 -3.05 0 0 3.05z"/><path d="M6.09 27.43h3.05v1.52H6.09Z"/><path d="M4.57 25.9h1.52v1.53H4.57Z"/><path d="m3.05 22.86 0 3.04 1.52 0 0 -1.52 1.52 0 0 -1.52 1.53 0 0 -4.57 -1.53 0 0 -1.53 -1.52 0 0 -1.52 -1.52 0 0 -1.53 1.52 0 0 -1.52 4.57 0 0 -1.52 1.52 0 0 -1.53 1.53 0 0 1.53 1.52 0 0 -1.53 1.53 0 0 -3.04 -1.53 0 0 -1.53 -3.05 0 0 -1.52 1.53 0 0 -1.53 -3.05 0 0 1.53 -3.05 0 0 1.52 -1.52 0 0 1.53 -1.52 0 0 3.04 -1.53 0 0 3.05 -1.52 0 0 7.62 1.52 0 0 3.05 1.53 0z"/></symbol>
+<symbol id="pix-browser" viewBox="0 0 32 32" fill="currentColor"><path d="m1.52 9.14 28.96 0 0 19.81 1.52 0 0 -25.9 -1.52 0 0 4.57 -28.96 0 0 -4.57 -1.52 0 0 25.9 1.52 0 0 -19.81z"/><path d="M1.52 28.95h28.96v1.53H1.52Z"/><path d="M4.57 12.19v13.72h22.86V12.19Zm9.14 7.62h-1.52v1.52h-1.52v1.53H9.14v-1.53h1.53v-1.52h1.52v-1.52h-1.52v-1.53H9.14v-1.52h1.53v1.52h1.52v1.53h1.52Zm9.15 0h-6.1v-1.52h6.1Z"/><path d="M9.14 4.57h1.53V6.1H9.14Z"/><path d="M6.1 4.57h1.52V6.1H6.1Z"/><path d="M3.05 4.57h1.52V6.1H3.05Z"/><path d="M1.52 1.52h28.96v1.53H1.52Z"/></symbol>
+</svg>
+
 
 <!-- ============================================================
      Moss Reveal — hero background integration (styles)
@@ -881,6 +894,19 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 </div>
 
 <!-- ====================== PILLARS ====================== -->
+<style id="pixel-style">
+  /* Streamline Pixel glyphs — 32x32 pixel-art icons, recolored via currentColor with crisp edges */
+  .pixico{ display:inline-block; flex:none; vertical-align:-.16em; color:inherit; shape-rendering:crispEdges; }
+  /* ledger: a glyph beside each step label that greens as the scroll rail reaches the step */
+  .led-step{ display:inline-flex; align-items:center; gap:.55rem; }
+  .led-step .pixico{ width:20px; height:20px; color:var(--ink-faint); opacity:.5; transition:color .5s ease, opacity .5s ease; }
+  .led.on .led-step .pixico{ color:var(--accent); opacity:1; }
+  /* pricing: a pixel glyph chip at the head of each tier card */
+  .tier-ico{ display:inline-grid; place-items:center; width:42px; height:42px; border-radius:11px;
+    background:rgba(88,129,87,.1); border:1px solid rgba(88,129,87,.22); margin-bottom:1.1rem; }
+  .tier-ico .pixico{ width:24px; height:24px; color:var(--accent); }
+  .tier.feat .tier-ico{ background:rgba(88,129,87,.18); border-color:rgba(88,129,87,.35); }
+</style>
 <section id="how">
   <div class="wrap">
     <div class="sec-head reveal">
@@ -894,21 +920,21 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
       <div class="led led-1">
         <span class="led-node" aria-hidden="true"></span>
         <div class="led-num" aria-hidden="true">01</div>
-        <div class="led-step">Detect</div>
+        <div class="led-step"><svg class="pixico"><use href="#pix-detect"/></svg>Detect</div>
         <h3>Find every claim</h3>
         <p>Break the answer into self-contained claims and flag any that retrieval doesn't support — supported, unsupported, or contradicted.</p>
       </div>
       <div class="led led-2">
         <span class="led-node" aria-hidden="true"></span>
         <div class="led-num" aria-hidden="true">02</div>
-        <div class="led-step">Diagnose</div>
+        <div class="led-step"><svg class="pixico"><use href="#pix-diagnose"/></svg>Diagnose</div>
         <h3>Understand why</h3>
         <p>See <em>why</em> it failed: missing evidence, weak retrieval, a contradicted source, or parametric drift — down to the exact chunks.</p>
       </div>
       <div class="led led-3">
         <span class="led-node" aria-hidden="true"></span>
         <div class="led-num" aria-hidden="true">03</div>
-        <div class="led-step">Correct</div>
+        <div class="led-step"><svg class="pixico"><use href="#pix-correct"/></svg>Correct</div>
         <h3>Ground it</h3>
         <p>Each flagged claim comes with a recommended fix — re-cite, regenerate, or lower confidence — to apply on your terms. Diagnosed, never blocked.</p>
       </div>
@@ -924,9 +950,8 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .scrolltear{ --st-paper:#fafafa; --st-line:rgba(38,48,26,.10); --st-ghost:#9a9a9a; --st-bg:#f2f2ef;
     position:relative; background:var(--bg); color:var(--ink); }   /* hero/page white — continuous with the page; cards read via border + shadow */
   /* outro sits on the same page bg now — no grey island to fade out of */
-  /* generous clean strips of bare page bg above + below the outro line, so the
-     background reads as one continuous canvas with the heading layered on top */
-  .st-spacer{ position:relative; min-height:62vh; display:flex; align-items:center; justify-content:center; padding:18vh 8vw; text-align:center;
+  /* compact outro — modest breathing room, no dead whitespace before the trust band */
+  .st-spacer{ position:relative; min-height:auto; display:flex; align-items:center; justify-content:center; padding:7vh 8vw 5vh; text-align:center;
     background:transparent; }
   .st-kicker{ font-family:var(--mono); font-size:12px; letter-spacing:.24em; text-transform:uppercase; color:var(--moss); }
   .st-spacer h2{ font-size:clamp(34px,6vw,72px); font-weight:600; letter-spacing:-.03em; line-height:1.02; margin-top:18px; max-width:20ch; color:var(--ink); }
@@ -1140,7 +1165,7 @@ img, svg, canvas, video, iframe, table, pre{ max-width:100%; }
   .wrap{ padding-inline:clamp(1rem,4.5vw,3.5rem); }
 
   /* scroll-tear outro: cap the tall clean strips on short screens */
-  .st-spacer{ padding:10vh 6vw; min-height:auto; }
+  .st-spacer{ padding:6vh 6vw 4vh; min-height:auto; }
 
   /* features + playground: keep claim-reasoning tooltips inside the viewport */
   .qr-claim::after,
@@ -2223,7 +2248,7 @@ result = veralith.<span class="tok-fn">evaluate</span>(
       '<div class="pg-chunk"><span class="rk">#' + i + '</span><span>' + esc(c) + '</span></div>').join('');
     elResp.innerHTML = s.response.map(seg => seg.c
       ? '<span class="pg-claim ' + seg.c.v + '" data-r="' + escA(seg.c.r) + '">' + esc(seg.t) +
-        '<span class="pg-rtag">' + (seg.c.v === 'g' ? 'grounded' : 'ungrounded') + '</span></span>'
+        '<span class="pg-rtag"><svg class="pixico" style="width:11px;height:11px;margin-right:.3em"><use href="#pix-' + (seg.c.v === 'g' ? 'check' : 'remove') + '"></use></svg>' + (seg.c.v === 'g' ? 'grounded' : 'ungrounded') + '</span></span>'
       : esc(seg.t)).join('');
     elVerdict.innerHTML = '<div class="pg-status">Press <b>Run check</b> to evaluate this trace — hover any highlighted claim afterwards for the judge’s reasoning.</div>';
   }
@@ -2297,6 +2322,7 @@ result = veralith.<span class="tok-fn">evaluate</span>(
 
     <div class="tiers">
       <div class="tier reveal" data-i="0">
+        <div class="tier-ico"><svg class="pixico"><use href="#pix-startup"/></svg></div>
         <span class="name">Hobby</span>
         <div class="price">$0</div>
         <p class="desc">For prototypes and side projects finding their footing.</p>
@@ -2310,6 +2336,7 @@ result = veralith.<span class="tok-fn">evaluate</span>(
       </div>
 
       <div class="tier feat reveal" data-i="1">
+        <div class="tier-ico"><svg class="pixico"><use href="#pix-browser"/></svg></div>
         <span class="name">Team</span>
         <div class="price">$79<small> / mo</small></div>
         <p class="desc">For teams running RAG in production and tuning it weekly.</p>
@@ -2323,6 +2350,7 @@ result = veralith.<span class="tok-fn">evaluate</span>(
       </div>
 
       <div class="tier reveal" data-i="2">
+        <div class="tier-ico"><svg class="pixico"><use href="#pix-global"/></svg></div>
         <span class="name">Enterprise</span>
         <div class="price">Custom</div>
         <p class="desc">For regulated, high-volume, or self-hosted deployments.</p>
