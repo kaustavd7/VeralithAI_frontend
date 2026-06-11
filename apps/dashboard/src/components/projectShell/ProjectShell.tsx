@@ -1,13 +1,19 @@
 import type { ReactNode } from 'react';
-import { ProjectSidebar, type SidebarNavId } from './ProjectSidebar';
+import { ProjectSidebar } from './ProjectSidebar';
 import { ProjectTopbar } from './ProjectTopbar';
+import { useSidebarMode } from '../../lib/sidebarMode';
 import '../../styles/project-shell.css';
 import '../../styles/project-page.css';
 
 type Props = {
-  slug: string;
-  active: SidebarNavId;
-  project: string;
+  /** sidebar nav variant: project-scoped tabs, or top-level workspace tabs */
+  variant?: 'project' | 'workspace';
+  /** active sidebar item id */
+  active: string;
+  /** present for project pages; omit at the workspace level */
+  slug?: string;
+  /** project name — when set, the topbar appends the `/ project ⌄` switcher */
+  project?: string;
   env?: 'production' | 'staging' | 'local';
   workspace?: string;
   /** Extra class on `.shell-main` (e.g. a pure-black canvas override). */
@@ -18,8 +24,9 @@ type Props = {
 };
 
 export function ProjectShell({
-  slug,
+  variant = 'project',
   active,
+  slug,
   project,
   env = 'local',
   workspace = 'workspace',
@@ -27,11 +34,13 @@ export function ProjectShell({
   drawer,
   children,
 }: Props) {
+  const [mode] = useSidebarMode();
+
   return (
-    <div className="shell">
+    <div className="shell" data-sb={mode}>
       <ProjectTopbar project={project} env={env} workspace={workspace} />
       <div className="shell-body">
-        <ProjectSidebar active={active} slug={slug} />
+        <ProjectSidebar active={active} slug={slug} variant={variant} />
         <main className={'shell-main' + (mainClass ? ' ' + mainClass : '')}>{children}</main>
         {drawer}
       </div>

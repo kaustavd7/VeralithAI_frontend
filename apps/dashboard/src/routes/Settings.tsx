@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../api/client';
-import { GlobalTopbar } from '../components/projectShell/GlobalTopbar';
+import { ProjectShell } from '../components/projectShell/ProjectShell';
 import '../styles/project-shell.css';
 import '../styles/project-page.css';
 import type { Me } from '../api/types';
@@ -256,11 +256,10 @@ export default function Settings() {
   const me = meQuery.data;
 
   return (
-    <div className="ph">
-      <GlobalTopbar crumb="settings" />
-      <div className="shell-body se-body" style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+    <ProjectShell variant="workspace" active="wsSettings">
+      <div className="se-body">
         <SettingsSidebar active="profile" />
-        <main className="shell-main se-main">
+        <div className="se-main">
           <div className="se-content">
             <h1 className="se-title">Profile</h1>
             {meQuery.isLoading || !me ? (
@@ -275,8 +274,8 @@ export default function Settings() {
               </>
             )}
           </div>
-        </main>
+        </div>
       </div>
-    </div>
+    </ProjectShell>
   );
 }

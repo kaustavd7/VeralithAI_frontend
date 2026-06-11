@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSidebarMode, type SidebarMode } from '../../lib/sidebarMode';
 
 export type SidebarNavId =
   | 'overview'
@@ -11,15 +12,22 @@ export type SidebarNavId =
   | 'calibration'
   | 'judges'
   | 'chunks'
-  | 'queue';
+  | 'queue'
+  // workspace-level (top of the app, no project selected)
+  | 'projects'
+  | 'billing'
+  | 'wsSettings';
+
+type Variant = 'project' | 'workspace';
 
 type Props = {
-  active: SidebarNavId;
-  slug: string;
+  active: string;
+  slug?: string;
+  variant?: Variant;
 };
 
 type Item = {
-  id: SidebarNavId;
+  id: string;
   label: string;
   icon: keyof typeof ICONS;
   kbd?: string;
@@ -30,7 +38,7 @@ type Item = {
 
 type Group = { label: string; items: Item[] };
 
-function groups(slug: string): Group[] {
+function projectGroups(slug: string): Group[] {
   return [
     {
       label: 'workspace',
@@ -55,6 +63,18 @@ function groups(slug: string): Group[] {
         { id: 'judges', label: 'Judges', icon: 'judges' },
         { id: 'chunks', label: 'Retrieval chunks', icon: 'chunks' },
         { id: 'queue', label: 'Worker queue', icon: 'queue' },
+      ],
+    },
+  ];
+}
+
+function workspaceGroups(): Group[] {
+  return [
+    {
+      label: 'workspace',
+      items: [
+        { id: 'projects', label: 'Projects', icon: 'projects', route: '/projects' },
+        { id: 'wsSettings', label: 'Workspace settings', icon: 'settings', route: '/settings' },
       ],
     },
   ];
@@ -114,18 +134,28 @@ const ICONS = {
     </>
   ),
   queue: <path d="M3 3h10v10H3z M3 6h10 M6 6v7" stroke="currentColor" strokeWidth="1.3" fill="none" />,
-  brand: (
+  projects: (
     <>
+      <path d="M8 1.8 L13.6 5 L13.6 11 L8 14.2 L2.4 11 L2.4 5 Z" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinejoin="round" />
+      <path d="M2.4 5 L8 8.2 L13.6 5 M8 8.2 L8 14.2" stroke="currentColor" strokeWidth="1.3" strokeOpacity="0.55" fill="none" strokeLinejoin="round" />
+    </>
+  ),
+  billing: (
+    <>
+      <rect x="2" y="3.5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none" />
+      <path d="M2 6.5h12" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M4.5 10h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </>
+  ),
+  settings: (
+    <>
+      <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.3" fill="none" />
       <path
-        d="M11 2 L20 18 L2 18 Z"
-        fill="currentColor"
-        fillOpacity="0.16"
+        d="M8 1.5v2.1M8 12.4v2.1M1.5 8h2.1M12.4 8h2.1M3.4 3.4l1.5 1.5M11.1 11.1l1.5 1.5M12.6 3.4l-1.5 1.5M4.9 11.1l-1.5 1.5"
         stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
+        strokeWidth="1.2"
+        strokeLinecap="round"
       />
-      <path d="M11 2 L11 18" stroke="currentColor" strokeWidth="1.6" strokeOpacity="0.55" />
-      <path d="M6.5 12 L15.5 12" stroke="currentColor" strokeWidth="1.6" strokeOpacity="0.55" />
     </>
   ),
 };
@@ -161,37 +191,70 @@ function SbTip({ label, kbd }: { label: string; kbd?: string }) {
   );
 }
 
-export function ProjectSidebar({ active, slug }: Props) {
+// Click cycles through the modes (Spotify-loop style): expanded → expand-on-hover → collapsed → …
+const MODE_CYCLE: SidebarMode[] = ['expanded', 'hover', 'collapsed'];
+const MODE_LABEL: Record<SidebarMode, string> = {
+  expanded: 'Expanded',
+  hover: 'Expand on hover',
+  collapsed: 'Collapsed',
+};
+
+function SidebarControl() {
+  const [mode, setMode] = useSidebarMode();
+  const cycle = () => setMode(MODE_CYCLE[(MODE_CYCLE.indexOf(mode) + 1) % MODE_CYCLE.length]);
+
+  return (
+    <div className="sb-ctrl">
+      <button
+        type="button"
+        className={'sb-ctrl-btn sb-ctrl-' + mode}
+        onClick={cycle}
+        aria-label={`Sidebar: ${MODE_LABEL[mode]} — click to change`}
+        title={`Sidebar: ${MODE_LABEL[mode]}`}
+      >
+        <PanelIcon mode={mode} />
+      </button>
+    </div>
+  );
+}
+
+function PanelIcon({ mode }: { mode: SidebarMode }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" strokeWidth="1.3" />
+      {mode === 'expanded' && <rect x="2.7" y="3.7" width="3.3" height="8.6" rx="0.8" fill="currentColor" />}
+      {mode === 'collapsed' && <path d="M6 3v10" stroke="currentColor" strokeWidth="1.3" />}
+      {mode === 'hover' && (
+        <path d="M6 3v10" stroke="currentColor" strokeWidth="1.3" strokeDasharray="2 1.6" />
+      )}
+    </svg>
+  );
+}
+
+export function ProjectSidebar({ active, slug = '', variant = 'project' }: Props) {
   const [hover, setHover] = useState(false);
+  const [mode] = useSidebarMode();
   const navigate = useNavigate();
+
+  // collapsed → never expands; expanded → always; hover → on cursor rest.
+  const expanded = mode === 'expanded' || (mode === 'hover' && hover);
+  const grps = variant === 'workspace' ? workspaceGroups() : projectGroups(slug);
 
   return (
     <aside
-      className={'sb' + (hover ? ' is-expanded' : '')}
+      className={'sb sb-mode-' + mode + (expanded ? ' is-expanded' : '')}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      <div className="sb-brand">
-        <span className="sb-brand-mark">
-          <svg width="20" height="20" viewBox="0 0 22 22">
-            {ICONS.brand}
-          </svg>
-        </span>
-        <span className="sb-brand-name">veralith</span>
-        <span className="sb-brand-env">local</span>
-      </div>
-
       <div className="sb-scroll">
-        {groups(slug).map((g) => (
+        {grps.map((g) => (
           <div className="sb-group" key={g.label}>
             <div className="sb-group-label">{g.label}</div>
             {g.items.map((it) => {
               const disabled = !it.route;
               const isActive = active === it.id;
               const className =
-                'sb-item' +
-                (isActive ? ' is-active' : '') +
-                (disabled ? ' is-disabled' : '');
+                'sb-item' + (isActive ? ' is-active' : '') + (disabled ? ' is-disabled' : '');
               return (
                 <div
                   key={it.id}
@@ -215,13 +278,7 @@ export function ProjectSidebar({ active, slug }: Props) {
         ))}
       </div>
 
-      <div className="sb-foot">
-        <div className="sb-foot-status">
-          <span className="sb-live-dot" />
-          <span className="sb-foot-label">Connected</span>
-          <span className="sb-foot-sub">v0.2</span>
-        </div>
-      </div>
+      <SidebarControl />
     </aside>
   );
 }

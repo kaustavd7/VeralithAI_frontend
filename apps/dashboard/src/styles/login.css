@@ -1,0 +1,331 @@
+/* ============================================================
+   Login / auth — split screen (form · brand showcase)
+   Left form column is theme-aware (legacy --* tokens, flips with
+   [data-theme]); the right brand column is a fixed deep-forest
+   sage surface so it always reads as "Veralith" regardless of
+   theme. Collapses to a single centered column under 880px.
+   ============================================================ */
+
+.lg-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg) url('/ROCK_grasses.webp') center / cover no-repeat;
+  color: var(--fg);
+}
+
+/* ---------- form column ---------- */
+.lg-form-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  /* theme-aware scrim so the form stays legible over the photo in both
+     light and dark; lets the image bleed through toward the seam. */
+  background: linear-gradient(
+    115deg,
+    color-mix(in oklab, var(--bg) 96%, transparent) 0%,
+    color-mix(in oklab, var(--bg) 86%, transparent) 62%,
+    color-mix(in oklab, var(--bg) 56%, transparent) 100%
+  );
+  backdrop-filter: blur(2px);
+}
+
+.lg-form {
+  width: 100%;
+  max-width: 360px;
+  animation: lgRise 0.5s cubic-bezier(0.22, 0.7, 0.2, 1) both;
+}
+
+@keyframes lgRise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.lg-brandline {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 38px;
+}
+.lg-brandline svg { display: block; }
+.lg-brandline-name {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.lg-h1 {
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+.lg-sub {
+  margin: 0 0 26px;
+  font-size: 14px;
+  color: var(--fg-3);
+  line-height: 1.5;
+}
+
+/* oauth */
+.lg-oauth { display: flex; flex-direction: column; gap: 10px; }
+.lg-oauth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 16px;
+  background: color-mix(in oklab, var(--accent) 8%, var(--panel-2));
+  color: var(--fg);
+  border: 1px solid color-mix(in oklab, var(--accent) 20%, var(--line-2));
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.06s ease;
+}
+.lg-oauth-btn:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 15%, var(--panel-2));
+  border-color: var(--accent);
+}
+.lg-oauth-btn:active:not(:disabled) { transform: translateY(1px); }
+.lg-oauth-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.lg-oauth-btn svg { flex: none; }
+
+/* divider */
+.lg-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0;
+  color: var(--fg-4);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.lg-divider::before,
+.lg-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* fields */
+.lg-field { display: block; }
+.lg-field + .lg-field { margin-top: 14px; }
+.lg-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--fg-2);
+  margin-bottom: 7px;
+}
+.lg-input-wrap { position: relative; }
+.lg-input {
+  width: 100%;
+  padding: 11px 12px;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.lg-input::placeholder { color: var(--fg-4); }
+.lg-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 22%, transparent);
+}
+.lg-input.has-toggle { padding-right: 42px; }
+.lg-eye {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  background: none;
+  border: none;
+  color: var(--fg-3);
+  border-radius: 6px;
+  transition: color 0.14s ease, background 0.14s ease;
+}
+.lg-eye:hover { color: var(--fg); background: var(--hover); }
+
+/* submit */
+.lg-submit {
+  width: 100%;
+  margin-top: 22px;
+  padding: 11px 16px;
+  background: var(--accent);
+  color: var(--accent-ink, var(--bg));
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 14px;
+  transition: filter 0.16s ease, opacity 0.16s ease, transform 0.06s ease;
+}
+.lg-submit:hover:not(:disabled) { filter: brightness(1.07); }
+.lg-submit:active:not(:disabled) { transform: translateY(1px); }
+.lg-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* messages */
+.lg-msg {
+  margin-top: 14px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.lg-msg.is-error {
+  background: rgba(226, 92, 92, 0.1);
+  border: 1px solid rgba(226, 92, 92, 0.3);
+  color: var(--cell-cu);
+}
+.lg-msg.is-info {
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 32%, transparent);
+  color: var(--accent);
+}
+
+/* mode toggle */
+.lg-foot {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--fg-3);
+}
+.lg-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---------- brand showcase column (fixed deep forest) ---------- */
+.lg-brand-col {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 34px;
+  padding: 48px;
+  color: #e8ece4;
+  background:
+    linear-gradient(155deg, rgba(12, 18, 12, 0.78) 0%, rgba(10, 15, 10, 0.58) 45%, rgba(8, 12, 8, 0.86) 100%),
+    radial-gradient(120% 90% at 88% 6%, rgba(163, 177, 138, 0.18), transparent 55%),
+    radial-gradient(90% 70% at 12% 100%, rgba(88, 129, 87, 0.22), transparent 60%);
+  border-left: 1px solid rgba(163, 177, 138, 0.12);
+}
+
+/* faint oversized crystal watermark */
+.lg-brand-watermark {
+  position: absolute;
+  right: -90px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 540px;
+  height: 540px;
+  opacity: 0.28;
+  pointer-events: none;
+  color: #070b07;
+}
+
+/* ambient drifting glow */
+.lg-brand-glow {
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  top: 10%;
+  right: 6%;
+  background: radial-gradient(circle, rgba(163, 177, 138, 0.3), transparent 70%);
+  filter: blur(36px);
+  animation: lgDrift 16s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes lgDrift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-46px, 34px) scale(1.12); }
+}
+
+.lg-brand-body {
+  position: relative;
+  max-width: 470px;
+}
+.lg-brand-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a3b18a;
+  margin-bottom: 18px;
+}
+.lg-brand-head {
+  font-size: 34px;
+  line-height: 1.18;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0 0 18px;
+  color: #f1f4ec;
+}
+.lg-brand-head em {
+  color: #a3b18a;
+  font-style: normal;
+}
+.lg-brand-text {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #aebaa3;
+  margin: 0;
+}
+
+/* capability strip */
+.lg-brand-caps {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.lg-cap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  background: rgba(163, 177, 138, 0.07);
+  border: 1px solid rgba(163, 177, 138, 0.16);
+  border-radius: 999px;
+  font-size: 13px;
+  color: #cdd6c4;
+}
+.lg-cap svg {
+  flex: none;
+  color: #a3b18a;
+}
+
+@media (max-width: 880px) {
+  .lg-page { grid-template-columns: 1fr; }
+  .lg-brand-col { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lg-form { animation: none; }
+  .lg-brand-glow { animation: none; }
+}

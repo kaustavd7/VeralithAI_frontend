@@ -3,6 +3,7 @@ import type { Provider } from '@supabase/supabase-js';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import '../styles/login.css';
 
 type Mode = 'sign-in' | 'sign-up';
 
@@ -14,6 +15,7 @@ export default function Login() {
   const [mode, setMode] = useState<Mode>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<Provider | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,196 +79,171 @@ export default function Login() {
     }
   }
 
+  const busy = submitting || oauthLoading !== null;
+
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '32px',
-        background: 'var(--bg)',
-      }}
-    >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: 380,
-          padding: '32px',
-          background: 'var(--panel)',
-          border: '1px solid var(--line)',
-          borderRadius: 'var(--radius)',
-        }}
-      >
-        <div
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 12,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'var(--accent)',
-            marginBottom: 6,
-          }}
-        >
-          veralith
-        </div>
-        <h1 style={{ margin: '0 0 4px 0', fontSize: 22, fontWeight: 600 }}>
-          {mode === 'sign-in' ? 'Sign in' : 'Create your account'}
-        </h1>
-        <p style={{ margin: '0 0 24px 0', color: 'var(--fg-3)', fontSize: 13 }}>
-          {mode === 'sign-in'
-            ? 'Welcome back. Sign in to continue.'
-            : 'Start diagnosing your RAG pipeline in minutes.'}
-        </p>
+    <main className="lg-page">
+      <div className="lg-form-col">
+        <div className="lg-form">
+          <div className="lg-brandline">
+            <CrystalMark size={42} />
+            <span className="lg-brandline-name">veralith</span>
+          </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-          <OAuthButton
-            provider="google"
-            label="Continue with Google"
-            loading={oauthLoading === 'google'}
-            disabled={submitting || oauthLoading !== null}
-            onClick={() => onOAuth('google')}
-          />
-          <OAuthButton
-            provider="github"
-            label="Continue with GitHub"
-            loading={oauthLoading === 'github'}
-            disabled={submitting || oauthLoading !== null}
-            onClick={() => onOAuth('github')}
-          />
-        </div>
+          <h1 className="lg-h1">{mode === 'sign-in' ? 'Sign in' : 'Create your account'}</h1>
+          <p className="lg-sub">
+            {mode === 'sign-in'
+              ? 'Welcome back. Sign in to continue.'
+              : 'Start diagnosing your RAG pipeline in minutes.'}
+          </p>
 
-        <Divider label="or" />
+          <div className="lg-oauth">
+            <OAuthButton
+              provider="google"
+              label="Continue with Google"
+              loading={oauthLoading === 'google'}
+              disabled={busy}
+              onClick={() => onOAuth('google')}
+            />
+            <OAuthButton
+              provider="github"
+              label="Continue with GitHub"
+              loading={oauthLoading === 'github'}
+              disabled={busy}
+              onClick={() => onOAuth('github')}
+            />
+          </div>
 
-        <form onSubmit={onSubmit} style={{ marginTop: 20 }}>
-          <Field
-            id="email"
-            label="Email"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            placeholder="you@example.com"
-            autoComplete="email"
-            disabled={submitting || oauthLoading !== null}
-            required
-            autoFocus
-          />
-          <div style={{ height: 12 }} />
-          <Field
-            id="password"
-            label="Password"
-            type="password"
-            value={password}
-            onChange={setPassword}
-            placeholder="At least 6 characters"
-            autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
-            disabled={submitting || oauthLoading !== null}
-            required
-            minLength={6}
-          />
+          <div className="lg-divider">
+            <span>or</span>
+          </div>
 
-          {error ? <Message kind="error">{error}</Message> : null}
-          {info ? <Message kind="info">{info}</Message> : null}
+          <form onSubmit={onSubmit}>
+            <div className="lg-field">
+              <label className="lg-label" htmlFor="email">
+                Email
+              </label>
+              <div className="lg-input-wrap">
+                <input
+                  id="email"
+                  className="lg-input"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  disabled={busy}
+                  required
+                  autoFocus
+                />
+              </div>
+            </div>
 
-          <button
-            type="submit"
-            disabled={submitting || oauthLoading !== null || !email || !password}
-            style={{
-              width: '100%',
-              marginTop: 20,
-              padding: '10px 16px',
-              background: 'var(--accent)',
-              color: 'var(--bg)',
-              border: 'none',
-              borderRadius: 'var(--radius-sm)',
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: submitting ? 'not-allowed' : 'pointer',
-              opacity: submitting || !email || !password ? 0.6 : 1,
-            }}
-          >
-            {submitting
-              ? mode === 'sign-in'
-                ? 'Signing in…'
-                : 'Creating account…'
-              : mode === 'sign-in'
-                ? 'Sign in'
-                : 'Create account'}
-          </button>
-        </form>
+            <div className="lg-field">
+              <label className="lg-label" htmlFor="password">
+                Password
+              </label>
+              <div className="lg-input-wrap">
+                <input
+                  id="password"
+                  className="lg-input has-toggle"
+                  type={showPw ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
+                  disabled={busy}
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  className="lg-eye"
+                  onClick={() => setShowPw((s) => !s)}
+                  aria-label={showPw ? 'Hide password' : 'Show password'}
+                  tabIndex={-1}
+                >
+                  {showPw ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+            </div>
 
-        <div
-          style={{
-            marginTop: 20,
-            textAlign: 'center',
-            fontSize: 13,
-            color: 'var(--fg-3)',
-          }}
-        >
-          {mode === 'sign-in' ? (
-            <>
-              No account?{' '}
-              <ModeToggle onClick={() => { setMode('sign-up'); clearMessages(); }}>
-                Sign up
-              </ModeToggle>
-            </>
-          ) : (
-            <>
-              Already have an account?{' '}
-              <ModeToggle onClick={() => { setMode('sign-in'); clearMessages(); }}>
-                Sign in
-              </ModeToggle>
-            </>
-          )}
+            {error ? <div className="lg-msg is-error">{error}</div> : null}
+            {info ? <div className="lg-msg is-info">{info}</div> : null}
+
+            <button type="submit" className="lg-submit" disabled={busy || !email || !password}>
+              {submitting
+                ? mode === 'sign-in'
+                  ? 'Signing in…'
+                  : 'Creating account…'
+                : mode === 'sign-in'
+                  ? 'Sign in'
+                  : 'Create account'}
+            </button>
+          </form>
+
+          <div className="lg-foot">
+            {mode === 'sign-in' ? (
+              <>
+                No account?{' '}
+                <button
+                  type="button"
+                  className="lg-link"
+                  onClick={() => {
+                    setMode('sign-up');
+                    clearMessages();
+                  }}
+                >
+                  Sign up
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  className="lg-link"
+                  onClick={() => {
+                    setMode('sign-in');
+                    clearMessages();
+                  }}
+                >
+                  Sign in
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </main>
-  );
-}
 
-function Field({
-  id,
-  label,
-  value,
-  onChange,
-  ...rest
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'id' | 'value' | 'onChange'>) {
-  return (
-    <div>
-      <label
-        htmlFor={id}
-        style={{
-          display: 'block',
-          fontSize: 12,
-          color: 'var(--fg-2)',
-          marginBottom: 6,
-        }}
-      >
-        {label}
-      </label>
-      <input
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        {...rest}
-        style={{
-          width: '100%',
-          padding: '10px 12px',
-          background: 'var(--bg)',
-          color: 'var(--fg)',
-          border: '1px solid var(--line-2)',
-          borderRadius: 'var(--radius-sm)',
-          fontFamily: 'var(--font-sans)',
-          fontSize: 14,
-          outline: 'none',
-        }}
-      />
-    </div>
+      <aside className="lg-brand-col" aria-hidden="true">
+        <div className="lg-brand-glow" />
+        <CrystalMark size={540} className="lg-brand-watermark" />
+
+        <div className="lg-brand-body">
+          <div className="lg-brand-eyebrow">RAG observability &amp; self-healing</div>
+          <h2 className="lg-brand-head">
+            Know the moment your RAG goes <em>wrong</em>.
+          </h2>
+          <p className="lg-brand-text">
+            Veralith traces every retrieval-augmented answer back to its sources, flags
+            hallucinations as they happen, and heals the gaps in your pipeline — automatically.
+          </p>
+        </div>
+
+        <div className="lg-brand-caps">
+          <span className="lg-cap">
+            <TraceIcon /> Trace
+          </span>
+          <span className="lg-cap">
+            <DiagnoseIcon /> Diagnose
+          </span>
+          <span className="lg-cap">
+            <HealIcon /> Self-heal
+          </span>
+        </div>
+      </aside>
+    </main>
   );
 }
 
@@ -284,90 +261,80 @@ function OAuthButton({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 10,
-        width: '100%',
-        padding: '10px 16px',
-        background: 'var(--panel-2)',
-        color: 'var(--fg)',
-        border: '1px solid var(--line-2)',
-        borderRadius: 'var(--radius-sm)',
-        fontSize: 14,
-        fontWeight: 500,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled && !loading ? 0.5 : 1,
-      }}
-    >
+    <button type="button" className="lg-oauth-btn" onClick={onClick} disabled={disabled}>
       {provider === 'google' ? <GoogleIcon /> : <GitHubIcon />}
       <span>{loading ? 'Redirecting…' : label}</span>
     </button>
   );
 }
 
-function Divider({ label }: { label: string }) {
+/* The Veralith crystal mark — same geometry as the shell Brand, drawn with
+   currentColor so the watermark can inherit a faint sage tint and the inline
+   marks can pick up --accent. */
+function CrystalMark({ size = 22, className }: { size?: number; className?: string }) {
+  const stroke = className ? 'currentColor' : 'var(--accent)';
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        color: 'var(--fg-4)',
-        fontSize: 11,
-        textTransform: 'uppercase',
-        letterSpacing: '0.08em',
-      }}
-    >
-      <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-      <span>{label}</span>
-      <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-    </div>
+    <svg width={size} height={size} viewBox="0 0 22 22" className={className} aria-hidden="true">
+      <path
+        d="M4 13.5 L7.5 6.5 L13 5 L18.5 9.5 L18 15 L11.5 19 L5 17.5 Z"
+        fill={stroke}
+        fillOpacity="0.16"
+        stroke={stroke}
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.5 6.5 L11 11 L18.5 9.5 M11 11 L11.5 19 M11 11 L5 17.5"
+        stroke={stroke}
+        strokeWidth="1.4"
+        strokeOpacity="0.55"
+        fill="none"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
-function Message({ kind, children }: { kind: 'error' | 'info'; children: React.ReactNode }) {
-  const isError = kind === 'error';
+function EyeIcon() {
   return (
-    <div
-      style={{
-        marginTop: 12,
-        padding: '8px 12px',
-        background: isError ? 'rgba(226, 92, 92, 0.1)' : 'rgba(111, 214, 196, 0.08)',
-        border: `1px solid ${isError ? 'rgba(226, 92, 92, 0.3)' : 'rgba(111, 214, 196, 0.25)'}`,
-        borderRadius: 'var(--radius-sm)',
-        color: isError ? 'var(--cell-cu)' : 'var(--accent)',
-        fontSize: 13,
-      }}
-    >
-      {children}
-    </div>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
   );
 }
 
-function ModeToggle({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+function EyeOffIcon() {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        background: 'none',
-        border: 'none',
-        padding: 0,
-        color: 'var(--accent)',
-        fontSize: 13,
-        cursor: 'pointer',
-        textDecoration: 'underline',
-        fontFamily: 'inherit',
-      }}
-    >
-      {children}
-    </button>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+}
+
+function TraceIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true">
+      <path d="M2 4h12M2 8h12M2 12h8" />
+    </svg>
+  );
+}
+
+function DiagnoseIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1.5 8.5h3l2-4 2.5 7 2-3h3" />
+    </svg>
+  );
+}
+
+function HealIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <path d="M12 8v8M8 12h8" />
+    </svg>
   );
 }
 

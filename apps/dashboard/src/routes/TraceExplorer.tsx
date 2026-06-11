@@ -487,7 +487,6 @@ export default function TraceExplorer() {
                           style={evaluating ? undefined : { background: severityBg(r.sufficiency_fraction) }}
                         />
                       </div>
-                      <div className="te-td te-col-time po-mono">{relativeTime(r.created_at)}</div>
                       <div className="te-td te-col-q">
                         <span className="te-q-id po-mono" title={r.id}>#{r.id.slice(0, 8)}</span>
                         <span className="te-q-text">{r.query}</span>
@@ -514,6 +513,7 @@ export default function TraceExplorer() {
                       <div className="te-td te-col-f">
                         {evaluating ? <span className="te-shimmer" /> : <MeterBar value={r.faithfulness_fraction} />}
                       </div>
+                      <div className="te-td te-col-time po-mono">{relativeTime(r.created_at)}</div>
                     </div>
                   );
                 })}

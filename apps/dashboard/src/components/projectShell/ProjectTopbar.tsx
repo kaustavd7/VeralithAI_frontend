@@ -1,16 +1,83 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
+import { useProjects } from '../../hooks/useProjects';
+import { api } from '../../api/client';
 import { AccountMenu } from './AccountMenu';
 
 type Props = {
   workspace?: string;
-  project: string;
+  /** when set, the topbar appends the `/ project ⌄` switcher; omit at the workspace level */
+  project?: string;
+  /** kept for back-compat with ProjectShell; env is no longer shown */
   env?: 'production' | 'staging' | 'local';
 };
 
-export function ProjectTopbar({ workspace = 'workspace', project, env = 'local' }: Props) {
+// Backend only models trial/pro today; trial reads as the free tier.
+const TIER_LABEL: Record<string, string> = { trial: 'Free', pro: 'Pro', max: 'Max' };
+
+export function ProjectTopbar({ workspace = 'workspace', project }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [switchOpen, setSwitchOpen] = useState(false);
+  const [q, setQ] = useState('');
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { slug = '' } = useParams<{ slug: string }>();
+  const projectsQuery = useProjects();
+  const meQuery = useQuery({ queryKey: ['me'], queryFn: () => api.getMe() });
+
+  const tier = meQuery.data?.plan_tier;
+  const tierLabel = tier ? (TIER_LABEL[tier] ?? tier) : null;
+
+  const projects = projectsQuery.data?.projects ?? [];
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    if (!s) return projects;
+    return projects.filter(
+      (p) => p.name.toLowerCase().includes(s) || p.slug.toLowerCase().includes(s),
+    );
+  }, [projects, q]);
+
+  const switchRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!switchOpen) return;
+    function onDoc(e: MouseEvent) {
+      if (switchRef.current && !switchRef.current.contains(e.target as Node)) {
+        setSwitchOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [switchOpen]);
+
+  // "<Name>'s workspace" derived from the auth user. useAuth resolves async on
+  // every mount, so we cache the last-known label and show it immediately to
+  // avoid flashing the "workspace" fallback on navigation/reload.
+  const derivedLabel = useMemo(() => {
+    const meta = user?.user_metadata as Record<string, unknown> | undefined;
+    const full = (meta?.['full_name'] as string | undefined) ?? (meta?.['name'] as string | undefined);
+    const name = full ?? user?.email?.split('@')[0] ?? '';
+    return name ? `${name}'s workspace` : '';
+  }, [user]);
+
+  const [workspaceLabel, setWorkspaceLabel] = useState<string>(() => {
+    try {
+      return localStorage.getItem('veralith.workspaceName') ?? '';
+    } catch {
+      return '';
+    }
+  });
+  useEffect(() => {
+    if (derivedLabel && derivedLabel !== workspaceLabel) {
+      setWorkspaceLabel(derivedLabel);
+      try {
+        localStorage.setItem('veralith.workspaceName', derivedLabel);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [derivedLabel, workspaceLabel]);
 
   const initials = useMemo(() => {
     const meta = user?.user_metadata as Record<string, unknown> | undefined;
@@ -26,21 +93,92 @@ export function ProjectTopbar({ workspace = 'workspace', project, env = 'local' 
   return (
     <div className="tb">
       <div className="tb-crumbs">
-        <span className="tb-crumb">{workspace}</span>
+        <button type="button" className="tb-logo" aria-label="All projects" onClick={() => navigate('/projects')}>
+          <VeralithMark />
+        </button>
         <span className="tb-crumb-sep">/</span>
-        <span className="tb-crumb is-here">{project}</span>
-        <span className={'tb-pill tb-pill-' + env}>
-          <span className="tb-pill-dot" />
-          {env}
-        </span>
+        <button type="button" className="tb-crumb tb-crumb-link" onClick={() => navigate('/projects')}>
+          {workspaceLabel || workspace}
+        </button>
+        {tierLabel && <span className="tb-tier">{tierLabel}</span>}
+
+        {project && (
+        <>
+        <span className="tb-crumb-sep">/</span>
+
+        <div className="tb-switch" ref={switchRef}>
+          <button
+            type="button"
+            className={'tb-switch-btn' + (switchOpen ? ' is-open' : '')}
+            onClick={() => setSwitchOpen((o) => !o)}
+            aria-haspopup="menu"
+            aria-expanded={switchOpen}
+          >
+            <span className="tb-crumb is-here">{project}</span>
+            <ChevronIcon />
+          </button>
+
+          {switchOpen && (
+            <div className="tb-switch-menu" role="menu">
+              {projects.length > 6 && (
+                <div className="tb-switch-search">
+                  <input
+                    autoFocus
+                    placeholder="Find project…"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                  />
+                </div>
+              )}
+              <div className="tb-switch-list">
+                {filtered.map((p) => {
+                  const active = p.slug === slug || p.id === slug;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={'tb-switch-item' + (active ? ' is-active' : '')}
+                      onClick={() => {
+                        setSwitchOpen(false);
+                        navigate(`/projects/${p.slug ?? p.id}`);
+                      }}
+                    >
+                      <span className="tb-switch-mark">
+                        <CubeMini />
+                      </span>
+                      <span className="tb-switch-name">{p.name}</span>
+                      {active && <CheckIcon />}
+                    </button>
+                  );
+                })}
+                {filtered.length === 0 && <div className="tb-switch-empty">No projects</div>}
+              </div>
+              <button
+                type="button"
+                className="tb-switch-foot"
+                onClick={() => {
+                  setSwitchOpen(false);
+                  navigate('/projects');
+                }}
+              >
+                View all projects
+              </button>
+            </div>
+          )}
+        </div>
+        </>
+        )}
       </div>
+
       <div className="tb-right">
-        <button className="tb-icon-btn" aria-label="Search" type="button" disabled>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <span className="ph-search-pill" role="button" tabIndex={0}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
             <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.3" />
             <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
           </svg>
-        </button>
+          Search…
+          <span className="ph-kbd">⌘K</span>
+        </span>
         <button className="tb-icon-btn" aria-label="Help" type="button" disabled>
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
             <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" />
@@ -68,5 +206,53 @@ export function ProjectTopbar({ workspace = 'workspace', project, env = 'local' 
         </div>
       </div>
     </div>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg className="tb-chev-ic" width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg className="check" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M3.5 8.5l3 3 6-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function VeralithMark() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+      <path
+        d="M4 13.5 L7.5 6.5 L13 5 L18.5 9.5 L18 15 L11.5 19 L5 17.5 Z"
+        fill="var(--accent)"
+        fillOpacity="0.32"
+        stroke="var(--accent)"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.5 6.5 L11 11 L18.5 9.5 M11 11 L11.5 19 M11 11 L5 17.5"
+        stroke="var(--accent)"
+        strokeWidth="1.4"
+        strokeOpacity="0.78"
+        fill="none"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CubeMini() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <path d="M9 1.6 L15.4 5 L15.4 13 L9 16.4 L2.6 13 L2.6 5 Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M2.6 5 L9 8.4 L15.4 5 M9 8.4 L9 16.4" stroke="currentColor" strokeWidth="1.3" strokeOpacity="0.55" strokeLinejoin="round" />
+    </svg>
   );
 }

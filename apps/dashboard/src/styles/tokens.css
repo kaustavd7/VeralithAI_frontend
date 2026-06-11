@@ -18,10 +18,10 @@
    ============================================================ */
 :root {
   /* surfaces */
-  --bg:           #0b0c0e;
-  --panel:        #111316;
-  --panel-2:      #15181c;
-  --panel-3:      #1a1e23;
+  --bg:           #000000;
+  --panel:        #000000;
+  --panel-2:      #000000;
+  --panel-3:      #000000;
   --line:         #23262b;
   --line-2:       #2c3037;
   --hover:        #181b1f;
@@ -79,10 +79,10 @@
 :root,
 :root[data-theme="dark"] {
   /* surfaces */
-  --po-bg:          #0c0d10;
-  --po-shell-bg:    #0a0b0e;
-  --po-panel:       #131418;
-  --po-panel-2:     #181a1e;
+  --po-bg:          #000000;
+  --po-shell-bg:    #000000;
+  --po-panel:       #000000;
+  --po-panel-2:     #000000;
   --po-line:        #232629;
   --po-line-strong: #2d3138;
   --po-hover:       #1a1c20;
