@@ -447,8 +447,8 @@
   position: absolute; left: calc(100% + 12px); top: 50%;
   transform: translateY(-50%) translateX(-6px);
   display: flex; align-items: center; gap: 9px;
-  background: color-mix(in oklab, var(--po-fg) 92%, var(--po-bg));
-  color: var(--po-bg);
+  background: color-mix(in oklab, var(--po-panel-2) 92%, #000);
+  color: var(--po-fg);
   padding: 7px 10px; border-radius: 8px;
   border: 1px solid var(--po-line-strong);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
@@ -465,14 +465,15 @@
 }
 /* Expanded: the inline label is visible, so never render the tip. */
 .sb.is-expanded .sb-tip { display: none; }
-.sb-tip-label { font-size: 12.5px; font-weight: 500; color: var(--po-bg); }
+.sb-tip-label { font-size: 12.5px; font-weight: 500; color: var(--po-fg); }
 .sb-tip-keys { display: inline-flex; align-items: center; gap: 5px; }
 .sb-tip-then { font-size: 10.5px; color: var(--po-fg-4); }
 .sb-tip-key {
   font-family: var(--font-sans); font-size: 10.5px; font-weight: 600;
   min-width: 17px; height: 17px; padding: 0 5px; box-sizing: border-box;
   display: inline-flex; align-items: center; justify-content: center;
-  color: var(--po-fg-2); background: var(--po-panel-2);
+  color: var(--po-fg-2);
+  background: color-mix(in oklab, var(--po-fg) 10%, transparent);
   border: 1px solid var(--po-line-strong);
   border-radius: 4px; box-shadow: 0 1px 0 var(--po-line-strong);
 }

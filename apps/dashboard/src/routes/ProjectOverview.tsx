@@ -126,6 +126,7 @@ function ProjectHero({
   keyPrefix: string | null;
   state: ConnState;
 }) {
+  const navigate = useNavigate();
   const dotClass =
     state === 'live' ? 'po-dot-live' : state === 'idle' ? 'po-dot-idle' : 'po-dot-grey';
   const dotLabel =
@@ -157,7 +158,11 @@ function ProjectHero({
         </div>
       </div>
       <div className="po-hero-r">
-        <button className="po-btn po-btn-ghost" type="button" disabled>
+        <button
+          className="po-btn po-btn-ghost"
+          type="button"
+          onClick={() => navigate('/settings')}
+        >
           Settings
         </button>
       </div>
