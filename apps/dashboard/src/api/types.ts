@@ -60,6 +60,21 @@ export interface StatsResponse {
   deltas: StatsDeltas;
 }
 
+// ---------------------------------------------------------------------------
+// Failure-cell timeseries — GET /v1/projects/{id}/analytics/cells/timeseries
+// Per-bucket counts for the 2×3 grounded × completeness taxonomy.
+// ---------------------------------------------------------------------------
+export interface CellTimeseriesPoint {
+  bucket: string;
+  cells: Record<FailureCell, number>;
+}
+
+export interface CellTimeseriesResponse {
+  buckets: CellTimeseriesPoint[];
+  totals: Record<FailureCell, number>;
+  total: number;
+}
+
 export interface TraceListItem {
   // UUID per backend (per DEV2_HANDOFF.md §0). Display leading 8 chars.
   id: string;

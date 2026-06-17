@@ -21,6 +21,20 @@ export function useStats(projectId: string, params: StatsQueryParams = {}) {
   });
 }
 
+/**
+ * Failure-cell timeseries for the 2×3 grounded × completeness taxonomy.
+ * Mirrors useStats. The caller MUST pass a stable, quantized `since` (floor
+ * Date.now() to the minute) — otherwise the query key changes every render and
+ * react-query refetches in an infinite loop. Quantization lives in the caller.
+ */
+export function useCellTimeseries(projectId: string, params: StatsQueryParams = {}) {
+  return useQuery({
+    queryKey: ['cell-timeseries', projectId, params],
+    queryFn: () => api.getCellTimeseries(projectId, params),
+    enabled: !!projectId,
+  });
+}
+
 export function useTraces(projectId: string, query: TracesQuery = {}) {
   return useQuery({
     queryKey: ['traces', projectId, query],

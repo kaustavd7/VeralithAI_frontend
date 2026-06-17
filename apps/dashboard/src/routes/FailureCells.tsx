@@ -1,20 +1,21 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
+import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
 import { useProjects } from '../hooks/useProjects';
-import { normalizeCell, tracesPath } from '../lib/nav';
+import { useCellTimeseries } from '../hooks/useOverviewData';
+import type { CellTimeseriesResponse, FailureCell } from '../api/types';
+import { tracesPath } from '../lib/nav';
 import '../styles/failure-cells.css';
 
 /* ─────────────────────────────────────────────────────────────────────────
    Failure Cells — /projects/:slug/analytics/cells
 
    The 2×3 grounded/ungrounded × complete/incomplete/extra taxonomy over time.
-   Hand-rolled SVG charts (no chart lib). The time-bucketed per-cell data is a
-   DETERMINISTIC synthetic generator (fcRateAt) seeded by (cellKey, ts, seed) —
-   there is no backend endpoint for time-bucketed cell counts yet. When one
-   ships (GET /projects/:slug/analytics/cells/timeseries → per-bucket per-cell
-   counts), replace fcSampleWin / fcWindowStats / fcCellWindow with fetches and
-   drop the `seed` / Reseed control. See the cell-key map note below.
+   Hand-rolled SVG charts (no chart lib). Data comes from
+   GET /v1/projects/{id}/analytics/cells/timeseries → per-bucket per-cell
+   counts (useCellTimeseries). The window is resolved to a STABLE, minute-
+   quantized `since` so the react-query key doesn't churn every render.
    ───────────────────────────────────────────────────────────────────────── */
 
 type FcGrouping = 'cells' | 'completeness';
@@ -32,55 +33,37 @@ interface FcState {
   smooth: boolean;
   threshold: boolean;
   hidden: Set<string>;
-  seed: number;
-  za: number;
-  zb: number;
 }
 
 interface FcCell {
-  key: string;
+  key: FailureCell;
   label: string;
   comp: 'complete' | 'incomplete' | 'extra';
   ground: 'grounded' | 'ungrounded';
   color: string;
   healthy: boolean;
-  base: number;
-  idx: number;
 }
 
 interface FcSeries {
   key: string;
   label: string;
   color: string;
-  members: string[];
+  members: FailureCell[];
 }
 
 type Pt = [number, number];
 
-/* ── deterministic model ────────────────────────────────────────────────── */
-
-function fcHash(a: number, b: number, c: number): number {
-  let h = 2166136261 >>> 0;
-  [a, b, c].forEach((x) => {
-    h ^= x;
-    h = Math.imul(h, 16777619);
-  });
-  h ^= h >>> 13;
-  h = Math.imul(h, 0x5bd1e995);
-  h ^= h >>> 15;
-  return (h >>> 0) / 4294967296;
-}
+/* ── cell model ─────────────────────────────────────────────────────────── */
 
 // sage ramp — light (healthy, dominant) → dark (worst case), matching the bubble chart
 const FC_CELLS: FcCell[] = [
-  { key: 'cg', label: 'complete · grounded',     comp: 'complete',   ground: 'grounded',   color: 'var(--fcell-cg)', healthy: true,  base: 1100 / 24, idx: 0 },
-  { key: 'ig', label: 'incomplete · grounded',   comp: 'incomplete', ground: 'grounded',   color: 'var(--fcell-ig)', healthy: false, base: 93 / 24,   idx: 1 },
-  { key: 'eg', label: 'extra · grounded',        comp: 'extra',      ground: 'grounded',   color: 'var(--fcell-eg)', healthy: false, base: 53 / 24,   idx: 2 },
-  { key: 'cu', label: 'complete · ungrounded',   comp: 'complete',   ground: 'ungrounded', color: 'var(--fcell-cu)', healthy: false, base: 24 / 24,   idx: 3 },
-  { key: 'eu', label: 'extra · ungrounded',      comp: 'extra',      ground: 'ungrounded', color: 'var(--fcell-eu)', healthy: false, base: 7 / 24,    idx: 4 },
-  { key: 'iu', label: 'incomplete · ungrounded', comp: 'incomplete', ground: 'ungrounded', color: 'var(--fcell-iu)', healthy: false, base: 2 / 24,    idx: 5 },
+  { key: 'complete_grounded',     label: 'complete · grounded',     comp: 'complete',   ground: 'grounded',   color: 'var(--fcell-cg)', healthy: true  },
+  { key: 'incomplete_grounded',   label: 'incomplete · grounded',   comp: 'incomplete', ground: 'grounded',   color: 'var(--fcell-ig)', healthy: false },
+  { key: 'extra_grounded',        label: 'extra · grounded',        comp: 'extra',      ground: 'grounded',   color: 'var(--fcell-eg)', healthy: false },
+  { key: 'complete_ungrounded',   label: 'complete · ungrounded',   comp: 'complete',   ground: 'ungrounded', color: 'var(--fcell-cu)', healthy: false },
+  { key: 'extra_ungrounded',      label: 'extra · ungrounded',      comp: 'extra',      ground: 'ungrounded', color: 'var(--fcell-eu)', healthy: false },
+  { key: 'incomplete_ungrounded', label: 'incomplete · ungrounded', comp: 'incomplete', ground: 'ungrounded', color: 'var(--fcell-iu)', healthy: false },
 ];
-const FC_MAP: Record<string, FcCell> = Object.fromEntries(FC_CELLS.map((c) => [c.key, c]));
 
 const FC_GROUPINGS: Record<FcGrouping, FcSeries[]> = {
   cells: FC_CELLS.map((c) => ({ key: c.key, label: c.label, color: c.color, members: [c.key] })),
@@ -98,94 +81,58 @@ const FC_RANGES: Record<FcRange, number> = {
   '7d': 7 * 864e5,
   '30d': 30 * 864e5,
 };
-const FC_ORIGIN = Date.UTC(2026, 4, 31, 14, 0, 0); // fixed "now" so the canvas is stable
-const FC_INC: { c: number; w: number; mult: Record<string, number> }[] = [
-  { c: FC_ORIGIN - 2 * 864e5,   w: 6 * 60, mult: { cu: 3.6, eu: 5, iu: 3 } },
-  { c: FC_ORIGIN - 9 * 864e5,   w: 5 * 60, mult: { ig: 3, iu: 2.4 } },
-  { c: FC_ORIGIN - 19 * 864e5,  w: 8 * 60, mult: { eg: 2.4, eu: 3 } },
-  { c: FC_ORIGIN - 14 * 3600e3, w: 80,     mult: { cu: 2.6, eu: 3.6 } },
-];
 
-function fcRateAt(cell: FcCell, ts: number, seed: number): number {
-  const dayPhase = (((ts % 864e5) + 864e5) % 864e5) / 864e5;
-  const daily = 0.6 + 0.4 * Math.sin((dayPhase - 0.28) * 2 * Math.PI);
-  const week = 0.92 + 0.08 * Math.sin(((ts % (7 * 864e5)) / (7 * 864e5)) * 2 * Math.PI);
-  let r = cell.base * (0.8 + 0.4 * daily) * week;
-  for (const inc of FC_INC) {
-    const m = inc.mult[cell.key];
-    if (m) {
-      const g = Math.exp(-0.5 * Math.pow((ts - inc.c) / (inc.w * 60000), 2));
-      r *= 1 + (m - 1) * g;
-    }
-  }
-  const nb = Math.floor(ts / 600000);
-  r *= 0.74 + 0.52 * fcHash(nb, cell.idx, seed);
-  return Math.max(0, r);
+function bucketForRange(range: FcRange): 'hour' | 'day' {
+  return range === '7d' || range === '30d' ? 'day' : 'hour';
 }
 
-/* ── aggregation / sampling ─────────────────────────────────────────────── */
-
-function fcSampleWin(series: FcSeries[], tStart: number, tEnd: number, N: number, seed: number) {
-  const dt = (tEnd - tStart) / N;
-  const dtH = dt / 3600e3;
-  const cats: number[] = [];
-  const raw: number[][] = series.map(() => []);
-  for (let i = 0; i < N; i++) {
-    const tc = tStart + dt * (i + 0.5);
-    cats.push(tc);
-    series.forEach((s, si) => {
-      let v = 0;
-      s.members.forEach((m) => (v += fcRateAt(FC_MAP[m], tc, seed)));
-      raw[si].push(v * dtH);
-    });
-  }
-  return { cats, raw };
+// Quantize "now" to the start of the current minute so successive renders share
+// the SAME `since` string. Without this the react-query key changes every render
+// → infinite refetch loop that hammers the backend.
+function sinceForRange(range: FcRange): string {
+  const QUANTUM = 60_000;
+  const now = Math.floor(Date.now() / QUANTUM) * QUANTUM;
+  return new Date(now - FC_RANGES[range]).toISOString();
 }
 
-function fcWindowStats(now: number, span: number, seed: number) {
-  const K = 200;
-  const dt = span / K;
-  const dtH = dt / 3600e3;
-  let tot = 0;
-  let cg = 0;
-  let ung = 0;
-  for (let i = 0; i < K; i++) {
-    const tc = now - span + dt * (i + 0.5);
-    for (const c of FC_CELLS) {
-      const v = fcRateAt(c, tc, seed) * dtH;
-      tot += v;
-      if (c.key === 'cg') cg += v;
-      if (c.ground === 'ungrounded') ung += v;
-    }
-  }
-  return { total: tot, healthyPct: tot ? (cg / tot) * 100 : 0, ungroundedPct: tot ? (ung / tot) * 100 : 0, failures: tot - cg };
+/* ── per-cell series derived from the API buckets ───────────────────────── */
+
+interface FcBucket {
+  t: number; // bucket start, ms epoch
+  counts: Record<FailureCell, number>;
 }
 
-function fcCellWindow(key: string, span: number, seed: number, N = 48) {
-  const now = FC_ORIGIN;
-  const dt = span / N;
-  const dtH = dt / 3600e3;
-  const vals: number[] = [];
-  let tot = 0;
-  for (let i = 0; i < N; i++) {
-    const tc = now - span + dt * (i + 0.5);
-    const v = fcRateAt(FC_MAP[key], tc, seed) * dtH;
-    vals.push(v);
-    tot += v;
-  }
-  return { tot, vals };
+interface FcModel {
+  buckets: FcBucket[];
+  totals: Record<FailureCell, number>;
+  total: number;
 }
 
-function fcMetricSpark(span: number, N: number, _seed: number, fn: (tc: number, dtH: number) => number): number[] {
-  const now = FC_ORIGIN;
-  const dt = span / N;
-  const dtH = dt / 3600e3;
-  const a: number[] = [];
-  for (let i = 0; i < N; i++) {
-    const tc = now - span + dt * (i + 0.5);
-    a.push(fn(tc, dtH));
-  }
-  return a;
+const ZERO_TOTALS: Record<FailureCell, number> = {
+  complete_grounded: 0,
+  complete_ungrounded: 0,
+  incomplete_grounded: 0,
+  incomplete_ungrounded: 0,
+  extra_grounded: 0,
+  extra_ungrounded: 0,
+};
+
+function buildModel(data: CellTimeseriesResponse | undefined): FcModel {
+  if (!data) return { buckets: [], totals: { ...ZERO_TOTALS }, total: 0 };
+  const buckets: FcBucket[] = data.buckets.map((b) => ({
+    t: Date.parse(b.bucket),
+    counts: { ...ZERO_TOTALS, ...b.cells },
+  }));
+  return {
+    buckets,
+    totals: { ...ZERO_TOTALS, ...data.totals },
+    total: data.total,
+  };
+}
+
+// Sum a series' member cells across the whole window.
+function seriesTotal(model: FcModel, s: FcSeries): number {
+  return s.members.reduce((acc, m) => acc + (model.totals[m] ?? 0), 0);
 }
 
 /* ── formatting ─────────────────────────────────────────────────────────── */
@@ -196,11 +143,13 @@ const fcNum = (n: number) => (n >= 1000 ? Math.round(n).toLocaleString() : Strin
 const fcR1 = (n: number) => Math.round(n * 10) / 10;
 function fcXLabel(ts: number, range: FcRange): string {
   const d = new Date(ts);
-  return range === '7d' || range === '30d' ? `${d.getMonth() + 1}/${d.getDate()}` : `${fcPad(d.getUTCHours())}:${fcPad(d.getUTCMinutes())}`;
+  return range === '7d' || range === '30d'
+    ? `${d.getMonth() + 1}/${d.getDate()}`
+    : `${fcPad(d.getHours())}:${fcPad(d.getMinutes())}`;
 }
 function fcFullTime(ts: number): string {
   const d = new Date(ts);
-  return `${FC_M[d.getUTCMonth()]} ${d.getUTCDate()} · ${fcPad(d.getUTCHours())}:${fcPad(d.getUTCMinutes())}`;
+  return `${FC_M[d.getMonth()]} ${d.getDate()} · ${fcPad(d.getHours())}:${fcPad(d.getMinutes())}`;
 }
 
 /* ── monotone-cubic spline ──────────────────────────────────────────────── */
@@ -249,12 +198,15 @@ let fcSpkSeq = 0;
 function FcSpark({ vals, color, fill = true }: { vals: number[]; color: string; fill?: boolean }) {
   const W = 100;
   const H = 38;
+  const gid = useMemo(() => 'fcsp' + (fcSpkSeq++).toString(36), []);
+  if (vals.length < 2) {
+    return <svg className="fc-spk" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" />;
+  }
   const mn = Math.min(...vals);
   const mx = Math.max(...vals);
   const rng = mx - mn || 1;
   const pts: Pt[] = vals.map((v, i) => [(i / (vals.length - 1)) * W, H - 2 - ((v - mn) / rng) * (H - 6)]);
   const line = fcMono(pts);
-  const gid = useMemo(() => 'fcsp' + (fcSpkSeq++).toString(36), []);
   return (
     <svg className="fc-spk" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
       <defs>
@@ -273,22 +225,19 @@ function FcSpark({ vals, color, fill = true }: { vals: number[]; color: string; 
 
 type Hover = { idx: number; x: number; w: number } | null;
 
-function FcChart({ state, seed }: { state: FcState; seed: number }) {
+function FcChart({ state, model }: { state: FcState; model: FcModel }) {
   const [hover, setHover] = useState<Hover>(null);
   const plotRef = useRef<HTMLDivElement>(null);
 
   const series = FC_GROUPINGS[state.grouping].filter((s) => !state.hidden.has(s.key));
-  const fullSpan = FC_RANGES[state.range];
-  const fullT0 = FC_ORIGIN - fullSpan;
-  const za = state.za;
-  const zb = state.zb;
-  const tStart = fullT0 + za * fullSpan;
-  const tEnd = fullT0 + zb * fullSpan;
-  const N = state.chart === 'bar' ? 40 : 64;
   const isShare = state.scale === 'share';
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const { cats, raw } = useMemo(() => fcSampleWin(series, tStart, tEnd, N, seed), [series.map((s) => s.key).join(), state.range, state.chart, za, zb, seed]);
+  // One column per real bucket. `raw[si][i]` = series si's count in bucket i.
+  const cats = model.buckets.map((b) => b.t);
+  const N = cats.length;
+  const raw: number[][] = series.map((s) =>
+    model.buckets.map((b) => s.members.reduce((acc, m) => acc + (b.counts[m] ?? 0), 0)),
+  );
   const colTot = cats.map((_, i) => series.reduce((a, _s, si) => a + raw[si][i], 0));
 
   const valAt = (si: number, i: number) => (isShare ? (colTot[i] ? (raw[si][i] / colTot[i]) * 100 : 0) : raw[si][i]);
@@ -296,7 +245,7 @@ function FcChart({ state, seed }: { state: FcState; seed: number }) {
   let yMax: number;
   if (isShare) yMax = 100;
   else if (state.chart === 'bar') yMax = Math.max(1, ...colTot);
-  else yMax = Math.max(1, ...series.map((_s, si) => Math.max(...raw[si])));
+  else yMax = Math.max(1, ...series.map((_s, si) => Math.max(0, ...raw[si])));
   const niceStep = (mv: number) => {
     const p = Math.pow(10, Math.floor(Math.log10(mv / 4 || 1)));
     const c = mv / 4 / p;
@@ -309,12 +258,14 @@ function FcChart({ state, seed }: { state: FcState; seed: number }) {
   for (let v = 0; v <= yMax + 1e-6; v += step) ticks.push(v);
 
   const padX = state.chart === 'bar' ? 1.2 : 0;
-  const xAt = (i: number) => padX + ((i + (state.chart === 'bar' ? 0.5 : 0)) / (state.chart === 'bar' ? N : N - 1)) * (100 - padX * 2);
+  const denom = state.chart === 'bar' ? N : Math.max(1, N - 1);
+  const xAt = (i: number) => padX + ((i + (state.chart === 'bar' ? 0.5 : 0)) / denom) * (100 - padX * 2);
   const yAt = (v: number) => 100 - (v / yMax) * 100;
-  const barW = ((100 - padX * 2) / N) * 0.7;
+  const barW = N > 0 ? ((100 - padX * 2) / N) * 0.7 : 0;
 
   function onMove(e: React.MouseEvent) {
-    const r = plotRef.current!.getBoundingClientRect();
+    if (!plotRef.current || N === 0) return;
+    const r = plotRef.current.getBoundingClientRect();
     const fx = (e.clientX - r.left) / r.width;
     let idx = Math.round(fx * (state.chart === 'bar' ? N : N - 1) - (state.chart === 'bar' ? 0.5 : 0));
     idx = Math.max(0, Math.min(N - 1, idx));
@@ -399,7 +350,7 @@ function FcChart({ state, seed }: { state: FcState; seed: number }) {
       </div>
 
       <div className="fc-xaxis">
-        {cats.map((tc, i) => i % Math.ceil(N / 8) === 0 && (
+        {cats.map((tc, i) => i % Math.max(1, Math.ceil(N / 8)) === 0 && (
           <span key={i} className="fc-xtick" style={{ left: xAt(i) + '%' }}>{fcXLabel(tc, state.range)}</span>
         ))}
       </div>
@@ -407,95 +358,9 @@ function FcChart({ state, seed }: { state: FcState; seed: number }) {
   );
 }
 
-/* ── x-axis zoom brush ──────────────────────────────────────────────────── */
-
-function FcZoom({
-  za,
-  zb,
-  preview,
-  range,
-  onChange,
-  onReset,
-}: {
-  za: number;
-  zb: number;
-  preview: number[];
-  range: FcRange;
-  onChange: (a: number, b: number) => void;
-  onReset: () => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const startDrag = (mode: 'a' | 'b' | 'pan') => (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const rect = ref.current!.getBoundingClientRect();
-    const startX = e.clientX;
-    const sa = za;
-    const sb = zb;
-    const onMoveEv = (ev: MouseEvent) => {
-      const f = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
-      const df = (ev.clientX - startX) / rect.width;
-      if (mode === 'a') onChange(Math.min(f, sb - 0.05), sb);
-      else if (mode === 'b') onChange(sa, Math.max(f, sa + 0.05));
-      else {
-        let na = sa + df;
-        let nb = sb + df;
-        if (na < 0) {
-          nb -= na;
-          na = 0;
-        }
-        if (nb > 1) {
-          na -= nb - 1;
-          nb = 1;
-        }
-        onChange(na, nb);
-      }
-    };
-    const onUp = () => {
-      window.removeEventListener('mousemove', onMoveEv);
-      window.removeEventListener('mouseup', onUp);
-    };
-    window.addEventListener('mousemove', onMoveEv);
-    window.addEventListener('mouseup', onUp);
-  };
-  const W = 100;
-  const H = 100;
-  const mx = Math.max(...preview, 1);
-  const pts: Pt[] = preview.map((v, i) => [(i / (preview.length - 1)) * W, H - 2 - (v / mx) * (H - 10)]);
-  const line = fcMono(pts);
-  const area = line + ` L ${W} ${H} L 0 ${H} Z`;
-  const lab = (f: number) => {
-    const d = new Date(FC_ORIGIN - FC_RANGES[range] * (1 - f));
-    return fcXLabel(d.getTime(), range);
-  };
-  return (
-    <div className="fc-zoomwrap">
-      <div className="fc-zoom" ref={ref} onDoubleClick={onReset}>
-        <svg className="fc-zoom-bg" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <path d={area} fill="var(--po-line-strong)" opacity="0.5" />
-          <path d={line} fill="none" stroke="var(--po-fg-4)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-        </svg>
-        <div className="fc-zoom-mask" style={{ left: 0, width: za * 100 + '%' }} />
-        <div className="fc-zoom-mask" style={{ right: 0, width: (1 - zb) * 100 + '%' }} />
-        <div className="fc-zoom-sel" style={{ left: za * 100 + '%', right: (1 - zb) * 100 + '%' }} onMouseDown={startDrag('pan')}>
-          <span className="fc-zoom-h fc-zoom-hl" onMouseDown={startDrag('a')} />
-          <span className="fc-zoom-h fc-zoom-hr" onMouseDown={startDrag('b')} />
-        </div>
-      </div>
-      <div className="fc-zoom-foot">
-        <span>
-          {lab(za)} – {lab(zb)}
-        </span>
-        <span className="fc-zoom-hint">{za > 0.001 || zb < 0.999 ? 'drag edges to zoom · double-click to reset' : 'drag the edges to zoom the time axis'}</span>
-      </div>
-    </div>
-  );
-}
-
 /* ── page body ──────────────────────────────────────────────────────────── */
 
-function FailureCellsPage() {
-  const { slug = '' } = useParams<{ slug: string }>();
+function FailureCellsPage({ projectId, slug }: { projectId: string; slug: string }) {
   const navigate = useNavigate();
   // Drill-down: a failure cell → the Trace Explorer pre-filtered to that cell.
   const goToCell = (cellKey: string) => navigate(tracesPath(slug, cellKey));
@@ -514,21 +379,13 @@ function FailureCellsPage() {
     smooth: true,
     threshold: true,
     hidden: new Set<string>(),
-    seed: 7,
-    za: 0,
-    zb: 1,
   });
   const set = (patch: Partial<FcState>) =>
     setState((s) => {
       const next = { ...s, ...patch };
       if (patch.grouping || patch.chart) next.hidden = new Set<string>();
-      if (patch.range !== undefined) {
-        next.za = 0;
-        next.zb = 1;
-      }
       return next;
     });
-  const setZoom = (a: number, b: number) => setState((s) => ({ ...s, za: a, zb: b }));
   const toggleHidden = (key: string) =>
     setState((s) => {
       const h = new Set(s.hidden);
@@ -537,11 +394,45 @@ function FailureCellsPage() {
       return { ...s, hidden: h };
     });
 
-  const span = FC_RANGES[state.range];
-  const cur = fcWindowStats(FC_ORIGIN, span, state.seed);
-  const hbad = cur.healthyPct < 90;
+  // STABLE minute-quantized window params → stable react-query key (no refetch loop).
+  const params = useMemo(
+    () => ({ since: sinceForRange(state.range), bucket: bucketForRange(state.range) }),
+    [state.range],
+  );
+  const query = useCellTimeseries(projectId, params);
+  const model = useMemo(() => buildModel(query.data), [query.data]);
 
-  const Seg = ({ group, opts }: { group: FcGroupKey; opts: [string, string, boolean?][] }) => (
+  if (query.isPending) return <LoadingState />;
+  if (query.isError) {
+    return (
+      <ErrorState
+        message={query.error instanceof Error ? query.error.message : undefined}
+        onRetry={() => query.refetch()}
+      />
+    );
+  }
+  if (model.total === 0) {
+    return (
+      <EmptyState
+        title="No failure cells yet"
+        sub="Once your traces are evaluated, the grounded × complete taxonomy over time shows up here."
+        action={
+          <Link to={`/projects/${slug}`} className="po-btn po-btn-ghost">
+            Connect your project
+          </Link>
+        }
+      />
+    );
+  }
+
+  // Window-level headline: healthy share = complete·grounded / total.
+  const totalAll = model.total;
+  const healthyPct = totalAll ? (model.totals.complete_grounded / totalAll) * 100 : 0;
+  const hbad = healthyPct < 90;
+
+  // Render helpers (plain functions, not components — avoids remounting on every
+  // render and the react-hooks/static-components lint rule).
+  const seg = (group: FcGroupKey, opts: [string, string, boolean?][]) => (
     <div className="fc-seg">
       {opts.map(([val, label, disabled]) => (
         <button
@@ -555,7 +446,7 @@ function FailureCellsPage() {
       ))}
     </div>
   );
-  const Tog = ({ flag, label, ok }: { flag: FcFlagKey; label: string; ok: boolean }) => (
+  const tog = (flag: FcFlagKey, label: string, ok: boolean) => (
     <button className={'fc-tog' + (state[flag] && ok ? ' is-on' : '') + (!ok ? ' is-disabled' : '')} disabled={!ok} onClick={() => ok && set({ [flag]: !state[flag] } as Partial<FcState>)}>
       <span className="fc-sw" />
       {label}
@@ -570,7 +461,7 @@ function FailureCellsPage() {
           <h1 className="fc-h1">Failure cells</h1>
         </div>
         <div className="fc-hero">
-          <span className={'fc-hero-num' + (hbad ? ' is-bad' : '')}>{fcR1(cur.healthyPct)}%</span>
+          <span className={'fc-hero-num' + (hbad ? ' is-bad' : '')}>{fcR1(healthyPct)}%</span>
           <div className="fc-hero-lab">
             <span>healthy</span>
             <span className={'fc-tgt' + (hbad ? ' is-miss' : '')}>{hbad ? 'below 90% ✗' : 'target 90% ✓'}</span>
@@ -581,26 +472,25 @@ function FailureCellsPage() {
       <div className="fc-controls">
         <div className="fc-cgrp">
           <span className="fc-kicker">Chart</span>
-          <Seg group="chart" opts={[['bar', 'Bars'], ['line', 'Lines']]} />
+          {seg('chart', [['bar', 'Bars'], ['line', 'Lines']])}
         </div>
         <div className="fc-cgrp">
           <span className="fc-kicker">Group by</span>
-          <Seg group="grouping" opts={[['cells', '6 cells'], ['completeness', 'Completeness']]} />
+          {seg('grouping', [['cells', '6 cells'], ['completeness', 'Completeness']])}
         </div>
         <div className="fc-cgrp">
           <span className="fc-kicker">Scale</span>
-          <Seg group="scale" opts={[['count', 'Count'], ['share', 'Share %']]} />
+          {seg('scale', [['count', 'Count'], ['share', 'Share %']])}
         </div>
         <div className="fc-cgrp">
           <span className="fc-kicker">Window</span>
-          <Seg group="range" opts={[['1h', '1h'], ['6h', '6h'], ['24h', '24h'], ['7d', '7d'], ['30d', '30d']]} />
+          {seg('range', [['1h', '1h'], ['6h', '6h'], ['24h', '24h'], ['7d', '7d'], ['30d', '30d']])}
         </div>
         <div className="fc-cgrp">
           <span className="fc-kicker">Options</span>
           <div className="fc-toggles">
-            <Tog flag="smooth" label="Smooth" ok={state.chart === 'line'} />
-            <Tog flag="threshold" label="SLO line" ok={state.scale === 'share'} />
-            <button className="fc-ghost" onClick={() => set({ seed: (state.seed * 1103515245 + 12345) >>> 0 })}>⟳ Reseed</button>
+            {tog('smooth', 'Smooth', state.chart === 'line')}
+            {tog('threshold', 'SLO line', state.scale === 'share')}
           </div>
         </div>
       </div>
@@ -612,11 +502,10 @@ function FailureCellsPage() {
           </span>
           <div className="fc-legend">
             {FC_GROUPINGS[state.grouping].map((s) => {
-              let cnt = 0;
-              s.members.forEach((m) => (cnt += fcCellWindow(m, span, state.seed).tot));
+              const cnt = seriesTotal(model, s);
               const off = state.hidden.has(s.key);
               // Only the 6-cell grouping's series keys map to real failure cells.
-              const cell = normalizeCell(s.key);
+              const cell = state.grouping === 'cells' ? (s.key as FailureCell) : undefined;
               return (
                 <button key={s.key} className={'fc-lg' + (off ? ' is-off' : '')} onClick={() => toggleHidden(s.key)}>
                   <span className="fc-lg-d" style={{ background: s.color }} />
@@ -632,11 +521,11 @@ function FailureCellsPage() {
                       style={{ cursor: 'pointer', color: 'var(--accent)', fontWeight: 700 }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        goToCell(s.key);
+                        goToCell(cell);
                       }}
                       onKeyDown={(e) => {
                         e.stopPropagation();
-                        onCellKey(s.key)(e);
+                        onCellKey(cell)(e);
                       }}
                     >
                       →
@@ -647,19 +536,7 @@ function FailureCellsPage() {
             })}
           </div>
         </div>
-        <FcChart state={state} seed={state.seed} />
-        <FcZoom
-          za={state.za}
-          zb={state.zb}
-          range={state.range}
-          preview={fcMetricSpark(span, 60, state.seed, (tc, dtH) => {
-            let t = 0;
-            for (const c of FC_CELLS) t += fcRateAt(c, tc, state.seed) * dtH;
-            return t;
-          })}
-          onChange={setZoom}
-          onReset={() => setZoom(0, 1)}
-        />
+        <FcChart state={state} model={model} />
       </div>
 
       <div className="fc-breakout">
@@ -670,18 +547,8 @@ function FailureCellsPage() {
         </div>
         <div className="fc-smgrid">
           {FC_CELLS.map((c) => {
-            const cw = fcCellWindow(c.key, span, state.seed);
-            const N = 48;
-            const dt = span / N;
-            const dtH = dt / 3600e3;
-            let prevTot = 0;
-            for (let i = 0; i < N; i++) {
-              const tc = FC_ORIGIN - span - span + dt * (i + 0.5);
-              prevTot += fcRateAt(c, tc, state.seed) * dtH;
-            }
-            const d = prevTot ? ((cw.tot - prevTot) / prevTot) * 100 : 0;
-            const good = c.healthy ? d > 0 : d < 0;
-            const dcls = Math.abs(d) < 0.5 ? 'fc-neu' : good ? 'fc-up' : 'fc-down';
+            const tot = model.totals[c.key] ?? 0;
+            const vals = model.buckets.map((b) => b.counts[c.key] ?? 0);
             return (
               <button
                 key={c.key}
@@ -694,11 +561,10 @@ function FailureCellsPage() {
                   <span className={'fc-sm-tag' + (c.healthy ? '' : ' is-fail')}>{c.healthy ? 'healthy' : 'failure'}</span>
                 </div>
                 <div className="fc-sm-row">
-                  <span className="fc-sm-c" style={{ color: c.color }}>{fcNum(cw.tot)}</span>
-                  <span className="fc-sm-sh">{fcR1((cw.tot / (cur.total || 1)) * 100)}%</span>
-                  <span className={'fc-sm-dl ' + dcls}>{d >= 0 ? '▲' : '▼'} {fcR1(Math.abs(d))}%</span>
+                  <span className="fc-sm-c" style={{ color: c.color }}>{fcNum(tot)}</span>
+                  <span className="fc-sm-sh">{fcR1((tot / (totalAll || 1)) * 100)}%</span>
                 </div>
-                <FcSpark vals={cw.vals} color={c.color} />
+                <FcSpark vals={vals} color={c.color} />
                 <span
                   className="fc-sm-drill"
                   role="link"
@@ -739,7 +605,18 @@ export default function FailureCells() {
   const projectName = project?.name ?? slug;
   return (
     <ProjectShell slug={slug} active="cells" project={projectName}>
-      <FailureCellsPage />
+      {projects.isPending ? (
+        <LoadingState />
+      ) : projects.isError ? (
+        <ErrorState
+          message={projects.error instanceof Error ? projects.error.message : undefined}
+          onRetry={() => projects.refetch()}
+        />
+      ) : !project ? (
+        <EmptyState title="Project not found" sub="This project may have been deleted, or the URL is incorrect." />
+      ) : (
+        <FailureCellsPage projectId={project.id} slug={slug} />
+      )}
     </ProjectShell>
   );
 }
