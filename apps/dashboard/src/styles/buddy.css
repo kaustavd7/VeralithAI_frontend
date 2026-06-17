@@ -4,23 +4,25 @@
    wander targets); per-action animations live on .buddy-svg.
    ════════════════════════════════════════════════════════════════ */
 
+/* Fixed-size box = just the buddy. The bubble + thought are positioned
+   absolutely off this box, so opening the bubble never resizes the root or
+   nudges the buddy. */
 .buddy-root {
   position: fixed;
   top: 0;
   left: 0;
+  width: 58px;
+  height: 58px;
   z-index: 95; /* above page content, below slide-overs (200) + modals (300) */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  pointer-events: none; /* only the buddy + bubbles are interactive */
+  pointer-events: none; /* only the buddy + bubble are interactive */
   transition: transform 2s cubic-bezier(0.45, 0, 0.25, 1);
   will-change: transform;
 }
 
 .buddy {
   pointer-events: auto;
-  position: relative;
+  position: absolute;
+  inset: 0;
   width: 58px;
   height: 58px;
   border: none;
@@ -135,8 +137,12 @@
   100% { transform: scale(0.6) rotate(20deg); opacity: 0; }
 }
 
-/* tiny transient "thought" pill (zzz, quips) above the buddy */
+/* tiny transient "thought" pill (zzz, quips) centered above the buddy */
 .buddy-thought {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
   pointer-events: none;
   font-size: 11px;
   font-weight: 500;
@@ -147,21 +153,27 @@
   border-radius: 10px;
   padding: 3px 9px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32);
-  animation: buddy-bubble-in 0.2s ease;
+  animation: buddy-fade 0.2s ease;
 }
 
-/* click speech bubble (below the buddy, tail pointing up) */
+/* click speech bubble — absolutely placed off the buddy, opening toward the
+   screen interior (to-left/-right, v-top/-bottom set by the component). */
 .buddy-bubble {
   pointer-events: auto;
-  position: relative;
+  position: absolute;
+  width: max-content;
   max-width: 250px;
   background: var(--po-panel);
   border: 1px solid var(--po-line-strong);
   border-radius: 14px;
   padding: 12px 14px;
   box-shadow: 0 16px 38px rgba(0, 0, 0, 0.42);
-  animation: buddy-bubble-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: buddy-bubble-in 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
+.buddy-bubble.to-left { right: calc(100% + 12px); }
+.buddy-bubble.to-right { left: calc(100% + 12px); }
+.buddy-bubble.v-top { top: -6px; }
+.buddy-bubble.v-bottom { bottom: -6px; }
 .buddy-bubble-text {
   margin: 0;
   font-size: 13px;
@@ -179,26 +191,33 @@
   font-size: 10.5px;
   color: var(--po-fg-4);
 }
-.buddy-bubble-next {
-  font-size: 10.5px;
-  font-weight: 600;
-  color: var(--accent);
-}
 .buddy-bubble-tail {
   position: absolute;
-  left: 50%;
-  margin-left: -6px;
-  top: -6px;
   width: 12px;
   height: 12px;
   background: var(--po-panel);
-  border-left: 1px solid var(--po-line-strong);
-  border-top: 1px solid var(--po-line-strong);
   transform: rotate(45deg);
 }
+.buddy-bubble.to-left .buddy-bubble-tail {
+  right: -6px;
+  border-top: 1px solid var(--po-line-strong);
+  border-right: 1px solid var(--po-line-strong);
+}
+.buddy-bubble.to-right .buddy-bubble-tail {
+  left: -6px;
+  border-bottom: 1px solid var(--po-line-strong);
+  border-left: 1px solid var(--po-line-strong);
+}
+.buddy-bubble.v-top .buddy-bubble-tail { top: 16px; }
+.buddy-bubble.v-bottom .buddy-bubble-tail { bottom: 16px; }
+
 @keyframes buddy-bubble-in {
-  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes buddy-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

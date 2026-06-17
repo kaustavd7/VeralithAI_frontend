@@ -219,6 +219,12 @@ export function Buddy() {
     }
   }
 
+  // Open the bubble toward the screen interior so it never overflows the edge.
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const bubbleSide = pos.x + 29 > vw / 2 ? 'left' : 'right';
+  const bubbleV = pos.y + 29 < vh / 2 ? 'top' : 'bottom';
+
   return (
     <div
       className="buddy-root"
@@ -300,12 +306,11 @@ export function Buddy() {
       </button>
 
       {open && (
-        <div className="buddy-bubble" role="status">
+        <div className={'buddy-bubble to-' + bubbleSide + ' v-' + bubbleV} role="status">
           <span className="buddy-bubble-tail" />
           <p className="buddy-bubble-text">{LINES[line](firstName)}</p>
           <div className="buddy-bubble-foot">
             <span className="buddy-bubble-hint">💬 Full chat coming soon</span>
-            <span className="buddy-bubble-next">{line < LINES.length - 1 ? 'tap me →' : 'tap to close'}</span>
           </div>
         </div>
       )}
