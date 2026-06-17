@@ -638,7 +638,9 @@ let seededHeals = false;
 function ensureSeedHeals(): void {
   if (seededHeals) return;
   seededHeals = true;
-  const projectId = state.projects.values().next().value?.id ?? 'mock-project';
+  // Use the stable seed-project constant (NOT state.projects, which may not be
+  // populated yet — listHeals resolves before listProjects seeds the map).
+  const projectId = SEED_PROJECTS[0].id;
   const now = Date.now();
   const cards: HealCardDetail[] = [
     {
@@ -912,5 +914,17 @@ function ensureSeedHeals(): void {
       evidence_traces: [],
     },
   ];
+  // Seed the base (first) project, then clone the whole set onto every other
+  // demo project so the heal board is populated whichever project you open.
   for (const c of cards) state.heals.set(c.id, c);
+  for (const proj of SEED_PROJECTS.slice(1)) {
+    for (const c of cards) {
+      const clone: HealCardDetail = {
+        ...c,
+        id: `${proj.id.slice(0, 8)}-${c.id}`,
+        project_id: proj.id,
+      };
+      state.heals.set(clone.id, clone);
+    }
+  }
 }
