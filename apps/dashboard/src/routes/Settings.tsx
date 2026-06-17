@@ -25,27 +25,13 @@ const SE_ICONS = {
       <path d="M8.3 8H14M11.5 8v2.4M13.2 8v1.8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </>
   ),
-  billing: (
-    <>
-      <rect x="2" y="4" width="12" height="8" rx="1.4" stroke="currentColor" strokeWidth="1.3" />
-      <path d="M2 6.6h12" stroke="currentColor" strokeWidth="1.3" />
-    </>
-  ),
-  notifications: (
-    <>
-      <path d="M8 2.5c-2 0-3.2 1.4-3.2 3.4 0 3-1.3 3.8-1.3 3.8h9s-1.3-.8-1.3-3.8C11.2 3.9 10 2.5 8 2.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-      <path d="M6.8 12a1.4 1.4 0 0 0 2.4 0" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-    </>
-  ),
 } as const;
 
 type NavId = keyof typeof SE_ICONS;
 
-const NAV: Array<{ id: NavId; label: string; disabled?: boolean; soon?: boolean; note?: string }> = [
-  { id: 'profile',       label: 'Profile' },
-  { id: 'api-keys',      label: 'API keys',       note: 'cross-project' },
-  { id: 'billing',       label: 'Billing',        soon: true },
-  { id: 'notifications', label: 'Notifications',  soon: true },
+const NAV: Array<{ id: NavId; label: string; soon?: boolean; note?: string }> = [
+  { id: 'profile',  label: 'Profile' },
+  { id: 'api-keys', label: 'API keys', note: 'cross-project' },
 ];
 
 function SettingsSidebar({ active, onNavigate }: { active: NavId; onNavigate: (id: NavId) => void }) {
@@ -266,25 +252,11 @@ function ProfileSection() {
   );
 }
 
-function ComingSoon({ icon, title, desc }: { icon: NavId; title: string; desc: string }) {
-  return (
-    <section className="se-panel se-coming">
-      <span className="se-coming-ic">
-        <svg width="22" height="22" viewBox="0 0 16 16" fill="none">{SE_ICONS[icon]}</svg>
-      </span>
-      <div className="se-coming-title">{title} — coming soon</div>
-      <p className="se-coming-desc">{desc}</p>
-    </section>
-  );
-}
-
 const TITLES: Record<NavId, string> = {
   profile: 'Profile',
   'api-keys': 'API keys',
-  billing: 'Billing',
-  notifications: 'Notifications',
 };
-const VALID_SECTIONS: NavId[] = ['profile', 'api-keys', 'billing', 'notifications'];
+const VALID_SECTIONS: NavId[] = ['profile', 'api-keys'];
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -300,20 +272,6 @@ export default function Settings() {
             <h1 className="se-title">{TITLES[section]}</h1>
             {section === 'profile' && <ProfileSection />}
             {section === 'api-keys' && <ApiKeysSettings />}
-            {section === 'billing' && (
-              <ComingSoon
-                icon="billing"
-                title="Billing"
-                desc="Plans, invoices and payment methods will live here. While Veralith is in private alpha, billing isn’t enabled — you’re on the trial."
-              />
-            )}
-            {section === 'notifications' && (
-              <ComingSoon
-                icon="notifications"
-                title="Notifications"
-                desc="Email and webhook alerts for new failures, raised PRs and trial reminders are on the way."
-              />
-            )}
           </div>
         </div>
       </div>
