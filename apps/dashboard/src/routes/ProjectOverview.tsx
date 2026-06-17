@@ -223,47 +223,48 @@ function buildKpis(stats: StatsResponse, state: ConnState): Kpi[] {
 
   const volumes = stats.timeseries.map((b) => b.count);
   const healthyRates = stats.timeseries.map((b) => (b.count > 0 ? b.ok / b.count : 0));
-  const sufficiency = stats.timeseries.map((b) => b.avg_sufficiency);
-  const faithfulness = stats.timeseries.map((b) => b.avg_faithfulness);
+  // avg_sufficiency / avg_faithfulness are float|null at runtime — coerce before charting.
+  const sufficiency = stats.timeseries.map((b) => b.avg_sufficiency ?? 0);
+  const faithfulness = stats.timeseries.map((b) => b.avg_faithfulness ?? 0);
 
   return [
     {
       label: 'Traces',
       value: stats.total_traces.toLocaleString(),
-      delta: `${stats.deltas.total_traces_pct_24h > 0 ? '+' : ''}${stats.deltas.total_traces_pct_24h.toFixed(1)}%`,
-      deltaDir: dirOf(stats.deltas.total_traces_pct_24h),
+      delta: `${(stats.deltas.total_traces_pct_24h ?? 0) > 0 ? '+' : ''}${(stats.deltas.total_traces_pct_24h ?? 0).toFixed(1)}%`,
+      deltaDir: dirOf(stats.deltas.total_traces_pct_24h ?? 0),
       sparkValues: volumes,
       sparkColor: 'var(--po-fg-3)',
     },
     {
       label: 'Healthy rate',
-      value: (stats.healthy_rate * 100).toFixed(1),
+      value: ((stats.healthy_rate ?? 0) * 100).toFixed(1),
       unit: '%',
-      delta: `${Math.abs(stats.deltas.healthy_rate_pp_24h).toFixed(1)} pp`,
-      deltaDir: dirOf(stats.deltas.healthy_rate_pp_24h),
+      delta: `${Math.abs(stats.deltas.healthy_rate_pp_24h ?? 0).toFixed(1)} pp`,
+      deltaDir: dirOf(stats.deltas.healthy_rate_pp_24h ?? 0),
       sparkValues: healthyRates,
       sparkColor: 'var(--po-live)',
     },
     {
       label: 'Avg sufficiency',
-      value: stats.avg_sufficiency.toFixed(2),
-      delta: `${stats.deltas.avg_sufficiency_delta_24h > 0 ? '+' : ''}${stats.deltas.avg_sufficiency_delta_24h.toFixed(2)}`,
-      deltaDir: dirOf(stats.deltas.avg_sufficiency_delta_24h),
+      value: (stats.avg_sufficiency ?? 0).toFixed(2),
+      delta: `${(stats.deltas.avg_sufficiency_delta_24h ?? 0) > 0 ? '+' : ''}${(stats.deltas.avg_sufficiency_delta_24h ?? 0).toFixed(2)}`,
+      deltaDir: dirOf(stats.deltas.avg_sufficiency_delta_24h ?? 0),
       sparkValues: sufficiency,
       sparkColor: 'var(--po-fg-3)',
     },
     {
       label: 'Avg faithfulness',
-      value: stats.avg_faithfulness.toFixed(2),
-      delta: `${stats.deltas.avg_faithfulness_delta_24h > 0 ? '+' : ''}${stats.deltas.avg_faithfulness_delta_24h.toFixed(2)}`,
-      deltaDir: dirOf(stats.deltas.avg_faithfulness_delta_24h),
+      value: (stats.avg_faithfulness ?? 0).toFixed(2),
+      delta: `${(stats.deltas.avg_faithfulness_delta_24h ?? 0) > 0 ? '+' : ''}${(stats.deltas.avg_faithfulness_delta_24h ?? 0).toFixed(2)}`,
+      deltaDir: dirOf(stats.deltas.avg_faithfulness_delta_24h ?? 0),
       sparkValues: faithfulness,
       sparkColor: 'var(--po-fg-3)',
     },
     {
       // Cost: value only. No per-bucket cost + no delta_24h in contract — see BACKEND_GAPS.md.
       label: 'Cost',
-      value: `$${stats.total_cost_usd.toFixed(2)}`,
+      value: `$${(stats.total_cost_usd ?? 0).toFixed(2)}`,
     },
   ];
 }
@@ -283,8 +284,8 @@ function KpiRow({ items }: { items: Kpi[] }) {
    ─────────────────────────────────────────────────────────── */
 
 function HealthyRateCard({ stats }: { stats: StatsResponse }) {
-  const rate = stats.healthy_rate * 100;
-  const deltaPP = stats.deltas.healthy_rate_pp_24h;
+  const rate = (stats.healthy_rate ?? 0) * 100;
+  const deltaPP = stats.deltas.healthy_rate_pp_24h ?? 0;
   const values = stats.timeseries.map((b) => (b.count > 0 ? (b.ok / b.count) * 100 : 0));
   const dir = dirOf(deltaPP);
   const groundedCount = stats.by_cell.complete_grounded;

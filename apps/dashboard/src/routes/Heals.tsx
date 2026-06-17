@@ -76,7 +76,7 @@ function ExtLink() {
    ─────────────────────────────────────────────────────────── */
 
 function StatusBadge({ status, size = 'sm' }: { status: HealStatus; size?: 'sm' | 'lg' }) {
-  const m = STATUS_META[status];
+  const m = STATUS_META[status] ?? { label: status, phrase: null, color: 'var(--po-grey)' };
   return (
     <span className={`he-badge he-badge-${size}`} style={{ '--c': m.color } as React.CSSProperties}>
       <span className={'he-badge-dot' + (m.pulse ? ' is-pulse' : '')} />
@@ -119,7 +119,7 @@ function QueueRow({
   flash: boolean;
   onClick: () => void;
 }) {
-  const m = STATUS_META[card.status];
+  const m = STATUS_META[card.status] ?? { label: card.status, phrase: null, color: 'var(--po-grey)' };
   return (
     <button
       className={'he-card-row' + (selected ? ' is-selected' : '') + (flash ? ' is-flash' : '')}
@@ -352,7 +352,8 @@ function ActionBar({
       {card.pr_url && <a className="he-pr-badge" href={card.pr_url} target="_blank" rel="noreferrer">View PR<ExtLink /></a>}
     </>;
   } else if (st === 'manually_fixed' || st === 'wont_fix') {
-    buttons = <span className="he-terminal-note">{STATUS_META[st].phrase} · no further action</span>;
+    const m = STATUS_META[st] ?? { label: st, phrase: null, color: 'var(--po-grey)' };
+    buttons = <span className="he-terminal-note">{m.phrase} · no further action</span>;
   } else if (st === 'superseded') {
     buttons = <span className="he-terminal-note">Replaced by a newer card</span>;
   }
@@ -408,7 +409,7 @@ function DetailPane({
       </div>
     );
   }
-  const m = STATUS_META[card.status];
+  const m = STATUS_META[card.status] ?? { label: card.status, phrase: null, color: 'var(--po-grey)' };
   const phrase = card.status === 'failed' ? card.failure_reason : m.phrase;
   return (
     <div className="he-detail">
@@ -507,7 +508,9 @@ export default function Heals() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const projects = useProjects();
-  const projectName = projects.data?.projects.find((p) => p.slug === slug || p.id === slug)?.name ?? slug;
+  const activeProject = projects.data?.projects.find((p) => p.slug === slug || p.id === slug);
+  const projectName = activeProject?.name ?? slug;
+  const projectId = activeProject?.id ?? null;
 
   const [filter, setFilter] = useState<FilterId>('all');
   const [splitPct, setSplitPct] = useState(42);
@@ -518,10 +521,16 @@ export default function Heals() {
   const pageRef = useRef<HTMLDivElement>(null);
   const lastStatusRef = useRef<Record<string, HealStatus>>({});
 
+  // GET /v1/heals is global across the user's projects (no projectId param),
+  // so we pass the active tab as status_filter and scope to this project below.
+  // 'all' / 'terminal' aren't single statuses → no server-side status_filter.
+  const statusFilter: HealStatus | undefined =
+    filter === 'all' || filter === 'terminal' ? undefined : filter;
+
   // Polling cadence per the contract: 10–15s for list.
   const listQuery = useQuery({
-    queryKey: ['heals'],
-    queryFn: () => api.listHeals(),
+    queryKey: ['heals', projectId, statusFilter ?? 'all'],
+    queryFn: () => api.listHeals({ status_filter: statusFilter, limit: 100 }),
     refetchInterval: 12_000,
   });
 
@@ -537,10 +546,15 @@ export default function Heals() {
     },
   });
 
+  // GET /v1/heals is global → scope to the current project client-side.
+  const cards: HealCardSummary[] = useMemo(() => {
+    const all = listQuery.data ?? [];
+    return projectId ? all.filter((c) => c.project_id === projectId) : all;
+  }, [listQuery.data, projectId]);
+
   // Flash a card row when its status changes during a poll.
   useEffect(() => {
-    const cards = listQuery.data;
-    if (!cards) return;
+    if (!listQuery.data) return;
     const timers: number[] = [];
     for (const c of cards) {
       const prev = lastStatusRef.current[c.id];
@@ -553,9 +567,7 @@ export default function Heals() {
     return () => {
       for (const id of timers) window.clearTimeout(id);
     };
-  }, [listQuery.data]);
-
-  const cards: HealCardSummary[] = listQuery.data ?? [];
+  }, [cards, listQuery.data]);
 
   const visible = useMemo(() => {
     const filtered = cards.filter((c) => {

@@ -352,7 +352,8 @@ function TraceVolumePanel({ slug, pageWindow }: { slug: string; pageWindow: Time
       : null;
 
   const xTickIdx = pickXTicks(n);
-  const deltaPct = stats.deltas.total_traces_pct_24h;
+  // Backend `deltas.*` are float|null — coerce before any arithmetic / Math.abs / .toFixed.
+  const deltaPct = stats.deltas.total_traces_pct_24h ?? 0;
   const deltaDir = deltaPct >= 0 ? 'up' : 'down';
 
   return (

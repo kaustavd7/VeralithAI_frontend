@@ -6,7 +6,7 @@ import Login from './routes/Login';
 import Onboarding from './routes/Onboarding';
 import Placeholder from './routes/Placeholder';
 import ProjectsHome from './routes/ProjectsHome';
-import TodayOverview from './routes/TodayOverview';
+import ProjectOverview from './routes/ProjectOverview';
 import TraceExplorer from './routes/TraceExplorer';
 import Analytics from './routes/Analytics';
 import FailureCells from './routes/FailureCells';
@@ -67,7 +67,7 @@ function AppRoutes() {
         path="/projects/:slug"
         element={
           <RequireAuth>
-            <TodayOverview />
+            <ProjectOverview />
           </RequireAuth>
         }
       />

@@ -43,13 +43,24 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   };
   const res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
   if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as ErrorEnvelope | null;
-    throw new ApiError(
-      body?.error?.code ?? 'unknown',
-      body?.error?.message ?? `HTTP ${res.status}`,
-      res.status,
-      body?.error?.details,
-    );
+    // FastAPI returns { detail: string } or { detail: [{ msg, ... }] } (validation);
+    // legacy envelope returns { error: { code, message, details } }. Parse both.
+    const body = (await res.json().catch(() => null)) as
+      | (ErrorEnvelope & { detail?: unknown })
+      | null;
+    const detail = body?.detail;
+    const detailMessage =
+      typeof detail === 'string'
+        ? detail
+        : Array.isArray(detail)
+          ? detail
+              .map((d) => (d as { msg?: unknown }).msg)
+              .filter((m): m is string => typeof m === 'string' && Boolean(m))
+              .join('; ')
+          : null;
+    const message = (detailMessage || null) ?? body?.error?.message ?? `HTTP ${res.status}`;
+    const code = body?.error?.code ?? `http_${res.status}`;
+    throw new ApiError(code, message, res.status, body?.error?.details);
   }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
