@@ -19,44 +19,42 @@ const wrap: React.CSSProperties = {
 const titleStyle: React.CSSProperties = { fontSize: 15, fontWeight: 600, color: 'var(--po-fg)' };
 const subStyle: React.CSSProperties = { fontSize: 13, color: 'var(--po-fg-3)', maxWidth: 420, lineHeight: 1.5 };
 
-/* Brand-themed loader: Veralith = "true stone" (vera + lith). A sprout grows
-   from a grounding stone — the self-heal / regeneration motif — in the Emerald
-   Signal accent. Pure CSS/SVG, token-driven, theme-aware, and reduced-motion
-   friendly. The whole figure fades in/out each cycle so the geometry reset is
-   never visible. */
+/* Brand-themed loader: Veralith = "true stone" (vera + lith). A cairn of
+   balanced stones settles into place one stone at a time — the top stone is the
+   emerald "lith". Pure CSS/SVG, token-driven, theme-aware, reduced-motion
+   friendly. The whole figure fades in/out each cycle so the reset is unseen. */
 export function LoadingState({ label = 'Loading…' }: { label?: string }) {
   return (
     <div style={wrap} role="status" aria-live="polite">
-      <span className="sv-sprout" aria-hidden="true">
-        <svg width="44" height="48" viewBox="0 0 44 48" fill="none">
-          <ellipse className="sv-stone" cx="22" cy="42" rx="12.5" ry="3.6" />
-          <path className="sv-stem" d="M22 42 C22 34 22 28 22 20" />
-          <path className="sv-leaf sv-leaf-l" d="M22 29 C14 28 9.5 21.5 11.5 14 C19 15 22.8 21.5 22 29 Z" />
-          <path className="sv-leaf sv-leaf-r" d="M22 24 C29.5 23 34 17.5 32 10.5 C25 11.5 21.3 17.5 22 24 Z" />
+      <span className="sv-cairn" aria-hidden="true">
+        <svg width="46" height="48" viewBox="0 0 46 48" fill="none">
+          {/* ground shadow */}
+          <ellipse className="sv-ground" cx="23" cy="44" rx="14" ry="2.4" />
+          {/* stacked stones, widest at the base */}
+          <ellipse className="sv-st sv-s1" cx="23" cy="38" rx="13" ry="4.6" />
+          <ellipse className="sv-st sv-s2" cx="23" cy="29.5" rx="9.6" ry="4" />
+          <ellipse className="sv-st-top sv-s3" cx="23" cy="21.5" rx="6.2" ry="3.4" />
         </svg>
       </span>
       <span style={subStyle}>{label}</span>
       <style>{`
-        .sv-sprout{display:inline-flex}
-        .sv-sprout svg{overflow:visible;
-          filter:drop-shadow(0 0 5px color-mix(in oklab, var(--accent) 35%, transparent));
-          animation:sv-cycle 2.4s ease-in-out infinite}
-        .sv-stone{fill:color-mix(in oklab, var(--po-fg) 20%, transparent)}
-        .sv-stem{stroke:var(--accent);stroke-width:2.4;stroke-linecap:round;fill:none;
-          stroke-dasharray:24;stroke-dashoffset:24;animation:sv-stem 2.4s ease-in-out infinite}
-        .sv-leaf{transform-box:fill-box;transform-origin:bottom center;transform:scale(0);opacity:0}
-        .sv-leaf-l{fill:var(--accent);animation:sv-leaf-l 2.4s ease-in-out infinite}
-        .sv-leaf-r{fill:color-mix(in oklab, var(--accent) 72%, var(--po-bg));
-          animation:sv-leaf-r 2.4s ease-in-out infinite}
-        @keyframes sv-cycle{0%{opacity:0}12%{opacity:1}80%{opacity:1}100%{opacity:0}}
-        @keyframes sv-stem{0%{stroke-dashoffset:24}40%,100%{stroke-dashoffset:0}}
-        @keyframes sv-leaf-l{0%,24%{transform:scale(0);opacity:0}56%,100%{transform:scale(1);opacity:1}}
-        @keyframes sv-leaf-r{0%,32%{transform:scale(0);opacity:0}64%,100%{transform:scale(1);opacity:1}}
+        .sv-cairn{display:inline-flex}
+        .sv-cairn svg{overflow:visible;animation:sv-cycle 2.4s ease-in-out infinite}
+        .sv-ground{fill:color-mix(in oklab, var(--po-fg) 12%, transparent)}
+        .sv-st{fill:color-mix(in oklab, var(--po-fg) 24%, transparent)}
+        .sv-st-top{fill:var(--accent);
+          filter:drop-shadow(0 0 5px color-mix(in oklab, var(--accent) 50%, transparent))}
+        .sv-s1{animation:sv-s1 2.4s ease-in-out infinite}
+        .sv-s2{animation:sv-s2 2.4s ease-in-out infinite}
+        .sv-s3{animation:sv-s3 2.4s ease-in-out infinite}
+        @keyframes sv-cycle{0%{opacity:0}10%{opacity:1}82%{opacity:1}100%{opacity:0}}
+        @keyframes sv-s1{0%{opacity:0;transform:translateY(-8px)}18%,100%{opacity:1;transform:translateY(0)}}
+        @keyframes sv-s2{0%,14%{opacity:0;transform:translateY(-8px)}38%,100%{opacity:1;transform:translateY(0)}}
+        @keyframes sv-s3{0%,28%{opacity:0;transform:translateY(-8px)}56%,100%{opacity:1;transform:translateY(0)}}
         @media (prefers-reduced-motion: reduce){
-          .sv-sprout svg,.sv-stem,.sv-leaf-l,.sv-leaf-r{animation:none}
-          .sv-sprout svg{opacity:1}
-          .sv-stem{stroke-dashoffset:0}
-          .sv-leaf{transform:scale(1);opacity:1}
+          .sv-cairn svg,.sv-s1,.sv-s2,.sv-s3{animation:none}
+          .sv-cairn svg{opacity:1}
+          .sv-st,.sv-st-top{transform:translateY(0);opacity:1}
         }
       `}</style>
     </div>
