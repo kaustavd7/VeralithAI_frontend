@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme, type ThemeChoice } from '../../hooks/useTheme';
 
@@ -12,8 +12,6 @@ export function AccountMenu({ onClose }: Props) {
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
-  // Present when the menu is opened from inside a project (/projects/:slug/…).
-  const { slug } = useParams<{ slug: string }>();
 
   // Display name + email derived from the Supabase user.
   const displayName = useMemo(() => {
@@ -83,12 +81,10 @@ export function AccountMenu({ onClose }: Props) {
     navigate('/settings');
   }
 
-  // API keys are per-project. Inside a project, open that project's keys page;
-  // otherwise send to the projects list to pick one.
+  // API keys are managed (cross-project) under Settings.
   function goApiKeys() {
     onClose();
-    if (slug) navigate(`/projects/${slug}/api-keys`);
-    else navigate('/projects');
+    navigate('/settings/api-keys');
   }
 
   return (

@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../api/client';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { LoadingState, ErrorState } from '../components/StateViews';
+import { ApiKeysSettings } from '../components/settings/ApiKeysSettings';
 import type { Me } from '../api/types';
 
 /* ─────────────────────────────────────────────────────────────
@@ -41,12 +43,12 @@ type NavId = keyof typeof SE_ICONS;
 
 const NAV: Array<{ id: NavId; label: string; disabled?: boolean; soon?: boolean; note?: string }> = [
   { id: 'profile',       label: 'Profile' },
-  { id: 'api-keys',      label: 'API keys',       disabled: true, note: 'cross-project' },
+  { id: 'api-keys',      label: 'API keys',       note: 'cross-project' },
   { id: 'billing',       label: 'Billing',        soon: true },
   { id: 'notifications', label: 'Notifications',  soon: true },
 ];
 
-function SettingsSidebar({ active }: { active: NavId }) {
+function SettingsSidebar({ active, onNavigate }: { active: NavId; onNavigate: (id: NavId) => void }) {
   return (
     <aside className="se-sidebar">
       <div className="se-sb-head">Settings</div>
@@ -55,12 +57,8 @@ function SettingsSidebar({ active }: { active: NavId }) {
           <button
             key={n.id}
             type="button"
-            disabled={n.disabled || n.soon}
-            className={
-              'se-sb-item' +
-              (n.id === active ? ' is-active' : '') +
-              (n.disabled || n.soon ? ' is-disabled' : '')
-            }
+            className={'se-sb-item' + (n.id === active ? ' is-active' : '')}
+            onClick={() => onNavigate(n.id)}
           >
             <span className="se-sb-ic">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -247,33 +245,74 @@ function AccountPanel() {
    Page
    ─────────────────────────────────────────────────────────── */
 
-export default function Settings() {
-  const meQuery = useQuery({
-    queryKey: ['me'],
-    queryFn: () => api.getMe(),
-  });
+function ProfileSection() {
+  const meQuery = useQuery({ queryKey: ['me'], queryFn: () => api.getMe() });
   const me = meQuery.data;
+  if (meQuery.isError) {
+    return (
+      <ErrorState
+        message={meQuery.error instanceof Error ? meQuery.error.message : 'Failed to load your profile.'}
+        onRetry={() => meQuery.refetch()}
+      />
+    );
+  }
+  if (meQuery.isLoading || !me) return <LoadingState label="Loading profile…" />;
+  return (
+    <>
+      <IdentityPanel me={me} />
+      <PlanPanel me={me} />
+      <AccountPanel />
+    </>
+  );
+}
+
+function ComingSoon({ icon, title, desc }: { icon: NavId; title: string; desc: string }) {
+  return (
+    <section className="se-panel se-coming">
+      <span className="se-coming-ic">
+        <svg width="22" height="22" viewBox="0 0 16 16" fill="none">{SE_ICONS[icon]}</svg>
+      </span>
+      <div className="se-coming-title">{title} — coming soon</div>
+      <p className="se-coming-desc">{desc}</p>
+    </section>
+  );
+}
+
+const TITLES: Record<NavId, string> = {
+  profile: 'Profile',
+  'api-keys': 'API keys',
+  billing: 'Billing',
+  notifications: 'Notifications',
+};
+const VALID_SECTIONS: NavId[] = ['profile', 'api-keys', 'billing', 'notifications'];
+
+export default function Settings() {
+  const navigate = useNavigate();
+  const { section: raw } = useParams<{ section?: string }>();
+  const section: NavId = VALID_SECTIONS.includes(raw as NavId) ? (raw as NavId) : 'profile';
 
   return (
     <ProjectShell variant="workspace" active="wsSettings">
       <div className="se-body">
-        <SettingsSidebar active="profile" />
+        <SettingsSidebar active={section} onNavigate={(id) => navigate('/settings/' + id)} />
         <div className="se-main">
           <div className="se-content">
-            <h1 className="se-title">Profile</h1>
-            {meQuery.isError ? (
-              <ErrorState
-                message={meQuery.error instanceof Error ? meQuery.error.message : 'Failed to load your profile.'}
-                onRetry={() => meQuery.refetch()}
+            <h1 className="se-title">{TITLES[section]}</h1>
+            {section === 'profile' && <ProfileSection />}
+            {section === 'api-keys' && <ApiKeysSettings />}
+            {section === 'billing' && (
+              <ComingSoon
+                icon="billing"
+                title="Billing"
+                desc="Plans, invoices and payment methods will live here. While Veralith is in private alpha, billing isn’t enabled — you’re on the trial."
               />
-            ) : meQuery.isLoading || !me ? (
-              <LoadingState label="Loading profile…" />
-            ) : (
-              <>
-                <IdentityPanel me={me} />
-                <PlanPanel me={me} />
-                <AccountPanel />
-              </>
+            )}
+            {section === 'notifications' && (
+              <ComingSoon
+                icon="notifications"
+                title="Notifications"
+                desc="Email and webhook alerts for new failures, raised PRs and trial reminders are on the way."
+              />
             )}
           </div>
         </div>

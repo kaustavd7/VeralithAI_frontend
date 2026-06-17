@@ -90,10 +90,13 @@ const ICONS = {
   ),
   chart: <path d="M2 13l3-6 3 3 3-7 3 5" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinejoin="round" />,
   heal: (
-    <>
-      <path d="M2 8h12M8 2v12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-      <circle cx="8" cy="8" r="6.2" stroke="currentColor" strokeWidth="1.3" fill="none" />
-    </>
+    <path
+      d="M8 13.3C8 13.3 2 9.6 2 5.6 2 3.9 3.3 2.7 4.9 2.7 6 2.7 7.1 3.4 8 4.6 8.9 3.4 10 2.7 11.1 2.7 12.7 2.7 14 3.9 14 5.6 14 9.6 8 13.3 8 13.3Z"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      fill="none"
+      strokeLinejoin="round"
+    />
   ),
   cells: (
     <>

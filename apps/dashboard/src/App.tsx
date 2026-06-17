@@ -13,7 +13,6 @@ import Analytics from './routes/Analytics';
 import FailureCells from './routes/FailureCells';
 import TraceDetail from './routes/TraceDetail';
 import Heals from './routes/Heals';
-import ApiKeys from './routes/ApiKeys';
 import Settings from './routes/Settings';
 
 export default function App() {
@@ -89,16 +88,6 @@ function AppRoutes() {
         }
       />
 
-      {/* API keys — per-project key management (list / create / revoke). */}
-      <Route
-        path="/projects/:slug/api-keys"
-        element={
-          <RequireAuth>
-            <ApiKeys />
-          </RequireAuth>
-        }
-      />
-
 
       {/* Legacy dense analytics dashboard, preserved at its own URL. */}
       <Route
@@ -157,7 +146,7 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/settings/profile"
+        path="/settings/:section"
         element={
           <RequireAuth>
             <Settings />

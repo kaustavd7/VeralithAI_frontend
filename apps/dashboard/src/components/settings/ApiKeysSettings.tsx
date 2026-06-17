@@ -1,14 +1,10 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ProjectShell } from '../components/projectShell/ProjectShell';
-import { useProjects } from '../hooks/useProjects';
-import { useApiKeys } from '../hooks/useOverviewData';
-import { api } from '../api/client';
-import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
-import type { ApiKey, ApiKeyWithSecret } from '../api/types';
-import '../styles/project-shell.css';
-import '../styles/project-page.css';
+import { useProjects } from '../../hooks/useProjects';
+import { useApiKeys } from '../../hooks/useOverviewData';
+import { api } from '../../api/client';
+import { LoadingState, ErrorState, EmptyState } from '../StateViews';
+import type { ApiKey, ApiKeyWithSecret, Project } from '../../api/types';
 
 function KeyIcon() {
   return (
@@ -19,15 +15,10 @@ function KeyIcon() {
   );
 }
 
-/* Project API keys — list, create (one-time secret reveal), revoke.
-   Per-project; backend CRUD lives at /v1/projects/{id}/api-keys. */
-export default function ApiKeys() {
-  const { slug = '' } = useParams<{ slug: string }>();
-  const projects = useProjects();
-  const project = projects.data?.projects.find((p) => p.slug === slug || p.id === slug);
-  const projectName = project?.name ?? slug;
+/* One project's keys — list, create (one-time secret reveal), revoke. */
+function ProjectKeysGroup({ project }: { project: Project }) {
+  const slug = project.slug;
   const queryClient = useQueryClient();
-
   const keysQuery = useApiKeys(slug);
   const keys = keysQuery.data?.api_keys ?? [];
 
@@ -38,8 +29,7 @@ export default function ApiKeys() {
   const [confirmKey, setConfirmKey] = useState<ApiKey | null>(null);
 
   const createMut = useMutation({
-    mutationFn: (name: string) =>
-      api.createApiKey(slug, name.trim() ? { name: name.trim() } : {}),
+    mutationFn: (name: string) => api.createApiKey(slug, name.trim() ? { name: name.trim() } : {}),
     onSuccess: (res) => {
       setRevealed(res.api_key);
       setCreateOpen(false);
@@ -47,7 +37,6 @@ export default function ApiKeys() {
       queryClient.invalidateQueries({ queryKey: ['api-keys', slug] });
     },
   });
-
   const revokeMut = useMutation({
     mutationFn: (keyId: string) => api.deleteApiKey(slug, keyId),
     onSuccess: () => {
@@ -67,106 +56,77 @@ export default function ApiKeys() {
     }
   }
 
-  const hasKeys = keys.length > 0;
-
   return (
-    <ProjectShell slug={slug} active="apiKeys" project={projectName}>
-      <div className="po-page">
-        <div
-          className="page-header"
-          style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}
+    <section className="se-keys-group">
+      <div className="se-keys-grouphead">
+        <span className="se-keys-projname">{project.name}</span>
+        <span className="se-keys-projslug po-mono">{project.slug}</span>
+        <button
+          type="button"
+          className="po-btn po-btn-sm"
+          onClick={() => { createMut.reset(); setCreateOpen(true); }}
         >
-          <div>
-            <h1 className="page-title">API keys</h1>
-            <div className="page-sub">
-              Authenticate the SDK and ingest endpoints for <b>{projectName}</b>. Secrets are shown once,
-              at creation.
-            </div>
-          </div>
-          {hasKeys && (
-            <button
-              type="button"
-              className="po-btn"
-              onClick={() => {
-                createMut.reset();
-                setCreateOpen(true);
-              }}
-            >
-              + Create key
-            </button>
-          )}
-        </div>
+          + New key
+        </button>
+      </div>
 
-        {keysQuery.isLoading ? (
-          <LoadingState label="Loading API keys…" />
-        ) : keysQuery.isError ? (
-          <ErrorState
-            message={keysQuery.error instanceof Error ? keysQuery.error.message : undefined}
-            onRetry={() => keysQuery.refetch()}
-          />
-        ) : !hasKeys ? (
-          <EmptyState
-            title="No API keys yet"
-            sub="Create a key to start sending traces from your RAG app via the Veralith SDK."
-            action={
-              <button type="button" className="po-btn" onClick={() => { createMut.reset(); setCreateOpen(true); }}>
-                Create your first key
-              </button>
-            }
-          />
-        ) : (
-          <div className="ak-card">
-            <div className="ak-list">
-              {keys.map((k) => {
-                const revoked = k.revoked_at !== null;
-                return (
-                  <div key={k.id} className={'ak-row' + (revoked ? ' is-revoked' : '')}>
-                    <div className="ak-key-ic"><KeyIcon /></div>
-                    <div className="ak-main">
-                      <div className="ak-titlerow">
-                        <span className="ak-name">{k.name ?? 'default'}</span>
-                      </div>
-                      <div className="ak-meta">
-                        <span className={'ak-prefix' + (revoked ? ' is-struck' : '')}>{k.prefix}</span>
-                        <span className="he-dot-sep">·</span>
-                        <span>Created {new Date(k.created_at).toLocaleDateString()}</span>
-                        {k.last_used_at && (
-                          <>
-                            <span className="he-dot-sep">·</span>
-                            <span>Last used {new Date(k.last_used_at).toLocaleDateString()}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="ak-action">
-                      {revoked ? (
-                        <span className="ak-revoked-pill">
-                          Revoked {new Date(k.revoked_at!).toLocaleDateString()}
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          className="ak-revoke"
-                          onClick={() => setConfirmKey(k)}
-                          disabled={revokeMut.isPending}
-                        >
-                          Revoke
-                        </button>
+      {keysQuery.isLoading ? (
+        <LoadingState label="Loading keys…" />
+      ) : keysQuery.isError ? (
+        <ErrorState
+          message={keysQuery.error instanceof Error ? keysQuery.error.message : undefined}
+          onRetry={() => keysQuery.refetch()}
+        />
+      ) : keys.length === 0 ? (
+        <div className="se-keys-empty">No keys for this project yet.</div>
+      ) : (
+        <div className="ak-card">
+          <div className="ak-list">
+            {keys.map((k) => {
+              const revoked = k.revoked_at !== null;
+              return (
+                <div key={k.id} className={'ak-row' + (revoked ? ' is-revoked' : '')}>
+                  <div className="ak-key-ic"><KeyIcon /></div>
+                  <div className="ak-main">
+                    <div className="ak-titlerow"><span className="ak-name">{k.name ?? 'default'}</span></div>
+                    <div className="ak-meta">
+                      <span className={'ak-prefix' + (revoked ? ' is-struck' : '')}>{k.prefix}</span>
+                      <span className="he-dot-sep">·</span>
+                      <span>Created {new Date(k.created_at).toLocaleDateString()}</span>
+                      {k.last_used_at && (
+                        <>
+                          <span className="he-dot-sep">·</span>
+                          <span>Last used {new Date(k.last_used_at).toLocaleDateString()}</span>
+                        </>
                       )}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                  <div className="ak-action">
+                    {revoked ? (
+                      <span className="ak-revoked-pill">Revoked {new Date(k.revoked_at!).toLocaleDateString()}</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="ak-revoke"
+                        onClick={() => setConfirmKey(k)}
+                        disabled={revokeMut.isPending}
+                      >
+                        Revoke
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Create modal */}
       {createOpen && (
         <div className="he-modal-scrim" onClick={() => setCreateOpen(false)}>
           <div className="he-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-            <div className="he-modal-title">Create API key</div>
+            <div className="he-modal-title">New key · {project.name}</div>
             <div className="he-modal-body">
               <label style={{ display: 'block', fontSize: 12, color: 'var(--po-fg-3)', marginBottom: 6 }}>
                 Name (optional)
@@ -207,7 +167,7 @@ export default function ApiKeys() {
             <div className="he-modal-title">Your new API key</div>
             <div className="he-modal-body">
               Copy it now — for your security, <b>we won’t show the secret again.</b>
-              <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'stretch' }}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                 <code
                   style={{
                     flex: 1,
@@ -242,8 +202,7 @@ export default function ApiKeys() {
             <div className="he-modal-title">Revoke this API key?</div>
             <div className="he-modal-body">
               Requests using <span className="ak-modal-prefix">{confirmKey.prefix}…</span> will return{' '}
-              <b>401</b> immediately. This cannot be undone — issue a new key first if you have running
-              services.
+              <b>401</b> immediately. This cannot be undone — issue a new key first if you have running services.
               {revokeMut.isError && (
                 <div style={{ marginTop: 8, color: 'var(--po-bad)', fontSize: 12.5 }}>
                   {revokeMut.error instanceof Error ? revokeMut.error.message : 'Could not revoke key.'}
@@ -263,6 +222,44 @@ export default function ApiKeys() {
           </div>
         </div>
       )}
-    </ProjectShell>
+    </section>
+  );
+}
+
+/* Cross-project API keys — a group per project. */
+export function ApiKeysSettings() {
+  const projects = useProjects();
+
+  if (projects.isLoading) return <LoadingState label="Loading projects…" />;
+  if (projects.isError) {
+    return (
+      <ErrorState
+        message={projects.error instanceof Error ? projects.error.message : 'Failed to load projects.'}
+        onRetry={() => projects.refetch()}
+      />
+    );
+  }
+  const list = projects.data?.projects ?? [];
+  if (list.length === 0) {
+    return (
+      <EmptyState
+        title="No projects yet"
+        sub="Create a project first — API keys are issued per project."
+      />
+    );
+  }
+
+  return (
+    <>
+      <p className="se-keys-intro">
+        Keys authenticate the SDK and ingest endpoints. They’re scoped per project; secrets are shown once,
+        at creation.
+      </p>
+      <div className="se-keys">
+        {list.map((p) => (
+          <ProjectKeysGroup key={p.id} project={p} />
+        ))}
+      </div>
+    </>
   );
 }
