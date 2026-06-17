@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import styles from './detail.module.css';
 import { CELL_META } from '../../utils/cellMeta';
+import { tracesPath } from '../../lib/nav';
 import type { Diagnosis, Suggestion } from '../../api/types';
 
 interface Props {
@@ -55,11 +57,25 @@ function renderInlineCode(text: string) {
   });
 }
 
+// Fallback so an unknown/missing failure_cell can't throw on .color/.label.
+const CELL_META_FALLBACK = {
+  label: 'unknown_cell',
+  color: 'var(--po-line-strong)',
+  ink: '#ffffff',
+  short: '?',
+} as const;
+
 export function DiagnosisHero({ diagnosis, suggestion, traceId }: Props) {
+  const { slug = '' } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [toast, setToast] = useState(false);
-  const meta = CELL_META[diagnosis.failure_cell];
+  const meta = CELL_META[diagnosis.failure_cell] ?? CELL_META_FALLBACK;
   const meaning = CELL_MEANINGS[diagnosis.failure_cell] ?? '';
   const severity = CELL_SEVERITY[diagnosis.failure_cell] ?? '';
+
+  function goToCellTraces() {
+    navigate(tracesPath(slug, diagnosis.failure_cell));
+  }
 
   const sufFrac = diagnosis.sufficiency_fraction;
   const fFrac = diagnosis.faithfulness_fraction;
@@ -88,7 +104,17 @@ export function DiagnosisHero({ diagnosis, suggestion, traceId }: Props) {
         <div className={styles.diagLeft}>
           <span
             className={styles.cellPill}
-            style={{ background: meta.color }}
+            style={{ background: meta.color, cursor: 'pointer' }}
+            role="button"
+            tabIndex={0}
+            title={`View ${meta.label} traces`}
+            onClick={goToCellTraces}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                goToCellTraces();
+              }
+            }}
           >
             {severity}
           </span>

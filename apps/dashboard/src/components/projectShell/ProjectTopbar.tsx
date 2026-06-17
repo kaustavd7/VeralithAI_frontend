@@ -10,8 +10,6 @@ type Props = {
   workspace?: string;
   /** when set, the topbar appends the `/ project ⌄` switcher; omit at the workspace level */
   project?: string;
-  /** kept for back-compat with ProjectShell; env is no longer shown */
-  env?: 'production' | 'staging' | 'local';
 };
 
 // Backend only models trial/pro today; trial reads as the free tier.

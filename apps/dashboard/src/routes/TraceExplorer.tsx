@@ -1,9 +1,10 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
 import { useStats, useTraces } from '../hooks/useOverviewData';
 import type { FailureCell, TraceListItem } from '../api/types';
+import { traceDetailPath } from '../lib/nav';
 
 /* ─────────────────────────────────────────────────────────────
    Cell metadata
@@ -137,10 +138,18 @@ function CellChips({
    Sort dropdown
    ─────────────────────────────────────────────────────────── */
 
+const SORT_OPTIONS: { id: SortKey; label: string }[] = [
+  { id: 'newest', label: 'newest' },
+  { id: 'oldest', label: 'oldest' },
+  { id: 'sufficiency_asc', label: 'sufficiency ↑' },
+  { id: 'sufficiency_desc', label: 'sufficiency ↓' },
+  { id: 'faithfulness_asc', label: 'faithfulness ↑' },
+  { id: 'faithfulness_desc', label: 'faithfulness ↓' },
+];
+
 function SortPill({ sort, onChange }: { sort: SortKey; onChange: (s: SortKey) => void }) {
   const [open, setOpen] = useState(false);
-  const label =
-    sort === 'newest' ? 'newest' : sort === 'oldest' ? 'oldest' : 'sufficiency ↑';
+  const label = SORT_OPTIONS.find((o) => o.id === sort)?.label ?? 'newest';
   return (
     <div className="te-sort" style={{ position: 'relative' }}>
       <span className="te-sort-label">sort</span>
@@ -153,6 +162,7 @@ function SortPill({ sort, onChange }: { sort: SortKey; onChange: (s: SortKey) =>
       {open && (
         <div
           role="menu"
+          className="te-sort-menu"
           style={{
             position: 'absolute',
             top: 'calc(100% + 6px)',
@@ -165,20 +175,10 @@ function SortPill({ sort, onChange }: { sort: SortKey; onChange: (s: SortKey) =>
             flexDirection: 'column',
             minWidth: 160,
             zIndex: 20,
-            boxShadow: '0 10px 24px rgba(0,0,0,0.25)',
           }}
           onMouseLeave={() => setOpen(false)}
         >
-          {(
-            [
-              { id: 'newest' as SortKey,             label: 'newest' },
-              { id: 'oldest' as SortKey,             label: 'oldest' },
-              { id: 'sufficiency_asc' as SortKey,    label: 'sufficiency ↑' },
-              { id: 'sufficiency_desc' as SortKey,   label: 'sufficiency ↓' },
-              { id: 'faithfulness_asc' as SortKey,   label: 'faithfulness ↑' },
-              { id: 'faithfulness_desc' as SortKey,  label: 'faithfulness ↓' },
-            ]
-          ).map((o) => (
+          {SORT_OPTIONS.map((o) => (
             <button
               key={o.id}
               type="button"
@@ -266,6 +266,21 @@ export default function TraceExplorer() {
   const { slug = '' } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const projects = useProjects();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // '/' focuses the search box (unless the user is already typing in a field).
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return;
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   const project = useMemo(
     () => projects.data?.projects.find((p) => p.slug === slug || p.id === slug),
@@ -424,6 +439,7 @@ export default function TraceExplorer() {
                 <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
               </svg>
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="Search query or trace id (current page)…"
                 value={search}
@@ -439,7 +455,7 @@ export default function TraceExplorer() {
         </div>
 
         {traces.isLoading ? (
-          <div className="po-page-loading">Loading traces…</div>
+          <div style={{ padding: '40px 0', color: 'var(--po-fg-3)' }}>Loading traces…</div>
         ) : isEmptyAfterFilters ? (
           <div className="te-empty">
             <div className="te-empty-mark">
@@ -459,14 +475,6 @@ export default function TraceExplorer() {
         ) : (
           <>
             <div className="te-table">
-              <div className="te-thead">
-                <div className="te-th te-col-sev" />
-                <div className="te-th te-col-time">Time</div>
-                <div className="te-th te-col-q">Query</div>
-                <div className="te-th te-col-cell">Failure cell</div>
-                <div className="te-th te-col-s">Sufficiency</div>
-                <div className="te-th te-col-f">Faithfulness</div>
-              </div>
               <div className="te-tbody">
                 {rows.map((r) => {
                   const cell = r.failure_cell ? CELL_BY_ID[r.failure_cell] : null;
@@ -476,7 +484,13 @@ export default function TraceExplorer() {
                       key={r.id}
                       className={'te-row' + (evaluating ? ' is-evaluating' : '')}
                       data-sev={severityAttr(r.sufficiency_fraction)}
-                      onClick={() => navigate(`/projects/${slug}/traces/${r.id}`)}
+                      onClick={() => navigate(traceDetailPath(slug, r.id))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          navigate(traceDetailPath(slug, r.id));
+                        }
+                      }}
                       role="link"
                       tabIndex={0}
                       title={r.query}
@@ -497,12 +511,26 @@ export default function TraceExplorer() {
                             <span className="te-eval-dot" />evaluating
                           </span>
                         ) : cell ? (
-                          <span
-                            className="te-cell-pill"
-                            style={{ ['--c' as keyof CSSProperties]: cell.color } as CSSProperties}
+                          <button
+                            type="button"
+                            className={'te-cell-pill' + (activeCells.has(cell.id) ? ' is-active' : '')}
+                            style={{
+                              ['--c' as keyof CSSProperties]: cell.color,
+                              cursor: 'pointer',
+                              appearance: 'none',
+                              WebkitAppearance: 'none',
+                              margin: 0,
+                              textAlign: 'inherit',
+                            } as CSSProperties}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleCell(cell.id);
+                            }}
+                            aria-pressed={activeCells.has(cell.id)}
+                            title={`Filter by ${cell.label}`}
                           >
                             <span className="te-cell-label">{cell.label}</span>
-                          </span>
+                          </button>
                         ) : (
                           <span className="po-mono" style={{ color: 'var(--po-fg-4)', fontSize: 12 }}>—</span>
                         )}

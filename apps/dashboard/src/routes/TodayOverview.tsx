@@ -1,9 +1,29 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
 import { useAuth } from '../hooks/useAuth';
+import { HealthDonut } from '../components/charts/HealthDonut';
+import { ProfileBadges } from '../components/charts/ProfileBadges';
+import { analyticsPath, cellsPath, healsPath, tracesPath } from '../lib/nav';
 import '../styles/today-workbench.css';
+
+/* Inline reset so a real <button> matches the former inline-text `.ovc-link`
+   <a> exactly (the .ovc-link CSS lives in another file we don't own). */
+const LINK_BTN_RESET: React.CSSProperties = {
+  background: 'none', border: 'none', padding: 0, font: 'inherit', textAlign: 'left',
+};
+
+/* Keyboard activation for elements given role="link"/role="button": fire the
+   click handler on Enter or Space (and stop Space from scrolling the page). */
+function onActivateKey(handler: () => void) {
+  return (e: KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      handler();
+    }
+  };
+}
 
 /* ────────────────────────────────────────────────────────────────────
    Project Overview "Today" — B2 triage command-center, glow variant.
@@ -395,14 +415,23 @@ const KG_TOPICS = [
 const KG_TOTAL = KG_TOPICS.reduce((a, t) => a + t.q, 0);
 const cellColor = (k: string) => `var(--cell-${k})`;
 
-function KnowledgeGapCell({ play = true }: { play?: boolean }) {
+function KnowledgeGapCell({ play = true, onTopic, onExplore }: { play?: boolean; onTopic: (cell: string) => void; onExplore: () => void }) {
   const max = KG_TOPICS[0].q;
   return (
     <div className="ovc-body kg-body">
       <div className="ovc-subhead"><ScrambleNumber value={String(KG_TOTAL)} play={play} /> failing queries · {KG_TOPICS.length} topics · 7d</div>
       <div className="kg-list">
         {KG_TOPICS.map((t, i) => (
-          <div className="kg-row" key={t.name}>
+          <div
+            className="kg-row"
+            key={t.name}
+            role="link"
+            tabIndex={0}
+            style={{ cursor: 'pointer' }}
+            onClick={() => onTopic(t.cell)}
+            onKeyDown={onActivateKey(() => onTopic(t.cell))}
+            aria-label={`View ${t.name} traces`}
+          >
             <div className="kg-top">
               <span className="kg-dot" style={{ background: cellColor(t.cell) }} />
               <span className="kg-name">{t.name}</span>
@@ -416,7 +445,7 @@ function KnowledgeGapCell({ play = true }: { play?: boolean }) {
           </div>
         ))}
       </div>
-      <a className="ovc-link">Explore topic clusters →</a>
+      <button type="button" className="ovc-link" style={LINK_BTN_RESET} onClick={onExplore}>Explore topic clusters →</button>
     </div>
   );
 }
@@ -428,7 +457,7 @@ const PI_HEALS = [
   { name: 'Fix SSO doc retrieval', gain: 2.4, traces: 34 },
   { name: 'Tighten rate-limit prompt', gain: 1.8, traces: 30 },
 ];
-function PotentialImprovementCell({ play = true }: { play?: boolean }) {
+function PotentialImprovementCell({ play = true, onHeals }: { play?: boolean; onHeals: () => void }) {
   const delta = ((PI_PROJECTED - PI_CURRENT) * 100).toFixed(1);
   return (
     <div className="ovc-body pi-body">
@@ -445,14 +474,23 @@ function PotentialImprovementCell({ play = true }: { play?: boolean }) {
       <div className="ovc-subhead">{PI_PENDING} pending heals · top contributors</div>
       <div className="pi-rows">
         {PI_HEALS.map((h) => (
-          <div className="pi-row" key={h.name}>
+          <div
+            className="pi-row"
+            key={h.name}
+            role="link"
+            tabIndex={0}
+            style={{ cursor: 'pointer' }}
+            onClick={onHeals}
+            onKeyDown={onActivateKey(onHeals)}
+            aria-label={`Review heal: ${h.name}`}
+          >
             <span className="pi-row-name">{h.name}</span>
             <span className="pi-row-traces po-mono">{h.traces} traces</span>
             <span className="pi-row-gain">+{h.gain.toFixed(1)}</span>
           </div>
         ))}
       </div>
-      <a className="ovc-link">Review all {PI_PENDING} heals →</a>
+      <button type="button" className="ovc-link" style={LINK_BTN_RESET} onClick={onHeals}>Review all {PI_PENDING} heals →</button>
     </div>
   );
 }
@@ -575,8 +613,21 @@ function LatencyDetailCell() {
   );
 }
 
+/* KPI cards drill down in display order: traces · failures (cells) · heals · p95 (analytics). */
+const STAT_NAV = ['traces', 'cells', 'heals', 'analytics'] as const;
+
 function TodayContent() {
   const { user } = useAuth();
+  const { slug = '' } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const statHref = (i: number) => {
+    switch (STAT_NAV[i]) {
+      case 'traces': return tracesPath(slug);
+      case 'cells': return cellsPath(slug);
+      case 'heals': return healsPath(slug);
+      case 'analytics': return analyticsPath(slug);
+    }
+  };
   const firstName = useMemo(() => {
     const meta = user?.user_metadata as Record<string, unknown> | undefined;
     const full = (meta?.['full_name'] as string | undefined) ?? (meta?.['name'] as string | undefined);
@@ -614,7 +665,7 @@ function TodayContent() {
   const [ovRef, ovInView] = useInView();
 
   return (
-    <div className="wf-page wf-b2 is-flat is-glow" ref={rootRef}>
+    <div className="wf-page wf-b2 is-glow" ref={rootRef}>
       <section className="wf-today">
         <div className="wf-today-head">
           <div>
@@ -642,13 +693,35 @@ function TodayContent() {
             </div>
             <div className="wf-b-stats">
               {pd.stats.map((s, i) => (
-                <div className="wf-b-stat wf-card" key={i}>
+                <div
+                  className="wf-b-stat wf-card"
+                  key={i}
+                  role="link"
+                  tabIndex={0}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate(statHref(i))}
+                  onKeyDown={onActivateKey(() => navigate(statHref(i)))}
+                  aria-label={`View ${s.l}`}
+                >
                   <span className="wf-mlabel">{s.l}</span>
                   <span className={'wf-num' + (s.warn ? ' wf-warn' : '')}><ScrambleNumber value={s.v} /></span>
                   <Delta dir={s.d}>{s.ds}</Delta>
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="wf-profile-sec">
+        <div className="wf-card wf-profile">
+          <div className="ovc-head">
+            <div className="ovc-title">Trace health profile</div>
+            <span className="ovc-tag po-mono">failure-cell mix · achievements</span>
+          </div>
+          <div className="wf-profile-body">
+            <div className="wf-profile-donut"><HealthDonut onCellClick={(cell) => navigate(tracesPath(slug, cell))} /></div>
+            <div className="wf-profile-side"><ProfileBadges /></div>
           </div>
         </div>
       </section>
@@ -666,8 +739,8 @@ function TodayContent() {
             <OvCell title="Ver-advice" sub="what we'd do next"><VerAdviceCell /></OvCell>
           </div>
           <div className="ovc-col ovc-col-r">
-            <OvCell title="Knowledge-gap topics" sub="failing-query clusters"><KnowledgeGapCell play={ovInView} /></OvCell>
-            <OvCell title="Potential improvement" sub="if all heals done" grow><PotentialImprovementCell play={ovInView} /></OvCell>
+            <OvCell title="Knowledge-gap topics" sub="failing-query clusters"><KnowledgeGapCell play={ovInView} onTopic={(cell) => navigate(tracesPath(slug, cell))} onExplore={() => navigate(cellsPath(slug))} /></OvCell>
+            <OvCell title="Potential improvement" sub="if all heals done" grow><PotentialImprovementCell play={ovInView} onHeals={() => navigate(healsPath(slug))} /></OvCell>
           </div>
         </div>
       </section>
@@ -685,12 +758,7 @@ export default function TodayOverview() {
   const projectName = project?.name ?? slug;
 
   return (
-    <ProjectShell
-      slug={slug}
-      active="overview"
-      project={projectName}
-      mainClass="tw-black-canvas"
-    >
+    <ProjectShell slug={slug} active="overview" project={projectName}>
       <TodayContent />
     </ProjectShell>
   );

@@ -3,12 +3,12 @@
 // color for chips that put text on the cell fill (dark on the two lightest, white
 // on the rest). Kept in sync with the --fcell-* tokens in tokens.css.
 export const CELL_META = {
-  complete_grounded:     { label: 'complete_grounded',     color: '#DAD7CD', ink: '#2c3a28', short: 'CG' },
-  complete_ungrounded:   { label: 'complete_ungrounded',   color: '#588157', ink: '#ffffff', short: 'CU' },
-  incomplete_grounded:   { label: 'incomplete_grounded',   color: '#A3B18A', ink: '#26331f', short: 'IG' },
-  incomplete_ungrounded: { label: 'incomplete_ungrounded', color: '#344E41', ink: '#ffffff', short: 'IU' },
-  extra_grounded:        { label: 'extra_grounded',        color: '#76936A', ink: '#ffffff', short: 'EG' },
-  extra_ungrounded:      { label: 'extra_ungrounded',      color: '#3A5A40', ink: '#ffffff', short: 'EU' },
+  complete_grounded:     { label: 'complete_grounded',     color: 'var(--fcell-cg)', ink: '#2c3a28', short: 'CG' },
+  complete_ungrounded:   { label: 'complete_ungrounded',   color: 'var(--fcell-cu)', ink: '#ffffff', short: 'CU' },
+  incomplete_grounded:   { label: 'incomplete_grounded',   color: 'var(--fcell-ig)', ink: '#26331f', short: 'IG' },
+  incomplete_ungrounded: { label: 'incomplete_ungrounded', color: 'var(--fcell-iu)', ink: '#ffffff', short: 'IU' },
+  extra_grounded:        { label: 'extra_grounded',        color: 'var(--fcell-eg)', ink: '#ffffff', short: 'EG' },
+  extra_ungrounded:      { label: 'extra_ungrounded',      color: 'var(--fcell-eu)', ink: '#ffffff', short: 'EU' },
 } as const;
 
 export type CellName = keyof typeof CELL_META;

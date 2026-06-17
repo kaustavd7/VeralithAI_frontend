@@ -4,7 +4,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProjects } from '../hooks/useProjects';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { api } from '../api/client';
-import '../styles/project-page.css';
 import type { Project } from '../api/types';
 
 /* ─────────────────────────────────────────────────────────────
@@ -153,42 +152,42 @@ export default function ProjectsHome() {
           <h1 className="ph-title">Projects</h1>
         </div>
 
-          <div className="ph-toolbar">
-            <div className="ph-field">
-              <SearchIcon size={14} />
-              <input
-                className="ph-input"
-                placeholder="Search projects…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+        <div className="ph-toolbar">
+          <div className="ph-field">
+            <SearchIcon size={14} />
+            <input
+              className="ph-input"
+              placeholder="Search projects…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
+        </div>
 
-          <div className="ph-grid">
-            {visibleProjects.map((p) => (
-              <ProjectCard
-                key={p.id}
-                project={p}
-                onOpen={() => navigate(`/projects/${p.slug ?? p.id}`)}
-                pinned={pinnedSet.has(p.id)}
-                onTogglePin={() => togglePin(p.id)}
-                draggable={!search.trim()}
-                dragging={dragId === p.id}
-                onDragStart={() => setDragId(p.id)}
-                onDragEnd={() => setDragId(null)}
-                onDropCard={() => reorder(p.id)}
-              />
-            ))}
-            <button
-              type="button"
-              className="ph-card ph-card-ghost"
-              onClick={() => setCreating(true)}
-            >
-              <PlusIcon size={16} />
-              New project
-            </button>
-          </div>
+        <div className="ph-grid">
+          {visibleProjects.map((p) => (
+            <ProjectCard
+              key={p.id}
+              project={p}
+              onOpen={() => navigate(`/projects/${p.slug ?? p.id}`)}
+              pinned={pinnedSet.has(p.id)}
+              onTogglePin={() => togglePin(p.id)}
+              draggable={!search.trim()}
+              dragging={dragId === p.id}
+              onDragStart={() => setDragId(p.id)}
+              onDragEnd={() => setDragId(null)}
+              onDropCard={() => reorder(p.id)}
+            />
+          ))}
+          <button
+            type="button"
+            className="ph-card ph-card-ghost"
+            onClick={() => setCreating(true)}
+          >
+            <PlusIcon size={16} />
+            New project
+          </button>
+        </div>
       </div>
 
       {creating && <CreateProjectModal onClose={() => setCreating(false)} />}

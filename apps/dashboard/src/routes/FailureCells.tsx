@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
+import { normalizeCell, tracesPath } from '../lib/nav';
 import '../styles/failure-cells.css';
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -72,21 +73,21 @@ function fcHash(a: number, b: number, c: number): number {
 
 // sage ramp — light (healthy, dominant) → dark (worst case), matching the bubble chart
 const FC_CELLS: FcCell[] = [
-  { key: 'cg', label: 'complete · grounded',     comp: 'complete',   ground: 'grounded',   color: '#DAD7CD', healthy: true,  base: 1100 / 24, idx: 0 },
-  { key: 'ig', label: 'incomplete · grounded',   comp: 'incomplete', ground: 'grounded',   color: '#A3B18A', healthy: false, base: 93 / 24,   idx: 1 },
-  { key: 'eg', label: 'extra · grounded',        comp: 'extra',      ground: 'grounded',   color: '#76936A', healthy: false, base: 53 / 24,   idx: 2 },
-  { key: 'cu', label: 'complete · ungrounded',   comp: 'complete',   ground: 'ungrounded', color: '#588157', healthy: false, base: 24 / 24,   idx: 3 },
-  { key: 'eu', label: 'extra · ungrounded',      comp: 'extra',      ground: 'ungrounded', color: '#3A5A40', healthy: false, base: 7 / 24,    idx: 4 },
-  { key: 'iu', label: 'incomplete · ungrounded', comp: 'incomplete', ground: 'ungrounded', color: '#344E41', healthy: false, base: 2 / 24,    idx: 5 },
+  { key: 'cg', label: 'complete · grounded',     comp: 'complete',   ground: 'grounded',   color: 'var(--fcell-cg)', healthy: true,  base: 1100 / 24, idx: 0 },
+  { key: 'ig', label: 'incomplete · grounded',   comp: 'incomplete', ground: 'grounded',   color: 'var(--fcell-ig)', healthy: false, base: 93 / 24,   idx: 1 },
+  { key: 'eg', label: 'extra · grounded',        comp: 'extra',      ground: 'grounded',   color: 'var(--fcell-eg)', healthy: false, base: 53 / 24,   idx: 2 },
+  { key: 'cu', label: 'complete · ungrounded',   comp: 'complete',   ground: 'ungrounded', color: 'var(--fcell-cu)', healthy: false, base: 24 / 24,   idx: 3 },
+  { key: 'eu', label: 'extra · ungrounded',      comp: 'extra',      ground: 'ungrounded', color: 'var(--fcell-eu)', healthy: false, base: 7 / 24,    idx: 4 },
+  { key: 'iu', label: 'incomplete · ungrounded', comp: 'incomplete', ground: 'ungrounded', color: 'var(--fcell-iu)', healthy: false, base: 2 / 24,    idx: 5 },
 ];
 const FC_MAP: Record<string, FcCell> = Object.fromEntries(FC_CELLS.map((c) => [c.key, c]));
 
 const FC_GROUPINGS: Record<FcGrouping, FcSeries[]> = {
   cells: FC_CELLS.map((c) => ({ key: c.key, label: c.label, color: c.color, members: [c.key] })),
   completeness: [
-    { key: 'complete',   label: 'complete',   color: '#DAD7CD', members: FC_CELLS.filter((c) => c.comp === 'complete').map((c) => c.key) },
-    { key: 'incomplete', label: 'incomplete', color: '#76936A', members: FC_CELLS.filter((c) => c.comp === 'incomplete').map((c) => c.key) },
-    { key: 'extra',      label: 'extra',      color: '#344E41', members: FC_CELLS.filter((c) => c.comp === 'extra').map((c) => c.key) },
+    { key: 'complete',   label: 'complete',   color: 'var(--fcell-cg)', members: FC_CELLS.filter((c) => c.comp === 'complete').map((c) => c.key) },
+    { key: 'incomplete', label: 'incomplete', color: 'var(--fcell-eg)', members: FC_CELLS.filter((c) => c.comp === 'incomplete').map((c) => c.key) },
+    { key: 'extra',      label: 'extra',      color: 'var(--fcell-iu)', members: FC_CELLS.filter((c) => c.comp === 'extra').map((c) => c.key) },
   ],
 };
 
@@ -494,6 +495,17 @@ function FcZoom({
 /* ── page body ──────────────────────────────────────────────────────────── */
 
 function FailureCellsPage() {
+  const { slug = '' } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  // Drill-down: a failure cell → the Trace Explorer pre-filtered to that cell.
+  const goToCell = (cellKey: string) => navigate(tracesPath(slug, cellKey));
+  const onCellKey = (cellKey: string) => (e: KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      goToCell(cellKey);
+    }
+  };
+
   const [state, setState] = useState<FcState>({
     chart: 'bar',
     grouping: 'cells',
@@ -603,11 +615,33 @@ function FailureCellsPage() {
               let cnt = 0;
               s.members.forEach((m) => (cnt += fcCellWindow(m, span, state.seed).tot));
               const off = state.hidden.has(s.key);
+              // Only the 6-cell grouping's series keys map to real failure cells.
+              const cell = normalizeCell(s.key);
               return (
                 <button key={s.key} className={'fc-lg' + (off ? ' is-off' : '')} onClick={() => toggleHidden(s.key)}>
                   <span className="fc-lg-d" style={{ background: s.color }} />
                   {s.label}
                   <span className="fc-lg-c">{fcNum(cnt)}</span>
+                  {cell && (
+                    <span
+                      className="fc-lg-drill"
+                      role="link"
+                      tabIndex={0}
+                      aria-label={`View ${s.label} traces`}
+                      title={`View ${s.label} traces`}
+                      style={{ cursor: 'pointer', color: 'var(--accent)', fontWeight: 700 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        goToCell(s.key);
+                      }}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                        onCellKey(s.key)(e);
+                      }}
+                    >
+                      →
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -665,6 +699,30 @@ function FailureCellsPage() {
                   <span className={'fc-sm-dl ' + dcls}>{d >= 0 ? '▲' : '▼'} {fcR1(Math.abs(d))}%</span>
                 </div>
                 <FcSpark vals={cw.vals} color={c.color} />
+                <span
+                  className="fc-sm-drill"
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`View ${c.label} traces`}
+                  style={{
+                    cursor: 'pointer',
+                    display: 'inline-block',
+                    marginTop: 6,
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10.5,
+                    color: 'var(--accent)',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToCell(c.key);
+                  }}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    onCellKey(c.key)(e);
+                  }}
+                >
+                  View traces →
+                </span>
               </button>
             );
           })}

@@ -161,8 +161,8 @@ function CreateProjectStep({
             style={{
               marginTop: 12,
               padding: '8px 12px',
-              background: 'rgba(226, 92, 92, 0.1)',
-              border: '1px solid rgba(226, 92, 92, 0.3)',
+              background: 'var(--hl-red)',
+              border: '1px solid var(--hl-red-b)',
               borderRadius: 'var(--radius-sm)',
               color: 'var(--cell-cu)',
               fontSize: 13,
@@ -268,7 +268,7 @@ def my_rag(query):
           onClick={copyKey}
           style={{
             padding: '6px 12px',
-            background: copied ? 'var(--accent-dim)' : 'var(--panel-3)',
+            background: copied ? 'var(--accent-dim)' : 'var(--hover)',
             color: copied ? 'var(--accent)' : 'var(--fg-2)',
             border: '1px solid var(--line-2)',
             borderRadius: 'var(--radius-sm)',

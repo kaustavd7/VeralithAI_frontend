@@ -14,7 +14,6 @@ type Props = {
   slug?: string;
   /** project name — when set, the topbar appends the `/ project ⌄` switcher */
   project?: string;
-  env?: 'production' | 'staging' | 'local';
   workspace?: string;
   /** Extra class on `.shell-main` (e.g. a pure-black canvas override). */
   mainClass?: string;
@@ -28,7 +27,6 @@ export function ProjectShell({
   active,
   slug,
   project,
-  env = 'local',
   workspace = 'workspace',
   mainClass,
   drawer,
@@ -38,7 +36,7 @@ export function ProjectShell({
 
   return (
     <div className="shell" data-sb={mode}>
-      <ProjectTopbar project={project} env={env} workspace={workspace} />
+      <ProjectTopbar project={project} workspace={workspace} />
       <div className="shell-body">
         <ProjectSidebar active={active} slug={slug} variant={variant} />
         <main className={'shell-main' + (mainClass ? ' ' + mainClass : '')}>{children}</main>

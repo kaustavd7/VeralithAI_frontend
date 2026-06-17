@@ -1,3 +1,6 @@
+import { Link } from 'react-router-dom';
+import { ProjectShell } from '../components/projectShell/ProjectShell';
+
 type Props = {
   title: string;
   subtitle?: string;
@@ -5,34 +8,18 @@ type Props = {
 
 export default function Placeholder({ title, subtitle }: Props) {
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-        padding: '64px',
-        gap: '12px',
-        background: 'var(--bg)',
-        color: 'var(--fg)',
-      }}
-    >
-      <div
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 12,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: 'var(--accent)',
-        }}
-      >
-        veralith
+    <ProjectShell variant="workspace" active="projects">
+      <div className="po-page-error">
+        <h1 style={{ margin: 0, fontSize: 32, fontWeight: 600 }}>{title}</h1>
+        {subtitle ? <p style={{ margin: '8px 0 0', maxWidth: 560 }}>{subtitle}</p> : null}
+        <Link
+          to="/projects"
+          className="po-btn"
+          style={{ display: 'inline-flex', alignItems: 'center', marginTop: 20, textDecoration: 'none' }}
+        >
+          Back to projects
+        </Link>
       </div>
-      <h1 style={{ margin: 0, fontSize: 32, fontWeight: 600 }}>{title}</h1>
-      {subtitle ? (
-        <p style={{ margin: 0, color: 'var(--fg-3)', maxWidth: 560 }}>{subtitle}</p>
-      ) : null}
-    </main>
+    </ProjectShell>
   );
 }

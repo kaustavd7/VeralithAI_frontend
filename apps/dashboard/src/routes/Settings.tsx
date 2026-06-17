@@ -3,8 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../api/client';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
-import '../styles/project-shell.css';
-import '../styles/project-page.css';
 import type { Me } from '../api/types';
 
 /* ─────────────────────────────────────────────────────────────
@@ -263,9 +261,9 @@ export default function Settings() {
           <div className="se-content">
             <h1 className="se-title">Profile</h1>
             {meQuery.isLoading || !me ? (
-              <p className="he-empty-line">Loading profile…</p>
+              <p className="se-empty-line">Loading profile…</p>
             ) : meQuery.isError ? (
-              <p className="he-empty-line">Failed to load profile.</p>
+              <p className="se-empty-line">Failed to load profile.</p>
             ) : (
               <>
                 <IdentityPanel me={me} />

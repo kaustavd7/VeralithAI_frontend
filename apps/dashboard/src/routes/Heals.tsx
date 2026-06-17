@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
+import { traceDetailPath, healsPath } from '../lib/nav';
 import '../styles/project-shell.css';
 import '../styles/project-page.css';
 import type {
@@ -151,7 +152,13 @@ function QueueRow({
    Evidence row + patch
    ─────────────────────────────────────────────────────────── */
 
-function EvidenceRow({ trace, defaultOpen }: { trace: HealEvidenceTrace; defaultOpen: boolean }) {
+function EvidenceRow({
+  trace, defaultOpen, onOpenTrace,
+}: {
+  trace: HealEvidenceTrace;
+  defaultOpen: boolean;
+  onOpenTrace: (traceId: string) => void;
+}) {
   const [open, setOpen] = useState(defaultOpen);
   // FailureCell → 2-letter abbreviation for chip
   const abbr = trace.failure_cell.split('_').map((p) => p[0]).join('') as 'cu' | 'iu' | 'ig' | 'eu' | 'eg' | 'cg';
@@ -160,17 +167,47 @@ function EvidenceRow({ trace, defaultOpen }: { trace: HealEvidenceTrace; default
     ig: 'incomplete · grounded', eu: 'extra · ungrounded',
     eg: 'extra · grounded',      cg: 'complete · grounded',
   };
+  function openTrace() {
+    onOpenTrace(trace.id);
+  }
   return (
     <div className={'he-ev' + (open ? ' is-open' : '')}>
-      <button className="he-ev-head" onClick={() => setOpen((o) => !o)}>
-        <Caret open={open} />
+      <div
+        className="he-ev-head"
+        role="link"
+        tabIndex={0}
+        style={{ cursor: 'pointer' }}
+        title={`Open trace ${shortId(trace.id)}`}
+        onClick={openTrace}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openTrace();
+          }
+        }}
+      >
+        <button
+          type="button"
+          className="he-ev-toggle"
+          aria-label={open ? 'Collapse trace details' : 'Expand trace details'}
+          aria-expanded={open}
+          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', color: 'inherit' }}
+          onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        >
+          <Caret open={open} />
+        </button>
         <span className="he-ev-id" title={trace.id}>{shortId(trace.id)}</span>
         <span className="he-cell-chip" style={{ '--c': `var(--fcell-${abbr})` } as React.CSSProperties}>
           <span className="he-cell-dot" />
           {cellLabels[abbr]}
         </span>
         <span className="he-ev-q">{trace.query}</span>
-      </button>
+        <span className="he-card-go" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </div>
       {open && (
         <div className="he-ev-body">
           <div className="he-ev-field">
@@ -353,6 +390,7 @@ function DetailPane({
   onCollapse: () => void;
 }) {
   const { slug = '' } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   if (isLoading || !card) {
     return (
       <div className="he-detail he-detail-empty">
@@ -399,7 +437,7 @@ function DetailPane({
         </div>
         {card.previous_card_id && (
           <div className="he-recur">
-            Previous attempt: <a href={`/projects/${slug}/heals/${card.previous_card_id}`}>earlier card</a> didn’t fix it — recurred at this trace.
+            Previous attempt: <Link to={healsPath(slug, card.previous_card_id)}>earlier card</Link> didn’t fix it — recurred at this trace.
           </div>
         )}
       </div>
@@ -439,7 +477,12 @@ function DetailPane({
         </div>
         <div className="he-ev-list">
           {card.evidence_traces.map((t, i) => (
-            <EvidenceRow key={t.id} trace={t} defaultOpen={i < 3} />
+            <EvidenceRow
+              key={t.id}
+              trace={t}
+              defaultOpen={i < 3}
+              onOpenTrace={(traceId) => navigate(traceDetailPath(slug, traceId))}
+            />
           ))}
         </div>
       </div>
@@ -498,15 +541,18 @@ export default function Heals() {
   useEffect(() => {
     const cards = listQuery.data;
     if (!cards) return;
+    const timers: number[] = [];
     for (const c of cards) {
       const prev = lastStatusRef.current[c.id];
       if (prev && prev !== c.status) {
         setFlashId(c.id);
-        const id = window.setTimeout(() => setFlashId(null), 1000);
-        return () => window.clearTimeout(id);
+        timers.push(window.setTimeout(() => setFlashId(null), 1000));
       }
       lastStatusRef.current[c.id] = c.status;
     }
+    return () => {
+      for (const id of timers) window.clearTimeout(id);
+    };
   }, [listQuery.data]);
 
   const cards: HealCardSummary[] = listQuery.data ?? [];
@@ -585,21 +631,32 @@ export default function Heals() {
 
   return (
     <ProjectShell slug={slug} active="heals" project={projectName}>
-      <div className={'he-page' + (dragging ? ' is-dragging' : '')} ref={pageRef}>
+      <div
+        className={'he-page' + (dragging ? ' is-dragging' : '')}
+        ref={pageRef}
+        style={{ display: 'flex', flexDirection: 'column' }}
+      >
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Heals</h1>
+            <div className="page-sub">
+              <span className="he-live" title="Updated every 12 seconds">
+                <span className="he-live-dot" />Live
+              </span>
+              {isEmpty ? '0 cards' : `${cards.length} cards · ${openCount} awaiting decision`}
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="he-split-row"
+          style={{ display: 'flex', flex: 1, minHeight: 0 }}
+        >
         <div
           className="he-queue"
           style={showDetail ? { width: `${splitPct}%` } : { flex: 1, width: 'auto' }}
         >
           <div className="he-queue-head">
-            <div className="he-queue-titlerow">
-              <h2 className="he-queue-title">Heals</h2>
-              <span className="he-live" title="Updated every 12 seconds">
-                <span className="he-live-dot" />Live
-              </span>
-            </div>
-            <div className="he-queue-sub">
-              {isEmpty ? '0 cards' : `${cards.length} cards · ${openCount} awaiting decision`}
-            </div>
             <div className="he-chips">
               {FILTERS.map((f) => (
                 <button
@@ -675,6 +732,7 @@ export default function Heals() {
             <span className="he-reopen-label">Detail</span>
           </button>
         ))}
+        </div>
 
         {confirm && (
           <ConfirmModal

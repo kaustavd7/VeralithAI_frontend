@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
+import { tracesPath } from '../lib/nav';
 import { useProjects } from '../hooks/useProjects';
 import { useStats, useTraces } from '../hooks/useOverviewData';
 import type {
@@ -266,7 +267,7 @@ function TraceVolumePanel({ slug, pageWindow }: { slug: string; pageWindow: Time
     return (
       <AnPanel title="Trace volume" subtitle={subtitleForWindow(win)} span={12}
         windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
-        <div className="po-page-loading" style={{ padding: '20px 0' }}>Loading…</div>
+        <div style={{ padding: '20px 0', color: 'var(--po-fg-3)' }}>Loading…</div>
       </AnPanel>
     );
   }
@@ -596,12 +597,12 @@ function shortBucketLabel(p: StatsTimeseriesPoint | undefined): string {
 // color (dark on the two lightest fills, white on the rest); `rgb` drives the
 // hover-ring + faint background gradient.
 const CELL_BUBBLES: { id: FailureCell; label: string; fill: string; text: string; rgb: string }[] = [
-  { id: 'complete_grounded',     label: 'complete · grounded',     fill: '#DAD7CD', text: '#2c3a28', rgb: '218,215,205' },
-  { id: 'incomplete_grounded',   label: 'incomplete · grounded',   fill: '#A3B18A', text: '#26331f', rgb: '163,177,138' },
-  { id: 'extra_grounded',        label: 'extra · grounded',        fill: '#76936A', text: '#FFFFFF', rgb: '118,147,106' },
-  { id: 'complete_ungrounded',   label: 'complete · ungrounded',   fill: '#588157', text: '#FFFFFF', rgb: '88,129,87' },
-  { id: 'extra_ungrounded',      label: 'extra · ungrounded',      fill: '#3A5A40', text: '#FFFFFF', rgb: '58,90,64' },
-  { id: 'incomplete_ungrounded', label: 'incomplete · ungrounded', fill: '#344E41', text: '#FFFFFF', rgb: '52,78,65' },
+  { id: 'complete_grounded',     label: 'complete · grounded',     fill: 'var(--fcell-cg)', text: '#2c3a28', rgb: '218,215,205' },
+  { id: 'incomplete_grounded',   label: 'incomplete · grounded',   fill: 'var(--fcell-ig)', text: '#26331f', rgb: '163,177,138' },
+  { id: 'extra_grounded',        label: 'extra · grounded',        fill: 'var(--fcell-eg)', text: '#FFFFFF', rgb: '118,147,106' },
+  { id: 'complete_ungrounded',   label: 'complete · ungrounded',   fill: 'var(--fcell-cu)', text: '#FFFFFF', rgb: '88,129,87' },
+  { id: 'extra_ungrounded',      label: 'extra · ungrounded',      fill: 'var(--fcell-eu)', text: '#FFFFFF', rgb: '58,90,64' },
+  { id: 'incomplete_ungrounded', label: 'incomplete · ungrounded', fill: 'var(--fcell-iu)', text: '#FFFFFF', rgb: '52,78,65' },
 ];
 
 type PackedCell = {
@@ -700,7 +701,15 @@ function packCellBubbles(byCell: Record<FailureCell, number>) {
 }
 
 function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeWindow }) {
+  const navigate = useNavigate();
   const { win, override, setOverride, clearOverride } = usePanelWindow(pageWindow);
+  const goToCell = (cell: FailureCell) => navigate(tracesPath(slug, cell));
+  const onCellKey = (cell: FailureCell) => (e: KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      goToCell(cell);
+    }
+  };
   const statsQuery = useStats(slug, useMemo(
     () => ({ since: sinceForWindow(win), bucket: bucketForWindow(win) }),
     [win],
@@ -762,7 +771,12 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
                   transition: 'opacity .2s ease',
                   cursor: 'pointer',
                 }}
+                role="link"
+                tabIndex={0}
+                aria-label={`View ${c.label} traces`}
                 onMouseEnter={() => setHover(i)}
+                onClick={() => goToCell(c.id)}
+                onKeyDown={onCellKey(c.id)}
               >
                 {hover === i && (
                   <circle r={c.r + 7} fill={`rgba(${c.rgb},0.18)`} />
@@ -844,10 +858,17 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
 
       <div className="an-legend an-cell-legend">
         {CELL_BUBBLES.map((c) => (
-          <span key={c.id} className="an-leg-item">
+          <button
+            key={c.id}
+            type="button"
+            className="an-leg-item"
+            style={{ cursor: 'pointer' }}
+            aria-label={`View ${c.label} traces`}
+            onClick={() => goToCell(c.id)}
+          >
             <span className="an-leg-sw" style={{ background: c.fill }} />
             {c.label}
-          </span>
+          </button>
         ))}
       </div>
     </AnPanel>
@@ -934,13 +955,40 @@ function TopFailingPanel({
             >
               <span className="an-lb-rank po-mono">#{i + 1}</span>
               <span className="an-lb-q">{r.query}</span>
-              <span
-                className="an-lb-cell"
-                style={{ ['--c' as keyof CSSProperties]: cellColor } as CSSProperties}
-              >
-                <span className="an-lb-dot" />
-                {cellLabel}
-              </span>
+              {r.failure_cell ? (
+                <button
+                  type="button"
+                  className="an-lb-cell"
+                  style={{
+                    ['--c' as keyof CSSProperties]: cellColor,
+                    cursor: 'pointer',
+                  } as CSSProperties}
+                  aria-label={`View ${cellLabel} traces`}
+                  title={`View ${cellLabel} traces`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(tracesPath(slug, r.failure_cell!));
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigate(tracesPath(slug, r.failure_cell!));
+                    }
+                  }}
+                >
+                  <span className="an-lb-dot" />
+                  {cellLabel}
+                </button>
+              ) : (
+                <span
+                  className="an-lb-cell"
+                  style={{ ['--c' as keyof CSSProperties]: cellColor } as CSSProperties}
+                >
+                  <span className="an-lb-dot" />
+                  {cellLabel}
+                </span>
+              )}
               <div className="an-lb-meter">
                 <span className="po-mono an-lb-num">{s.toFixed(2)}</span>
                 <div className="an-lb-track">
@@ -1071,7 +1119,7 @@ function HallucinationTrendPanel({
     return (
       <AnPanel title="Hallucination trend" subtitle={subtitleForWindow(win)} span={7}
         windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
-        <div className="po-page-loading" style={{ padding: '20px 0' }}>Loading…</div>
+        <div style={{ padding: '20px 0', color: 'var(--po-fg-3)' }}>Loading…</div>
       </AnPanel>
     );
   }

@@ -298,6 +298,61 @@ function buildSeedTraceDetail(projectId: string, id: string = SEED_DETAIL_ID): T
   };
 }
 
+// ---------------------------------------------------------------------------
+// Seed projects — pre-populate the grid so a fresh demo isn't empty.
+// `user_id` is stamped lazily on first listProjects() call because the mock's
+// userId is the live Supabase auth id (dynamic), and listProjects filters on
+// it. Mirrors the lazy ensureSeedHeals() pattern below.
+// ---------------------------------------------------------------------------
+type SeedProject = {
+  id: string;
+  name: string;
+  slug: string;
+  agoSeconds: number;
+  trace_count: number;
+};
+
+const SEED_PROJECTS: SeedProject[] = [
+  {
+    id: 'p1a2b3c4-0001-4f1a-9e10-1a2b3c4d5e60',
+    name: 'Acme RAG Assistant',
+    slug: 'acme-rag-assistant',
+    agoSeconds: 14 * 86_400,
+    trace_count: 1247,
+  },
+  {
+    id: 'p2b3c4d5-0002-4f1a-9e10-2b3c4d5e6f71',
+    name: 'Support Copilot',
+    slug: 'support-copilot',
+    agoSeconds: 6 * 86_400,
+    trace_count: 318,
+  },
+  {
+    id: 'p3c4d5e6-0003-4f1a-9e10-3c4d5e6f7082',
+    name: 'Docs Search Beta',
+    slug: 'docs-search-beta',
+    agoSeconds: 2 * 86_400,
+    trace_count: 42,
+  },
+];
+
+let seededProjects = false;
+function ensureSeedProjects(userId: string): void {
+  if (seededProjects) return;
+  seededProjects = true;
+  for (const s of SEED_PROJECTS) {
+    const project: Project = {
+      id: s.id,
+      user_id: userId,
+      name: s.name,
+      slug: s.slug,
+      created_at: new Date(Date.now() - s.agoSeconds * 1000).toISOString(),
+      trace_count: s.trace_count,
+    };
+    state.projects.set(project.id, project);
+  }
+}
+
 const SEED_CALIBRATION: CalibrationResponse = {
   threshold: 0.85,
   n_successful_traces: 1083,
@@ -316,6 +371,7 @@ function findProject(projectIdOrSlug: string): Project | null {
 export const mockApi = {
   async listProjects(userId: string): Promise<{ projects: Project[] }> {
     await delay();
+    ensureSeedProjects(userId);
     return {
       projects: Array.from(state.projects.values()).filter((p) => p.user_id === userId),
     };

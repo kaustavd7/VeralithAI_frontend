@@ -1,3 +1,12 @@
+/* ============================================================================
+   ⚠ UNROUTED — this page is NOT mounted in App.tsx. The live "/projects/:slug"
+   overview route renders routes/TodayOverview.tsx (demo data). This component is
+   kept ON PURPOSE: it holds the real-API wiring (useStats / useTraces /
+   useApiKeys + revoke) for when Overview is moved onto live data. Do not delete;
+   when wiring the real Overview, merge TodayOverview's visual treatment onto this
+   component's data hooks and route it here, then retire the demo. (See the
+   consistency-audit openQuestion on ProjectOverview vs TodayOverview.)
+   ============================================================================ */
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';

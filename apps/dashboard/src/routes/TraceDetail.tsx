@@ -39,22 +39,28 @@ export default function TraceDetail() {
 
   const shell = (body: React.ReactNode) => (
     <ProjectShell slug={slug} active="traces" project={projectName}>
-      <DetailActionBar
-        traceId={id}
-        onBack={() => navigate(`/projects/${slug}/traces`)}
-      />
-      {body}
+      <div className={detailStyles.page}>
+        <DetailActionBar
+          traceId={id}
+          onBack={() => navigate(`/projects/${slug}/traces`)}
+        />
+        {body}
+      </div>
     </ProjectShell>
   );
 
   if (query.isLoading) {
-    return shell(<div style={{ padding: 28, color: 'var(--fg-3)' }}>Loading trace…</div>);
+    return (
+      <ProjectShell slug={slug} active="traces" project={projectName}>
+        <div className="po-page-loading">Loading trace…</div>
+      </ProjectShell>
+    );
   }
   if (query.isError || !query.data) {
-    return shell(
-      <div style={{ padding: 28, color: 'var(--cell-cu)' }}>
-        Failed to load trace #{id.slice(0, 8)}.
-      </div>,
+    return (
+      <ProjectShell slug={slug} active="traces" project={projectName}>
+        <div className="po-page-error">Failed to load trace #{id.slice(0, 8)}.</div>
+      </ProjectShell>
     );
   }
 
@@ -192,10 +198,32 @@ function DetailActionBar({
           </svg>
           Back
         </button>
-        <button type="button" className={detailStyles.btn}>Re-evaluate</button>
-        <button type="button" className={detailStyles.btn}>Flag false positive</button>
-        <HealButton />
-        <button type="button" className={`${detailStyles.btn} ${detailStyles.btnPrimary}`}>
+        {/* Dead actions — no handler/endpoint yet. Gated as disabled "soon"
+            stubs (mirrors HealButton) so they aren't interactive no-ops. */}
+        <button
+          type="button"
+          className={`${detailStyles.btn} ${detailStyles.btnDisabled}`}
+          disabled
+          title="Coming soon"
+        >
+          Re-evaluate
+          <span className={detailStyles.healBadge}>soon</span>
+        </button>
+        <button
+          type="button"
+          className={`${detailStyles.btn} ${detailStyles.btnDisabled}`}
+          disabled
+          title="Coming soon"
+        >
+          Flag false positive
+          <span className={detailStyles.healBadge}>soon</span>
+        </button>
+        <button
+          type="button"
+          className={`${detailStyles.btn} ${detailStyles.btnDisabled}`}
+          disabled
+          title="Coming soon"
+        >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path
               d="M3 3v6h6M3 9l5-5"
@@ -206,7 +234,9 @@ function DetailActionBar({
             />
           </svg>
           Open raw JSON
+          <span className={detailStyles.healBadge}>soon</span>
         </button>
+        <HealButton />
       </div>
     </div>
   );
