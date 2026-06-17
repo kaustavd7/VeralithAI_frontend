@@ -63,6 +63,7 @@ export function Buddy() {
   const [line, setLine] = useState(0);
   const [frozen, setFrozen] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [lean, setLean] = useState(0);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -130,6 +131,31 @@ export function Buddy() {
     }
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Scroll knocks him off-balance (tilt by scroll velocity) + a slight haze,
+  // springing back when you stop. Capture catches the inner .shell-main scroller.
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    let lastTop = 0;
+    let lastTarget: EventTarget | null = null;
+    let reset = 0;
+    function onScroll(e: Event) {
+      const t = e.target as Document | Element;
+      const top = t === document ? window.scrollY : (t as Element).scrollTop ?? 0;
+      if (t !== lastTarget) { lastTarget = t; lastTop = top; return; }
+      const delta = top - lastTop;
+      lastTop = top;
+      if (!delta) return;
+      setLean(clamp(delta * 0.5, -16, 16));
+      window.clearTimeout(reset);
+      reset = window.setTimeout(() => setLean(0), 150);
+    }
+    document.addEventListener('scroll', onScroll, true);
+    return () => {
+      document.removeEventListener('scroll', onScroll, true);
+      window.clearTimeout(reset);
+    };
   }, []);
 
   // Roam engine — vertical-only patrol within his lane, plus idle antics.
@@ -241,6 +267,7 @@ export function Buddy() {
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
   const bubbleSide = pos.x + 29 > vw / 2 ? 'left' : 'right';
   const bubbleV = pos.y + 29 < vh / 2 ? 'top' : 'bottom';
+  const blurPx = Math.min(1.3, Math.abs(lean) / 9);
 
   return (
     <div
@@ -265,6 +292,13 @@ export function Buddy() {
         aria-label="Lith — your coding buddy (drag to move)"
         title="Lith — drag me!"
       >
+        <span
+          className="buddy-stage"
+          style={{
+            transform: `rotate(${lean.toFixed(2)}deg)`,
+            filter: blurPx > 0.05 ? `blur(${blurPx.toFixed(2)}px)` : undefined,
+          }}
+        >
         <span className="buddy-shadow" aria-hidden="true" />
         <svg ref={svgRef} className="buddy-svg" width="58" height="58" viewBox="0 0 64 64" fill="none" aria-hidden="true">
           <defs>
@@ -320,6 +354,7 @@ export function Buddy() {
             />
           )}
         </svg>
+        </span>
       </button>
 
       {open && (
