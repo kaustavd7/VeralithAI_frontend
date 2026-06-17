@@ -41,7 +41,11 @@
   background: var(--po-bg);
   transition: padding-left 180ms var(--sb-ease);
 }
-/* docked-expanded sidebar pushes the content instead of overlaying it */
+/* Only the 'expanded' sidebar mode reflows page content: the main column's
+   left padding grows to var(--sb-expanded) (240px) so the docked rail pushes
+   content instead of overlaying it. The 'hover' mode floats out as an overlay
+   and 'collapsed' stays a 56px rail — both leave .shell-main at the default
+   var(--sb-collapsed) padding so content never shifts under them. */
 .shell[data-sb='expanded'] .shell-main {
   padding-left: var(--sb-expanded);
 }
@@ -64,19 +68,6 @@
 .tb-crumb { color: var(--po-fg-3); font-size: 13px; }
 .tb-crumb.is-here { color: var(--po-fg); font-weight: 500; }
 .tb-crumb-sep { color: var(--po-fg-4); }
-.tb-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 11px; padding: 3px 8px 3px 7px;
-  border-radius: 999px;
-  background: rgba(163, 177, 138, 0.12);
-  color: var(--po-live);
-  font-family: var(--font-mono);
-  margin-left: 4px;
-}
-.tb-pill-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--po-live);
-}
 
 /* veralith brand mark in the topbar */
 .tb-logo {
@@ -276,7 +267,7 @@
   display: flex; flex-direction: column;
   /* reserve the global Workbench strip (44px, fixed at the viewport bottom)
      so the sidebar control isn't hidden behind it */
-  padding-bottom: 44px;
+  padding-bottom: var(--wb-clearance);
   z-index: 10;
   transition: width 180ms var(--sb-ease);
   transition-delay: 200ms;
@@ -330,95 +321,6 @@
   color: var(--po-fg);
   border-color: var(--po-line);
 }
-.sb-ctrl-menu {
-  position: absolute;
-  bottom: calc(100% - 2px);
-  left: 8px;
-  width: 200px;
-  padding: 6px;
-  background: var(--po-panel);
-  border: 1px solid var(--po-line-strong);
-  border-radius: var(--po-radius);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
-  z-index: 60;
-  animation: amIn 140ms cubic-bezier(0.22, 0.7, 0.2, 1);
-  transform-origin: bottom left;
-}
-:root[data-theme="light"] .sb-ctrl-menu {
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-.sb-ctrl-head {
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--po-fg-3);
-  padding: 6px 8px 8px;
-}
-.sb-ctrl-opt {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  font: inherit;
-  font-size: 13px;
-  color: var(--po-fg);
-  padding: 7px 8px;
-  border-radius: 7px;
-}
-.sb-ctrl-opt:hover {
-  background: var(--po-row-hover);
-}
-.sb-ctrl-radio {
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  flex: none;
-  border: 1.3px solid var(--po-fg-4);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.sb-ctrl-radio-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: transparent;
-}
-.sb-ctrl-opt.is-active .sb-ctrl-radio {
-  border-color: var(--po-live);
-}
-.sb-ctrl-opt.is-active .sb-ctrl-radio-dot {
-  background: var(--po-live);
-}
-.sb-brand {
-  height: 52px; flex: none;
-  display: flex; align-items: center; gap: 12px;
-  padding: 0 0 0 18px;
-  border-bottom: 1px solid var(--po-line);
-}
-.sb-brand-mark { display: inline-flex; color: var(--accent); }
-.sb-brand-name {
-  font-weight: 600; font-size: 14px; color: var(--po-fg);
-  letter-spacing: -0.01em;
-  opacity: 0; transform: translateX(-4px);
-  transition: opacity 140ms var(--sb-ease) 80ms,
-              transform 140ms var(--sb-ease) 80ms;
-  white-space: nowrap; pointer-events: none;
-}
-.sb.is-expanded .sb-brand-name { opacity: 1; transform: translateX(0); }
-.sb-brand-env {
-  margin-left: auto; margin-right: 14px;
-  font-family: var(--font-mono); font-size: 10px;
-  color: var(--po-fg-3); padding: 2px 6px;
-  border: 1px solid var(--po-line); border-radius: 4px;
-  opacity: 0; transition: opacity 140ms var(--sb-ease) 80ms;
-  white-space: nowrap; pointer-events: none;
-}
-.sb.is-expanded .sb-brand-env { opacity: 1; }
 
 .sb-scroll { flex: 1; overflow: visible; padding: 14px 8px 6px; }
 .sb-scroll::-webkit-scrollbar { width: 0; }
@@ -491,7 +393,8 @@
   position: absolute; left: calc(100% + 10px); top: 50%;
   transform: translateY(-50%) translateX(-12px);
   display: flex; align-items: center; gap: 9px;
-  background: #0a0b0d; color: var(--po-fg);
+  background: color-mix(in oklab, var(--po-fg) 92%, var(--po-bg));
+  color: var(--po-bg);
   padding: 7px 10px; border-radius: 8px;
   border: 1px solid var(--po-line-strong);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
@@ -504,7 +407,7 @@
   transform: translateY(-50%) translateX(0);
   transition: opacity 220ms var(--sb-ease) 2000ms, transform 300ms var(--sb-ease) 2000ms, visibility 0s linear 2000ms;
 }
-.sb-tip-label { font-size: 12.5px; font-weight: 500; color: var(--po-fg); }
+.sb-tip-label { font-size: 12.5px; font-weight: 500; color: var(--po-bg); }
 .sb-tip-keys { display: inline-flex; align-items: center; gap: 5px; }
 .sb-tip-then { font-size: 10.5px; color: var(--po-fg-4); }
 .sb-tip-key {
@@ -516,31 +419,5 @@
   border-radius: 4px; box-shadow: 0 1px 0 var(--po-line-strong);
 }
 
-.sb-foot {
-  flex: none;
-  border-top: 1px solid var(--po-line);
-  padding: 6px 8px 10px;
-}
-.sb-foot-status {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 10px 4px; color: var(--po-fg-2);
-  font-size: 12px;
-}
-.sb-live-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--po-live); flex: none;
-  box-shadow: 0 0 0 0 var(--po-live);
-  animation: pulse 2s infinite;
-}
-.sb-foot-label, .sb-foot-sub {
-  opacity: 0;
-  transition: opacity 140ms var(--sb-ease) 80ms;
-  pointer-events: none; white-space: nowrap;
-}
-.sb-foot-sub {
-  margin-left: auto;
-  font-family: var(--font-mono); font-size: 10px;
-  color: var(--po-fg-4);
-}
-.sb.is-expanded .sb-foot-label,
-.sb.is-expanded .sb-foot-sub { opacity: 1; }
+/* (legacy .sb-brand / .sb-foot status blocks removed — the sidebar renders only
+   .sb-scroll groups + the .sb-ctrl mode button; no brand header or live footer) */

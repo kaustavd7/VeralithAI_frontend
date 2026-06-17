@@ -17,8 +17,8 @@
 :root[data-theme="light"] .tw-black-canvas { --po-bg: #ffffff; --wf-flat-border: color-mix(in oklab, #000000 11%, transparent); }
 
 /* ── page shell ─────────────────────────────────────────────────────── */
-.wf-page { max-width: 1180px; margin: 0 auto; padding: 26px 34px 60px; display: flex; flex-direction: column; gap: 0; }
-.wf-h1 { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -.022em; color: var(--po-fg); }
+.wf-page { max-width: var(--page-max); margin: 0 auto; padding: var(--page-pad-top) var(--page-pad-x) 60px; display: flex; flex-direction: column; gap: 0; }
+.wf-h1 { margin: 0; font-size: var(--title-hero); font-weight: 600; letter-spacing: -.022em; color: var(--po-fg); }
 .wf-h2 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.022em; color: var(--po-fg); }
 /* Today / Yesterday / Last week toggle — heading-size tabs, active = full fg, others dimmed */
 /* fixed row height so the active tab growing/shrinking never bounces the layout below */
@@ -27,13 +27,25 @@
    transitions so the clicked tab grows while the others shrink (smoothly). */
 .wf-period-tab { font: inherit; font-size: 17px; line-height: 1; color: var(--po-fg-4); background: none; border: none; padding: 0; margin: 0; cursor: pointer;
   transition: font-size .3s cubic-bezier(.22, .7, .2, 1), color .22s ease; }
-.wf-period-tab.is-active { font-size: 24px; color: var(--po-fg); }
+.wf-period-tab.is-active { font-size: 20px; color: var(--po-fg); }
 .wf-period-tab:hover:not(.is-active) { color: var(--po-fg-2); }
-.wf-overview { margin-top: 20px; }
-.wf-card { background: var(--po-panel); border: 1.5px solid var(--po-line); border-radius: var(--po-radius); }
-.wf-bar { background: var(--po-line-strong); border-radius: 5px; }
+.wf-overview { margin-top: var(--space-6); }
+.wf-heatmap-sec { margin-top: var(--space-6); }
+.wf-heatmap { padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; }
+
+/* ── Trace health profile (donut + achievements) — LeetCode-profile row ── */
+.wf-profile-sec { margin-top: var(--space-6); }
+.wf-profile { padding: 18px 20px; display: flex; flex-direction: column; gap: 18px; }
+/* donut on the left, a 1px divider, badges + mini-stats on the right */
+.wf-profile-body { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: stretch; }
+.wf-profile-donut { padding-right: 28px; border-right: 1px solid var(--po-line); display: flex; align-items: center; }
+.wf-profile-side { display: flex; min-width: 0; }
+@media (max-width: 900px) {
+  .wf-profile-body { grid-template-columns: 1fr; gap: 20px; }
+  .wf-profile-donut { padding-right: 0; border-right: none; padding-bottom: 18px; border-bottom: 1px solid var(--po-line); }
+}
+.wf-card { background: var(--po-panel); border: 1px solid var(--po-line); border-radius: var(--po-radius); }
 .wf-num { font-size: 30px; font-weight: 600; letter-spacing: -.02em; color: var(--po-fg); font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; line-height: 1.1; }
-.wf-num-sm { font-size: 20px; }
 .wf-warn { color: var(--po-bad); }
 .wf-mlabel { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--po-fg-3); display: inline-flex; align-items: center; gap: 7px; }
 .wf-metric-sub { font-size: 12px; }
@@ -43,11 +55,11 @@
 /* healthy: bright-green pill; sage text in dark, a deeper green in light so it
    stays legible on white */
 .wf-health-badge.is-good { color: color-mix(in oklab, #ffffff 70%, var(--accent));
-  border: 1px solid color-mix(in oklab, #2bf35a 40%, transparent);
-  background: color-mix(in oklab, #2bf35a 14%, transparent); }
+  border: 1px solid color-mix(in oklab, var(--po-live) 40%, transparent);
+  background: color-mix(in oklab, var(--po-live) 14%, transparent); }
 [data-theme="light"] .wf-health-badge.is-good { color: color-mix(in oklab, #000000 74%, var(--accent));
-  border-color: color-mix(in oklab, #2bf35a 55%, var(--po-line));
-  background: color-mix(in oklab, #2bf35a 22%, transparent); }
+  border-color: color-mix(in oklab, var(--po-live) 55%, var(--po-line));
+  background: color-mix(in oklab, var(--po-live) 22%, transparent); }
 .wf-health-badge.is-warn { color: var(--po-idle);
   border: 1px solid color-mix(in oklab, var(--po-idle) 40%, transparent);
   background: color-mix(in oklab, var(--po-idle) 12%, transparent); }
@@ -68,10 +80,6 @@
 .wf-rec-link { color: var(--po-live); font-size: 12.5px; font-weight: 500; cursor: pointer; }
 .wf-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--po-fg-2); background: var(--po-bg); border: 1px solid var(--po-line); border-radius: 999px; padding: 5px 11px; white-space: nowrap; cursor: pointer; }
 .wf-chip.is-strong { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 40%, var(--po-line)); background: color-mix(in oklab, var(--accent) 8%, transparent); }
-
-/* scroll-fold seam */
-.wf-seam { position: relative; height: 1px; background: repeating-linear-gradient(90deg, var(--po-line-strong) 0 8px, transparent 8px 16px); margin: 34px 0; }
-.wf-seam-chip { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); background: var(--po-bg); color: var(--po-fg-4); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; padding: 3px 12px; border: 1px solid var(--po-line); border-radius: 999px; }
 
 /* ── charts ─────────────────────────────────────────────────────────── */
 .wf-spark { display: block; width: 100%; }
@@ -114,17 +122,10 @@
 .wf-asof-main b { color: var(--po-fg); font-weight: 600; }
 .wf-b-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .wf-b-stat { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
-.wf-b-ovgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.wf-b-ovgrid .wf-span2 { grid-column: span 2; }
 
-/* responsive: reflow the hero + overview grids on narrow viewports */
+/* responsive: reflow the hero grid on narrow viewports */
 @media (max-width: 900px) {
   .wf-b-grid { grid-template-columns: 1fr; }
-  .wf-b-ovgrid { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 560px) {
-  .wf-b-ovgrid { grid-template-columns: 1fr; }
-  .wf-b-ovgrid .wf-span2 { grid-column: span 1; }
 }
 
 /* bigger numbers in the 4 dense stat cells */
@@ -135,37 +136,22 @@
 /* ── Your overview ──────────────────────────────────────────────────── */
 .wf-ov-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .wf-ov-actions { display: flex; gap: 8px; }
-.wf-ov-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
-.wf-ov-card { background: var(--po-panel); border: 1px solid var(--po-line); border-radius: var(--po-radius); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 150px; }
-.wf-ovc-head { display: flex; align-items: center; justify-content: space-between; }
-.wf-ovc-title { font-size: 13px; font-weight: 600; color: var(--po-fg); }
-.wf-stack-rows { display: flex; flex-direction: column; gap: 10px; margin-top: 2px; }
-.wf-stack-row { display: flex; align-items: center; gap: 10px; }
-.wf-cell-swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
-.wf-stack-row .wf-bar { flex: 1; height: 9px; }
-.wf-stack-label { font-family: var(--font-mono); font-size: 10.5px; color: var(--po-fg-3); width: 26px; flex: none; }
-.wf-stack-n { font-family: var(--font-mono); font-size: 11px; color: var(--po-fg-3); width: 34px; text-align: right; }
 
-/* ── B2 transparent surfaces (card colour = page canvas) ────────────── */
-.wf-b2 .wf-card,
-.wf-b2 .wf-ov-card,
+/* ── B2 surfaces: cards are lifted --po-panel; only the inner charts go
+   transparent so they melt into the card ───────────────────────────── */
 .wf-b2 .wf-chart { background-color: transparent !important; }
 /* cards read as interactive — pointer cursor on hover (clickable chips/links/
    buttons already carry their own pointer cursor) */
 .wf-b2 .wf-card,
-.wf-b2 .wf-ov-card,
 .wf-b2 .ovc-card,
 .wf-b2 .rh-card { cursor: pointer; }
 .wf-b2 .wf-chart { padding-left: 0; padding-right: 0; border: none !important; }
 /* flat — no borders at all (the amber alert keeps its own border + fill) */
-.wf-b2.is-flat .wf-card,
-.wf-b2.is-flat .wf-ov-card { border-color: var(--wf-flat-border) !important; }
+.wf-b2.is-flat .wf-card { border-color: var(--wf-flat-border) !important; }
 
 /* ── glow — thin border whose bright segment tracks the cursor ──────── */
-.wf-b2.is-glow .wf-card,
-.wf-b2.is-glow .wf-ov-card { position: relative; }
-.wf-b2.is-glow .wf-card::before,
-.wf-b2.is-glow .wf-ov-card::before {
+.wf-b2.is-glow .wf-card { position: relative; }
+.wf-b2.is-glow .wf-card::before {
   content: ''; position: absolute; inset: -1.5px; border-radius: inherit; padding: 1.5px;
   background: conic-gradient(from var(--b2angle),
     color-mix(in oklab, var(--accent) 78%, transparent) 0deg,
@@ -180,13 +166,12 @@
   /* default (cursor not over the card) = faded out over a longer, smooth ease */
   opacity: 0; transition: opacity .5s ease; pointer-events: none;
 }
-.wf-b2.is-glow .wf-card:hover::before,
-.wf-b2.is-glow .wf-ov-card:hover::before { opacity: 1; transition: opacity .18s ease; }
+.wf-b2.is-glow .wf-card:hover::before { opacity: 1; transition: opacity .18s ease; }
 /* on hover the glow ring REPLACES the static dim border (otherwise the two
    stack into a doubled / blurred edge) — cross-fade for smoothness */
-.wf-b2.is-glow .wf-card, .wf-b2.is-glow .wf-ov-card,
+.wf-b2.is-glow .wf-card,
 .wf-b2.is-glow .ovc-card:not(.ovc-flush), .wf-b2.is-glow .rh-card { transition: border-color .25s ease; }
-.wf-b2.is-glow .wf-card:hover, .wf-b2.is-glow .wf-ov-card:hover,
+.wf-b2.is-glow .wf-card:hover,
 .wf-b2.is-glow .ovc-card:not(.ovc-flush):hover, .wf-b2.is-glow .rh-card:hover { border-color: transparent !important; }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -471,11 +456,11 @@
 .wb-hc-seg.is-bad { background: color-mix(in oklab, var(--po-bad) 75%, transparent); }
 
 /* footer strip (also the collapsed Workbench) */
-.wb-foot { height: 40px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 16px; background: var(--po-shell-bg); border-top: 1px solid var(--po-line); cursor: pointer; }
+.wb-foot { height: var(--wb-strip); flex: none; display: flex; align-items: center; gap: 14px; padding: 0 16px; background: var(--po-shell-bg); border-top: 1px solid var(--po-line); cursor: pointer; }
 .wb-foot-only { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; pointer-events: auto; cursor: pointer; }
 /* reserve space so the always-on collapsed strip never hides page content;
    scrollbar-gutter keeps the layout stable when the page scroll is locked. */
-.shell-main, .ph-scroll { padding-bottom: 44px; scrollbar-gutter: stable; }
+.shell-main, .ph-scroll { padding-bottom: var(--wb-clearance); scrollbar-gutter: stable; }
 /* while the Workbench panel is open, lock the page scroll behind it */
 html.wb-scroll-lock .shell-main,
 html.wb-scroll-lock .ph-scroll,
@@ -500,8 +485,6 @@ html.wb-scroll-lock .he-detail { overflow: hidden; }
    knowledge-gap topics · potential improvement). Ported from the B2-glow
    handoff; cards inherit the page's transparent/flat + cursor-glow treatment.
    ════════════════════════════════════════════════════════════════════ */
-.wf-b2 .ovc-card:not(.ovc-flush),
-.wf-b2 .rh-card { background-color: transparent !important; }
 .wf-b2.is-flat .ovc-card:not(.ovc-flush),
 .wf-b2.is-flat .rh-card { border-color: var(--wf-flat-border) !important; }
 .wf-b2.is-glow .ovc-card:not(.ovc-flush),
@@ -530,7 +513,7 @@ html.wb-scroll-lock .he-detail { overflow: hidden; }
 .ovc-col-l { flex: 1.9; }
 .ovc-col-r { flex: 1; }
 .ovc-grow { flex: 1; }
-.ovc-card { background: var(--po-panel); border: 1.5px solid var(--po-line); border-radius: var(--po-radius); padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.ovc-card { background: var(--po-panel); border: 1px solid var(--po-line); border-radius: var(--po-radius); padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
 .ovc-card.ovc-flush { padding: 0; background: none; border: none; }
 .ovc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .ovc-title { font-size: 14px; font-weight: 600; color: var(--po-fg); }
@@ -542,7 +525,7 @@ html.wb-scroll-lock .he-detail { overflow: hidden; }
 .ovc-chip { font-size: 11.5px; color: var(--po-fg-2); background: var(--po-panel); border: 1px solid var(--po-line); border-radius: var(--po-radius-sm); padding: 4px 10px; cursor: pointer; }
 
 /* RAG health — composite index variant */
-.rh-card { background: var(--po-panel); border: 1.5px solid var(--po-line); border-radius: var(--po-radius); padding: 18px 20px; display: flex; flex-direction: column; gap: 18px; }
+.rh-card { background: var(--po-panel); border: 1px solid var(--po-line); border-radius: var(--po-radius); padding: 18px 20px; display: flex; flex-direction: column; gap: 18px; }
 .rh-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .rh-title { font-size: 14px; font-weight: 600; color: var(--po-fg); }
 .rh-sub { font-size: 11.5px; color: var(--po-fg-3); margin-top: 3px; }

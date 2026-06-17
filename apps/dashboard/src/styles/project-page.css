@@ -9,12 +9,38 @@
 /* ── Project Overview page ─────────────────────────────────── */
 
 .po-page {
-  max-width: 1180px;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 28px 32px 40px;
+  padding: var(--page-pad-top) var(--page-pad-x) var(--page-pad-bottom);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-6);
+}
+
+/* ── Shared in-project page header system (one-canvas continuity) ── */
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: var(--page-header-gap);
+}
+.page-title {
+  margin: 0;
+  font-size: var(--title-page);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  color: var(--po-fg);
+}
+.page-sub {
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--po-fg-3);
+}
+.page-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .po-hero {
@@ -486,7 +512,7 @@
 }
 .po-cta:hover .po-cta-ic {
   color: var(--accent);
-  border-color: rgba(111, 214, 196, 0.3);
+  border-color: color-mix(in oklab, var(--accent) 30%, transparent);
 }
 .po-cta-t {
   color: var(--po-fg);
@@ -515,12 +541,12 @@
 /* ── Trace Explorer page ───────────────────────────────────── */
 
 .te-page {
-  max-width: 1440px;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 24px 32px 32px;
+  padding: var(--page-pad-top) var(--page-pad-x) var(--page-pad-bottom);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-6);
 }
 .te-head {
   display: flex;
@@ -530,7 +556,7 @@
 }
 .te-title {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--title-page);
   font-weight: 600;
   letter-spacing: -0.015em;
   color: var(--po-fg);
@@ -552,6 +578,10 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  background: var(--po-panel);
+  border: 1px solid var(--po-line);
+  border-radius: var(--po-radius);
+  padding: var(--card-pad);
 }
 .te-filter-row {
   display: flex;
@@ -648,7 +678,6 @@
   flex: 1;
   background: transparent;
   border: none;
-  outline: none;
   color: var(--po-fg);
   font: inherit;
   font-size: 12.5px;
@@ -699,6 +728,19 @@
 }
 .te-sort-pill svg {
   color: var(--po-fg-3);
+}
+.te-sort-menu {
+  background: var(--po-panel);
+  border: 1px solid var(--po-line-strong);
+  border-radius: var(--po-radius-sm);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.45),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+[data-theme="light"] .te-sort-menu {
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .te-table {
@@ -895,7 +937,7 @@
   align-items: center;
   gap: 8px;
   padding: 3px 10px 3px 9px;
-  border-radius: 5px;
+  border-radius: 999px;
   font-family: var(--font-sans);
   font-size: 11.5px;
   font-weight: 500;
@@ -943,7 +985,7 @@
   background: var(--po-bg);
   border-radius: 3px;
   overflow: hidden;
-  min-width: 68px;
+  min-width: 40px;
   max-width: 92px;
 }
 .te-meter-fill {
@@ -1033,17 +1075,13 @@
   opacity: 0.35;
   cursor: default;
 }
-.te-page-gap {
-  color: var(--po-fg-4);
-  padding: 0 4px;
-}
 
 /* Page-level loading + error fallbacks */
 .po-page-loading,
 .po-page-error {
-  max-width: 1180px;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 48px 32px;
+  padding: var(--page-pad-top) var(--page-pad-x);
   color: var(--po-fg-3);
   font-size: 13px;
 }
@@ -1065,15 +1103,15 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 14px 24px 12px;
-  border-bottom: 1px solid var(--po-line);
+  padding: var(--page-pad-top) var(--page-pad-x) 12px;
   flex: none;
   flex-wrap: wrap;
-  background: var(--po-shell-bg);
+  max-width: var(--page-max);
+  margin-inline: auto;
 }
 .an-title {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--title-page);
   font-weight: 600;
   letter-spacing: -0.015em;
   color: var(--po-fg);
@@ -1116,20 +1154,22 @@
 .an-add-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
   background: var(--accent);
-  color: #08221d;
+  color: var(--accent-ink);
   border: none;
   font: inherit;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
-  padding: 7px 13px;
-  border-radius: 8px;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: var(--po-radius-sm);
   cursor: pointer;
-  transition: background 0.12s;
+  transition: filter 120ms;
 }
 .an-add-btn:hover {
-  background: #82e0d0;
+  filter: brightness(1.08);
 }
 .an-add-btn:disabled {
   opacity: 0.5;
@@ -1141,9 +1181,11 @@
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 10px;
-  padding: 14px 22px;
+  padding: 14px var(--page-pad-x);
   align-content: start;
   position: relative;
+  max-width: var(--page-max);
+  margin-inline: auto;
 }
 
 /* Panel */
@@ -1501,7 +1543,7 @@ button.an-tv-leg:hover {
   color: color-mix(in oklab, var(--c) 65%, var(--po-fg) 35%);
   border: 1px solid color-mix(in oklab, var(--c) 28%, transparent);
   padding: 2px 8px 2px 6px;
-  border-radius: 4px;
+  border-radius: 999px;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1545,10 +1587,13 @@ button.an-tv-leg:hover {
   border-top: 1px solid var(--po-line);
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 var(--page-pad-x);
   gap: 10px;
   font-size: 11.5px;
   color: var(--po-fg-3);
+  max-width: var(--page-max);
+  margin-inline: auto;
+  width: 100%;
 }
 .an-s-dot {
   width: 6px;
@@ -1659,11 +1704,6 @@ button.an-tv-leg:hover {
   color: var(--accent-ink);
   border-color: var(--accent);
 }
-[data-theme="light"] .an-more-win.is-active {
-  background: #4f7a4d;
-  color: #fff;
-  border-color: #4f7a4d;
-}
 .an-more-note {
   font-size: 10.5px;
   color: var(--po-fg-4);
@@ -1758,121 +1798,6 @@ button.an-tv-leg:hover {
    the design's JetBrains Mono refs become tabular-nums on the
    same font.
    ============================================================ */
-.ph {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  color: var(--po-fg);
-  position: relative;
-  isolation: isolate;
-  /* deep-forest "Veralith" backdrop — same recipe as the sign-in brand panel */
-  background:
-    radial-gradient(120% 90% at 16% 8%, rgba(163, 177, 138, 0.1), transparent 55%),
-    radial-gradient(90% 70% at 88% 100%, rgba(88, 129, 87, 0.22), transparent 60%),
-    linear-gradient(155deg, #0e140f 0%, #0c110d 45%, #0a0e0a 100%);
-}
-/* faint crystal watermark + drifting sage glow, layered behind content
-   (z-index:-1 sits above the gradient, below the in-flow page content). */
-.ph::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  top: 40%;
-  right: 6%;
-  width: 520px;
-  height: 520px;
-  transform: translateY(-50%);
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M4 13.5 L7.5 6.5 L13 5 L18.5 9.5 L18 15 L11.5 19 L5 17.5 Z' fill='%23a3b18a' fill-opacity='0.16' stroke='%23a3b18a' stroke-width='1.7' stroke-linejoin='round'/%3E%3Cpath d='M7.5 6.5 L11 11 L18.5 9.5 M11 11 L11.5 19 M11 11 L5 17.5' stroke='%23a3b18a' stroke-width='1.4' stroke-opacity='0.55' fill='none' stroke-linejoin='round'/%3E%3C/svg%3E")
-    center / contain no-repeat;
-  opacity: 0.16;
-  pointer-events: none;
-}
-.ph::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  top: 6%;
-  left: 5%;
-  width: 440px;
-  height: 440px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(163, 177, 138, 0.12), transparent 70%);
-  filter: blur(44px);
-  pointer-events: none;
-  animation: phDrift 16s ease-in-out infinite alternate;
-}
-@keyframes phDrift {
-  from { transform: translate(0, 0) scale(1); }
-  to   { transform: translate(-44px, 32px) scale(1.12); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ph::after { animation: none; }
-}
-:root[data-theme="light"] .ph {
-  background:
-    radial-gradient(120% 90% at 16% 8%, rgba(163, 177, 138, 0.2), transparent 55%),
-    radial-gradient(90% 70% at 88% 100%, rgba(120, 147, 106, 0.14), transparent 60%),
-    linear-gradient(155deg, #eef1ea 0%, #e9ede4 45%, #e4e9de 100%);
-}
-.ph-top {
-  height: 52px;
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 0 22px;
-  background: var(--po-shell-bg);
-  border-bottom: 1px solid var(--po-line);
-}
-.ph-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-}
-.ph-brand-mark {
-  display: inline-flex;
-  color: var(--accent);
-}
-.ph-brand-name {
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: -0.01em;
-}
-.ph-crumb-sep {
-  color: var(--po-fg-4);
-  margin: 0;
-  font-size: 15px;
-}
-.ph-crumb {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  color: var(--po-fg-2);
-}
-.ph-ws-mark {
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
-  flex: none;
-  background: linear-gradient(
-    135deg,
-    var(--accent),
-    color-mix(in oklab, var(--accent) 55%, #000)
-  );
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent-ink);
-  font-size: 9px;
-  font-weight: 700;
-}
-.ph-top-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 .ph-search-pill {
   display: inline-flex;
   align-items: center;
@@ -1904,64 +1829,19 @@ button.an-tv-leg:hover {
   border-radius: 5px;
   padding: 1px 5px;
 }
-.ph-icon-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--po-fg-3);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.ph-icon-btn:hover {
-  background: var(--po-hover);
-  color: var(--po-fg-2);
-}
-.ph-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  background: linear-gradient(135deg, #a3b18a, #3a5a40);
-  color: var(--accent-ink);
-  font-weight: 600;
-  font-size: 11px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.ph-avatar-wrap {
-  position: relative;
-  display: inline-flex;
-}
-
-/* scroll body */
-.ph-scroll {
-  flex: 1;
-  overflow-y: auto;
-}
 .ph-main {
-  max-width: 1040px;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 52px 32px 80px;
+  padding: var(--page-pad-top) var(--page-pad-x) var(--page-pad-bottom);
 }
 .ph-head {
-  margin-bottom: 30px;
+  margin-bottom: var(--page-header-gap);
 }
 .ph-title {
-  font-size: 27px;
+  font-size: var(--title-page);
   font-weight: 600;
   letter-spacing: -0.02em;
   margin: 0;
-}
-.ph-sub {
-  margin-top: 7px;
-  font-size: 13.5px;
-  color: var(--po-fg-3);
 }
 
 /* toolbar */
@@ -1969,7 +1849,7 @@ button.an-tv-leg:hover {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 22px;
+  margin-bottom: var(--page-header-gap);
 }
 .ph-field {
   position: relative;
@@ -2002,7 +1882,7 @@ button.an-tv-leg:hover {
 }
 /* dark mode: match the project-card surface color */
 :root[data-theme="dark"] .ph-input {
-  background: #000000;
+  background: var(--po-panel);
 }
 .ph-input::placeholder {
   color: var(--po-fg-4);
@@ -2010,41 +1890,6 @@ button.an-tv-leg:hover {
 .ph-input:focus {
   border-color: color-mix(in oklab, var(--accent) 55%, var(--po-line));
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 14%, transparent);
-}
-.ph-sort {
-  height: 38px;
-  border-radius: var(--po-radius-sm);
-  background: var(--po-panel);
-  border: 1px solid var(--po-line);
-  color: var(--po-fg-2);
-  font: inherit;
-  font-size: 13px;
-  padding: 0 10px;
-  outline: none;
-  cursor: pointer;
-}
-.ph-new {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 38px;
-  padding: 0 15px 0 13px;
-  border-radius: var(--po-radius-sm);
-  border: none;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font: inherit;
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: filter 120ms;
-}
-.ph-new:hover {
-  filter: brightness(1.07);
-}
-.ph-new svg {
-  flex: none;
 }
 
 /* project grid */
@@ -2085,10 +1930,9 @@ button.an-tv-leg:hover {
 [data-theme="light"] .ph-card:hover {
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.09);
 }
-/* dark mode: lift the real project-card surface off the forest backdrop for
-   visibility (ghost tile keeps its sage fill via :not). */
+/* dark mode: match the panel surface (ghost tile keeps its sage fill via :not). */
 :root[data-theme="dark"] .ph-card:not(.ph-card-ghost) {
-  background: #000000;
+  background: var(--po-panel);
 }
 .ph-card-top {
   display: flex;
@@ -2263,45 +2107,6 @@ button.an-tv-leg:hover {
   flex: none;
 }
 
-/* empty state */
-.ph-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 70px 24px;
-  border: 1px dashed var(--po-line);
-  border-radius: var(--po-radius);
-  background: var(--po-panel);
-}
-.ph-empty-mark {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  margin-bottom: 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent);
-  background: color-mix(in oklab, var(--accent) 12%, var(--po-panel-2));
-  border: 1px solid color-mix(in oklab, var(--accent) 22%, transparent);
-}
-.ph-empty-title {
-  font-size: 17px;
-  font-weight: 600;
-}
-.ph-empty-sub {
-  margin-top: 8px;
-  max-width: 380px;
-  font-size: 13.5px;
-  color: var(--po-fg-3);
-  line-height: 1.5;
-}
-.ph-empty .ph-new {
-  margin: 22px 0 0;
-}
-
 /* create-project modal */
 .ph-scrim {
   position: fixed;
@@ -2431,23 +2236,28 @@ button.an-tv-leg:hover {
 }
 .ph-btn-ghost {
   margin-left: auto;
-  height: 36px;
-  padding: 0 15px;
+  height: 34px;
+  padding: 0 16px;
   border-radius: var(--po-radius-sm);
-  background: transparent;
+  background: var(--po-panel);
   border: 1px solid var(--po-line);
   color: var(--po-fg-2);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+  transition:
+    background 120ms,
+    border-color 120ms,
+    color 120ms;
 }
 .ph-btn-ghost:hover {
   background: var(--po-hover);
+  border-color: var(--po-line-strong);
   color: var(--po-fg);
 }
 .ph-btn-primary {
-  height: 36px;
-  padding: 0 17px;
+  height: 34px;
+  padding: 0 16px;
   border-radius: var(--po-radius-sm);
   border: none;
   background: var(--accent);
@@ -2459,7 +2269,7 @@ button.an-tv-leg:hover {
   transition: filter 120ms;
 }
 .ph-btn-primary:hover {
-  filter: brightness(1.07);
+  filter: brightness(1.08);
 }
 .ph-form-err {
   color: var(--cell-cu);
@@ -2477,6 +2287,8 @@ button.an-tv-leg:hover {
   background: var(--po-bg);
   color: var(--po-fg);
   font-family: inherit;
+  max-width: var(--page-max);
+  margin-inline: auto;
 }
 .he-card-traces,
 .he-queue-sub,
@@ -2509,8 +2321,11 @@ button.an-tv-leg:hover {
   border-right: 1px solid var(--po-line);
   background: var(--po-shell-bg);
 }
+/* Heals title now lives in the full-width .page-header; tighten the gap to the
+   queue panel so the filter chips sit just under it (no leftover title space). */
+.he-page .page-header { margin-bottom: 12px; }
 .he-queue-head {
-  padding: 22px 20px 14px;
+  padding: 12px var(--page-pad-x);
   border-bottom: 1px solid var(--po-line);
 }
 .he-queue-titlerow {
@@ -2520,7 +2335,7 @@ button.an-tv-leg:hover {
 }
 .he-queue-title {
   margin: 0;
-  font-size: 28px;
+  font-size: var(--title-page);
   font-weight: 600;
   letter-spacing: -0.02em;
 }
@@ -2566,7 +2381,7 @@ button.an-tv-leg:hover {
   font-size: 11.5px;
   padding: 4px 11px;
   border-radius: 999px;
-  background: var(--po-panel);
+  background: transparent;
   color: var(--po-fg-3);
   border: 1px solid var(--po-line);
   cursor: pointer;
@@ -2578,24 +2393,20 @@ button.an-tv-leg:hover {
 }
 .he-chip:hover {
   color: var(--po-fg-2);
+  background: var(--po-hover);
   border-color: var(--po-line-strong);
 }
 .he-chip.is-active {
-  background: var(--accent);
-  color: var(--accent-ink);
-  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 30%, transparent);
   font-weight: 600;
-}
-[data-theme="light"] .he-chip.is-active {
-  background: #4f7a4d;
-  color: #fff;
-  border-color: #4f7a4d;
 }
 
 .he-queue-list {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 12px 52px;
+  padding: 12px var(--page-pad-x) 52px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -2876,7 +2687,7 @@ button.an-tv-leg:hover {
   flex: 1;
   min-width: 0;
   overflow-y: auto;
-  padding: 24px 28px 52px;
+  padding: 24px var(--page-pad-x) 52px;
   position: relative;
 }
 .he-detail-empty {
@@ -2992,7 +2803,8 @@ button.an-tv-leg:hover {
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
-  padding: 9px 16px;
+  height: 34px;
+  padding: 0 16px;
   border-radius: var(--po-radius-sm);
   cursor: pointer;
   border: 1px solid transparent;
@@ -3013,7 +2825,7 @@ button.an-tv-leg:hover {
 }
 .he-btn-good {
   background: var(--cell-cg);
-  color: #04190f;
+  color: var(--accent-ink);
 }
 .he-btn-good:hover {
   filter: brightness(1.08);
@@ -3021,15 +2833,16 @@ button.an-tv-leg:hover {
 .he-btn-ghost {
   background: var(--po-panel);
   color: var(--po-fg-2);
-  border-color: var(--po-line-strong);
+  border-color: var(--po-line);
 }
 .he-btn-ghost:hover {
   background: var(--po-hover);
   color: var(--po-fg);
+  border-color: var(--po-line-strong);
 }
 .he-btn-danger {
-  background: var(--cell-cu);
-  color: #2a0707;
+  background: var(--po-bad);
+  color: var(--accent-ink);
 }
 .he-btn-danger:hover {
   filter: brightness(1.08);
@@ -3039,14 +2852,6 @@ button.an-tv-leg:hover {
   color: var(--po-fg-3);
   border-color: var(--po-line);
   cursor: default;
-}
-[data-theme="light"] .he-btn-primary {
-  background: #4f7a4d;
-  color: #fff;
-}
-[data-theme="light"] .he-btn-good {
-  background: #1a8052;
-  color: #fff;
 }
 
 .he-spinner {
@@ -3336,12 +3141,6 @@ button.an-tv-leg:hover {
   color: var(--po-fg);
   font-weight: 600;
 }
-.he-ev-open {
-  margin-left: auto;
-  font-size: 12px;
-  color: var(--accent);
-  text-decoration: none;
-}
 .he-cell-chip {
   display: inline-flex;
   align-items: center;
@@ -3349,7 +3148,7 @@ button.an-tv-leg:hover {
   flex: none;
   font-size: 10.5px;
   padding: 2px 8px 2px 6px;
-  border-radius: 4px;
+  border-radius: 999px;
   background: color-mix(in oklab, var(--c) 13%, var(--po-panel));
   color: color-mix(in oklab, var(--c) 68%, var(--po-fg) 32%);
   border: 1px solid color-mix(in oklab, var(--c) 28%, transparent);
@@ -3535,13 +3334,18 @@ button.an-tv-leg:hover {
 .se-content {
   max-width: 720px;
   margin: 0 auto;
-  padding: 36px 40px 60px;
+  padding: 36px var(--page-pad-x) 60px;
 }
 .se-title {
   margin: 0 0 22px;
-  font-size: 26px;
+  font-size: var(--title-page);
   font-weight: 600;
   letter-spacing: -0.02em;
+}
+.se-empty-line {
+  margin: 0;
+  font-size: 13px;
+  color: var(--po-fg-4);
 }
 
 .se-panel {
@@ -3639,9 +3443,14 @@ button.an-tv-leg:hover {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  padding: 8px 14px;
+  height: 34px;
+  padding: 0 16px;
   border-radius: var(--po-radius-sm);
   border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   transition:
     filter 120ms,
     background 120ms,
@@ -3661,11 +3470,12 @@ button.an-tv-leg:hover {
 .se-btn-ghost {
   background: var(--po-panel);
   color: var(--po-fg-2);
-  border-color: var(--po-line-strong);
+  border-color: var(--po-line);
 }
 .se-btn-ghost:hover {
   background: var(--po-hover);
   color: var(--po-fg);
+  border-color: var(--po-line-strong);
 }
 .se-save-wrap {
   position: relative;
@@ -3676,8 +3486,8 @@ button.an-tv-leg:hover {
   position: absolute;
   bottom: calc(100% + 7px);
   right: 0;
-  background: #0a0b0d;
-  color: var(--po-fg);
+  background: color-mix(in oklab, var(--po-fg) 92%, var(--po-bg));
+  color: var(--po-bg);
   font-size: 11px;
   padding: 4px 8px;
   border: 1px solid var(--po-line-strong);
@@ -3690,10 +3500,6 @@ button.an-tv-leg:hover {
 }
 .se-save-wrap:hover::after {
   opacity: 1;
-}
-[data-theme="light"] .se-btn-primary {
-  background: #4f7a4d;
-  color: #fff;
 }
 
 .se-banner {
@@ -3731,10 +3537,6 @@ button.an-tv-leg:hover {
   border-radius: 999px;
   background: var(--accent);
   color: var(--accent-ink);
-}
-[data-theme="light"] .se-plan-pill {
-  background: #4f7a4d;
-  color: #fff;
 }
 .se-plan-status {
   font-size: 12.5px;
@@ -3857,10 +3659,6 @@ button.an-tv-leg:hover {
   padding: 1px 7px;
   border-radius: 999px;
 }
-[data-theme="light"] .ak-new-pill {
-  background: #4f7a4d;
-  color: #fff;
-}
 .ak-meta {
   display: flex;
   align-items: center;
@@ -3910,4 +3708,43 @@ button.an-tv-leg:hover {
 }
 .ak-modal-prefix {
   color: var(--po-fg);
+}
+
+/* ============================================================
+   Focus ring (additive, app-wide) — keyboard a11y continuity.
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+/* Pill / row controls that clip their overflow can't show an offset
+   outline — fall back to an inset-safe ring. */
+.te-chip:focus-visible,
+.te-chip-cell:focus-visible,
+.te-row:focus-visible,
+.sb-item:focus-visible,
+.am-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 70%, transparent);
+}
+
+/* ============================================================
+   Segmented / time-window pills — one spec so 24h→7d feels
+   identical on every in-project page. Group radius = --po-radius-sm,
+   item radius = --po-radius-chip (6), active bg flat --po-row-active,
+   transition background .12s,color .12s. Colors kept as-is otherwise.
+   ============================================================ */
+.te-chip-group,
+.an-tchips {
+  border-radius: var(--po-radius-sm);
+}
+.te-chip-time,
+.te-chip,
+.an-tchip,
+.an-seg-opt {
+  border-radius: var(--po-radius-chip);
+  transition:
+    background 0.12s,
+    color 0.12s;
 }

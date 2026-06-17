@@ -191,8 +191,8 @@
   line-height: 1.45;
 }
 .lg-msg.is-error {
-  background: rgba(226, 92, 92, 0.1);
-  border: 1px solid rgba(226, 92, 92, 0.3);
+  background: color-mix(in oklab, var(--cell-cu) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--cell-cu) 32%, transparent);
   color: var(--cell-cu);
 }
 .lg-msg.is-info {

@@ -1,0 +1,58 @@
+/* ============================================================
+   Health donut + profile badges — the LeetCode-profile row that
+   rounds out the Overview. Self-styled; every surface/border/ink/
+   status color flows through the --po-* / --accent / --cell-* tokens
+   so it stays theme-aware and matches the .wf-card lifted look.
+   ============================================================ */
+
+/* ── donut + legend ─────────────────────────────────────────────────── */
+.hd-wrap { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; }
+
+.hd-ring { position: relative; flex: none; width: 168px; height: 168px; }
+.hd-svg { display: block; width: 100%; height: 100%; }
+/* a soft emerald glow on the healthy arc, matching the page's accent treatment */
+.hd-arc.is-healthy { filter: drop-shadow(0 0 3px color-mix(in oklab, var(--accent) 45%, transparent)); }
+
+/* draw-in: spin the ring in (a subtle accompaniment to the Overview's wipe-in).
+   The slice dash geometry is set inline by React, so we animate rotation +
+   opacity rather than the dash array to avoid fighting the inline values. */
+@keyframes hdSweep { from { opacity: 0; transform: rotate(-24deg); } to { opacity: 1; transform: rotate(0); } }
+.wf-overview .hd-svg { opacity: 0; }
+.wf-overview.is-revealed .hd-svg { animation: hdSweep .9s cubic-bezier(.16, 1, .3, 1) both; transform-box: view-box; transform-origin: center; }
+
+.hd-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; pointer-events: none; }
+.hd-pct { font-size: 38px; font-weight: 600; letter-spacing: -.03em; line-height: 1; color: var(--po-fg);
+  font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+.hd-pct-sym { font-size: 19px; font-weight: 600; color: var(--po-fg-3); margin-left: 1px; }
+.hd-pct-lab { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--po-fg-4); }
+
+.hd-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.hd-leg-row { display: grid; grid-template-columns: 11px 1fr auto; align-items: center; gap: 10px; padding: 5px 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--po-line) 55%, transparent); }
+.hd-leg-row:last-child { border-bottom: none; }
+.hd-leg-sw { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+.hd-leg-sw-empty { background: transparent !important; border: 1px dashed var(--po-line-strong); }
+.hd-leg-name { font-size: 12.5px; color: var(--po-fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hd-leg-count { font-size: 13px; font-weight: 600; color: var(--po-fg); font-variant-numeric: tabular-nums; text-align: right; }
+.hd-leg-total .hd-leg-name { color: var(--po-fg-3); }
+.hd-leg-total .hd-leg-count { color: var(--accent); }
+
+/* ── profile badges + mini-stats ────────────────────────────────────── */
+.pb-wrap { display: flex; flex-direction: column; gap: 16px; min-width: 0; flex: 1; }
+.pb-section-lab { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--po-fg-4); }
+
+.pb-badges { display: flex; flex-wrap: wrap; gap: 9px; }
+.pb-badge { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 9%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 30%, var(--po-line));
+  border-radius: 999px; padding: 6px 12px; white-space: nowrap; transition: background .16s ease, border-color .16s ease; }
+.pb-badge:hover { background: color-mix(in oklab, var(--accent) 14%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--po-line)); }
+.pb-badge-ic { display: inline-flex; align-items: center; justify-content: center; color: var(--accent); flex: none; }
+
+.pb-ministats { display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; }
+.pb-ministat { flex: 1; min-width: 92px; display: flex; flex-direction: column; gap: 4px;
+  background: var(--po-panel-2); border: 1px solid var(--po-line); border-radius: var(--po-radius-sm); padding: 12px 14px; }
+.pb-ministat-v { font-size: 22px; font-weight: 600; letter-spacing: -.02em; color: var(--po-fg);
+  font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; line-height: 1; }
+.pb-ministat-l { font-size: 10.5px; color: var(--po-fg-3); letter-spacing: .02em; }

@@ -17,24 +17,24 @@
    New project pages use the --po-* palette below.
    ============================================================ */
 :root {
-  /* surfaces */
-  --bg:           #000000;
-  --panel:        #000000;
-  --panel-2:      #000000;
-  --panel-3:      #000000;
-  --line:         #23262b;
-  --line-2:       #2c3037;
-  --hover:        #181b1f;
+  /* surfaces — layered dark (Emerald Signal): off pure-black for eye comfort */
+  --bg:           #0e0f12;
+  --panel:        #16181d;
+  --panel-2:      #1c1f25;
+  --panel-3:      #20242b;
+  --line:         #282c33;
+  --line-2:       #353a42;
+  --hover:        #1b1e24;
 
-  /* text */
-  --fg:           #e9ebee;
-  --fg-2:         #b6bac1;
-  --fg-3:         #7c828c;
-  --fg-4:         #555b66;
+  /* text — lifted contrast so muted copy stays comfortable on dark */
+  --fg:           #e9ecf1;
+  --fg-2:         #bdc3cc;
+  --fg-3:         #8c93a0;
+  --fg-4:         #6d7480;
 
-  /* accent — sage green (A3B18A · 588157 · 3A5A40 · 344E41 · DAD7CD palette) */
-  --accent:       #A3B18A;
-  --accent-dim:   #344E41;
+  /* accent — emerald signal (34D399 · 10B981 · 059669 · 047857 · ECFDF5 ramp) */
+  --accent:       #34d399;
+  --accent-dim:   #0f5132;
 
   /* Semantic status aliases (RED / AMBER / GREEN). Despite the --cell- name these
      are used app-wide as danger/warn/success (heal statuses, deltas, form errors,
@@ -70,6 +70,29 @@
 
   --font-sans:    'Circular Std', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono:    'Circular Std', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* content-frame + workbench-clearance standard (single source) */
+  --page-max:        1440px;
+  --page-pad-x:      32px;
+  --page-pad-top:    28px;
+  --page-pad-bottom: 40px;
+  --page-w-narrow:   1040px;
+  --page-w-standard: 1440px;
+  --page-w-wide:     1440px;
+  --wb-strip:        40px;
+  --wb-clearance:    44px;
+
+  /* UX-continuity spacing + type scale (one-canvas in-project pages) */
+  --space-2:         8px;
+  --space-3:         12px;
+  --space-4:         16px;
+  --space-6:         24px;
+  --title-page:      22px;
+  --title-hero:      28px;
+  --page-header-gap: 18px;
+  --po-radius-chip:  6px;
+  --card-pad:        18px 20px;
+  --card-pad-dense:  14px 16px;
 }
 
 /* ============================================================
@@ -78,32 +101,32 @@
    ============================================================ */
 :root,
 :root[data-theme="dark"] {
-  /* surfaces */
-  --po-bg:          #000000;
-  --po-shell-bg:    #000000;
-  --po-panel:       #000000;
-  --po-panel-2:     #000000;
-  --po-line:        #232629;
-  --po-line-strong: #2d3138;
-  --po-hover:       #1a1c20;
-  --po-row-hover:   #1a1c20;
-  --po-row-active:  #1f2228;
+  /* surfaces — layered dark (Emerald Signal): depth, not a flat black void */
+  --po-bg:          #0e0f12;
+  --po-shell-bg:    #0b0c0e;
+  --po-panel:       #16181d;
+  --po-panel-2:     #1c1f25;
+  --po-line:        #282c33;
+  --po-line-strong: #353a42;
+  --po-hover:       #1b1e24;
+  --po-row-hover:   #1b1e24;
+  --po-row-active:  #232830;
 
-  /* foreground */
-  --po-fg:   #e8ebef;
-  --po-fg-2: #b4b9c1;
-  --po-fg-3: #7a808a;
-  --po-fg-4: #555a62;
+  /* foreground — lifted contrast so muted text stays comfortable on dark */
+  --po-fg:   #e9ecf1;
+  --po-fg-2: #bdc3cc;
+  --po-fg-3: #8c93a0;
+  --po-fg-4: #6d7480;
 
-  /* status — live/healthy is now SAGE (was #5dd1a1); amber + red preserved as semantics */
-  --po-live: #A3B18A;
+  /* status — live/healthy is EMERALD; amber + red preserved as data semantics */
+  --po-live: #34d399;
   --po-idle: #e2b85a;
   --po-bad:  #e07474;
   --po-grey: #5c6068;
 
   /* Ink on accent-colored fills (primary buttons, avatar gradient, ws mark).
-     Dark forest green reads well on sage-green (#A3B18A) fills. */
-  --accent-ink: #20301c;
+     Near-black green reads crisp on emerald (#34D399) fills. */
+  --accent-ink: #04140d;
 
   --po-radius:    12px;
   --po-radius-sm: 8px;
@@ -129,9 +152,9 @@
   --po-fg-3: #6c7280;
   --po-fg-4: #9aa0aa;
 
-  /* deeper sage so it stays legible on white (per the sage retheme: accent + live = #4f7a4d) */
-  --accent:  #4f7a4d;
-  --po-live: #4f7a4d;
+  /* deeper emerald so it stays legible on white (accent + live = #059669) */
+  --accent:  #059669;
+  --po-live: #059669;
   --po-idle: #b07e1d;
   --po-bad:  #b53636;
   --po-grey: #7a808a;
@@ -168,9 +191,9 @@
   --hl-red-b:   rgba(197, 74, 74, 0.55);
 }
 
-/* Pulse used by the live-state dot on the new shell. Sage glow (was #5dd1a1). */
+/* Pulse used by the live-state dot on the new shell. Emerald glow. */
 @keyframes pulse {
-  0%   { box-shadow: 0 0 0 0   rgba(163, 177, 138, 0.55); }
-  70%  { box-shadow: 0 0 0 7px rgba(163, 177, 138, 0); }
-  100% { box-shadow: 0 0 0 0   rgba(163, 177, 138, 0); }
+  0%   { box-shadow: 0 0 0 0   rgba(52, 211, 153, 0.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(52, 211, 153, 0); }
 }
