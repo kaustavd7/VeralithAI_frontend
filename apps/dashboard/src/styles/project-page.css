@@ -855,6 +855,22 @@
   }
 }
 
+/* Skeleton rows — placeholders while the first trace page loads. Reuse the
+   .te-row grid + .te-shimmer animation; just neutralise hover/cursor. */
+.te-row-sk {
+  cursor: default;
+}
+.te-row-sk:hover {
+  background: transparent;
+}
+.te-sk-sev {
+  display: block;
+  width: 6px;
+  height: 100%;
+  min-height: 38px;
+  background: color-mix(in oklab, var(--po-fg) 8%, transparent);
+}
+
 .te-row[data-sev]::before {
   content: "";
   position: absolute;

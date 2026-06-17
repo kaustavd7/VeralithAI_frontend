@@ -227,6 +227,45 @@ function MeterBar({ value }: { value: number | null | undefined }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Loading skeleton — placeholder rows that mirror the table grid so the
+   first load settles in place instead of flashing centered text.
+   ─────────────────────────────────────────────────────────── */
+
+const SK_Q_WIDTHS = ['72%', '54%', '83%', '61%', '47%', '76%', '58%', '68%', '50%', '64%'];
+
+function TraceSkeleton({ rows = 9 }: { rows?: number }) {
+  return (
+    <div className="te-table" aria-hidden="true">
+      <div className="te-tbody">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div className="te-row te-row-sk" key={i}>
+            <div className="te-td te-col-sev">
+              <span className="te-sk-sev" />
+            </div>
+            <div className="te-td te-col-q">
+              <span className="te-shimmer" style={{ width: 56, height: 9 }} />
+              <span className="te-shimmer" style={{ width: SK_Q_WIDTHS[i % SK_Q_WIDTHS.length] }} />
+            </div>
+            <div className="te-td te-col-cell">
+              <span className="te-shimmer" style={{ width: 92, height: 18, borderRadius: 999 }} />
+            </div>
+            <div className="te-td te-col-s">
+              <span className="te-shimmer" style={{ width: '72%' }} />
+            </div>
+            <div className="te-td te-col-f">
+              <span className="te-shimmer" style={{ width: '72%' }} />
+            </div>
+            <div className="te-td te-col-time">
+              <span className="te-shimmer" style={{ width: 40, height: 9, marginLeft: 'auto' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
    CSV export
    ─────────────────────────────────────────────────────────── */
 
@@ -483,7 +522,7 @@ export default function TraceExplorer() {
             }}
           />
         ) : traces.isLoading ? (
-          <div style={{ padding: '40px 0', color: 'var(--po-fg-3)' }}>Loading traces…</div>
+          <TraceSkeleton />
         ) : isEmptyProject ? (
           <EmptyState
             title="No traces yet"
