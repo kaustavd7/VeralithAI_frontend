@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
-import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
+import { EmptyState, ErrorState } from '../components/StateViews';
 import { tracesPath } from '../lib/nav';
 import { useProjects } from '../hooks/useProjects';
 import { useStats, useTraces } from '../hooks/useOverviewData';
@@ -255,6 +255,65 @@ function AnPanel({
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Page skeleton + zero-state — ONE set of placeholders for the whole grid
+   instead of a loader (and a "No traces" card) inside every panel. The page
+   already holds a deduped primary stats query, so we gate the grid on it.
+   ─────────────────────────────────────────────────────────── */
+
+const AN_SK_SPANS = [12, 5, 7, 12];
+
+function AnSkeletonPanel({ span, shimmer }: { span: number; shimmer: boolean }) {
+  const cls = shimmer ? ' is-live' : '';
+  return (
+    <div className="an-panel" style={{ gridColumn: `span ${span}` }}>
+      <div className="an-panel-head">
+        <GripDots />
+        <div className="an-panel-tg">
+          <span className={'an-sk-line' + cls} style={{ width: 116 }} />
+          <span className={'an-sk-line' + cls} style={{ width: 74, height: 8, marginTop: 7 }} />
+        </div>
+      </div>
+      <div className="an-panel-body">
+        <div className={'an-sk-chart' + cls} />
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsSkeleton() {
+  return (
+    <div className="an-grid" aria-hidden="true">
+      {AN_SK_SPANS.map((s, i) => (
+        <AnSkeletonPanel key={i} span={s} shimmer />
+      ))}
+    </div>
+  );
+}
+
+function AnalyticsEmpty({ slug }: { slug: string }) {
+  return (
+    <div className="an-empty-wrap">
+      {/* Ghost panels keep the dashboard structure; one card carries the message. */}
+      <div className="an-grid an-grid-ghost" aria-hidden="true">
+        {AN_SK_SPANS.map((s, i) => (
+          <AnSkeletonPanel key={i} span={s} shimmer={false} />
+        ))}
+      </div>
+      <div className="an-empty-card">
+        <div className="an-empty-title">No traces in this window</div>
+        <div className="an-empty-sub">
+          Charts populate as traces arrive. Widen the time range, or connect your
+          SDK to start sending traces.
+        </div>
+        <Link to={`/projects/${slug}`} className="po-btn an-empty-cta">
+          Connect your SDK
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
    Trace Volume chart (OK + Failed, hover crosshair tooltip).
    Data source: stats.timeseries[].count / ok / failed.
    ─────────────────────────────────────────────────────────── */
@@ -274,7 +333,7 @@ function TraceVolumePanel({ slug, pageWindow }: { slug: string; pageWindow: Time
     return (
       <AnPanel title="Trace volume" subtitle={subtitleForWindow(win)} span={12}
         windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
-        <LoadingState />
+        <div className="an-sk-chart is-live" />
       </AnPanel>
     );
   }
@@ -774,7 +833,7 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
         onWin={setOverride}
         onClearWin={clearOverride}
       >
-        <LoadingState />
+        <div className="an-sk-chart is-live" />
       </AnPanel>
     );
   }
@@ -1023,7 +1082,7 @@ function TopFailingPanel({
         onWin={setOverride}
         onClearWin={clearOverride}
       >
-        <LoadingState />
+        <div className="an-sk-chart is-live" />
       </AnPanel>
     );
   }
@@ -1261,7 +1320,7 @@ function HallucinationTrendPanel({
     return (
       <AnPanel title="Hallucination trend" subtitle={subtitleForWindow(win)} span={7}
         windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
-        <LoadingState />
+        <div className="an-sk-chart is-live" />
       </AnPanel>
     );
   }
@@ -1537,6 +1596,10 @@ export default function Analytics() {
               if (tracesQuery.isError) tracesQuery.refetch();
             }}
           />
+        ) : statsQuery.isPending ? (
+          <AnalyticsSkeleton />
+        ) : (statsQuery.data?.total_traces ?? 0) === 0 ? (
+          <AnalyticsEmpty slug={slug} />
         ) : (
           <div className="an-grid">
             <TraceVolumePanel slug={slug} pageWindow={pageWindow} />

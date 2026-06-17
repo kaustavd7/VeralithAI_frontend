@@ -871,6 +871,78 @@
   background: color-mix(in oklab, var(--po-fg) 8%, transparent);
 }
 
+/* Analytics — one page-level skeleton + zero-state instead of a loader and a
+   "No traces" card inside every panel. Reuses .an-panel framing + te-shimmer. */
+.an-sk-line,
+.an-sk-chart {
+  display: block;
+  border-radius: 6px;
+  background: var(--po-panel-2);
+}
+.an-sk-line {
+  height: 11px;
+}
+.an-sk-chart {
+  height: 138px;
+  width: 100%;
+  margin-top: 4px;
+}
+.an-sk-line.is-live,
+.an-sk-chart.is-live {
+  background: linear-gradient(
+    90deg,
+    var(--po-panel-2) 0%,
+    color-mix(in oklab, var(--po-fg-4) 16%, var(--po-panel-2)) 50%,
+    var(--po-panel-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: te-shimmer 1.4s ease-in-out infinite;
+}
+.an-empty-wrap {
+  position: relative;
+}
+.an-grid-ghost {
+  opacity: 0.38;
+  filter: saturate(0.55);
+  pointer-events: none;
+}
+.an-empty-card {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: max-content;
+  max-width: 440px;
+  height: max-content;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  text-align: center;
+  padding: 26px 32px;
+  background: color-mix(in oklab, var(--po-panel) 94%, transparent);
+  border: 1px solid var(--po-line);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(3px);
+}
+.an-empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--po-fg);
+}
+.an-empty-sub {
+  font-size: 13px;
+  color: var(--po-fg-3);
+  line-height: 1.5;
+  max-width: 360px;
+}
+.an-empty-cta {
+  margin-top: 6px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
 .te-row[data-sev]::before {
   content: "";
   position: absolute;
