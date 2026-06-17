@@ -342,33 +342,150 @@ function HealthyRateCard({ stats }: { stats: StatsResponse }) {
 
 type Lang = 'python' | 'node' | 'curl';
 
-function snippetFor(lang: Lang, key: string): string {
+/* ─────────────────────────────────────────────────────────────
+   SDK connect block — a dark IDE-style integration card shown
+   when no traces have arrived yet. The snippets are the REAL
+   API: Python = `veralith.log(...)`; node/curl = the REST
+   `POST /v1/traces` call (there is no node SDK).
+
+   Each snippet is authored as lines of typed tokens so we can
+   render subtle syntax coloring. `tk()` is shorthand for a
+   single token; `plainCopy()` flattens a snippet back to text
+   for the Copy button.
+   ─────────────────────────────────────────────────────────── */
+
+type TokKind = 'cmt' | 'kw' | 'str' | 'fn' | 'num' | 'punct' | 'plain';
+type Tok = { t: string; k: TokKind };
+type CodeLine = Tok[];
+
+const tk = (t: string, k: TokKind = 'plain'): Tok => ({ t, k });
+
+/** Filename shown on the editor window-chrome tab, per language. */
+function fileNameFor(lang: Lang): string {
+  if (lang === 'python') return 'rag_pipeline.py';
+  if (lang === 'node') return 'trace.js';
+  return 'send_trace.sh';
+}
+
+function snippetLines(lang: Lang, key: string): CodeLine[] {
   if (lang === 'python') {
-    return `pip install veralith
-
-from veralith import Veralith
-v = Veralith(api_key="${key}")
-
-trace = v.trace(query="What is the Rule of 72?")
-trace.log(response="Divide 72 by…", chunks=[…])`;
+    return [
+      [tk('# 1. install', 'cmt')],
+      [tk('pip', 'fn'), tk(' install veralith')],
+      [],
+      [tk('# 2. export your project key', 'cmt')],
+      [tk('export', 'kw'), tk(' VERALITH_API_KEY='), tk(`"${key}"`, 'str')],
+      [],
+      [tk('# 3. log one trace from your RAG pipeline', 'cmt')],
+      [tk('import', 'kw'), tk(' veralith', 'fn')],
+      [],
+      [
+        tk('trace_id = veralith.', 'plain'),
+        tk('log', 'fn'),
+        tk('('),
+      ],
+      [
+        tk('    query', 'plain'),
+        tk('='),
+        tk('"What is the Rule of 72?"', 'str'),
+        tk(','),
+      ],
+      [
+        tk('    context', 'plain'),
+        tk('=['),
+        tk('"Divide 72 by the annual rate…"', 'str'),
+        tk('],'),
+      ],
+      [
+        tk('    response', 'plain'),
+        tk('='),
+        tk('"At 8%, money doubles in ~9 years."', 'str'),
+        tk(','),
+      ],
+      [tk(')')],
+      [],
+      [tk('# or zero-reshape: decorate your RAG fn', 'cmt')],
+      [tk('@veralith.trace', 'fn'), tk('  ', 'plain'), tk('# auto-measures latency', 'cmt')],
+    ];
   }
   if (lang === 'node') {
-    return `npm install veralith
-
-import { Veralith } from "veralith";
-const v = new Veralith({ apiKey: "${key}" });
-
-const trace = v.trace({ query: "What is the Rule of 72?" });
-await trace.log({ response: "Divide 72 by…", chunks: [...] });`;
+    return [
+      [tk('// No node SDK — POST a trace to the REST API.', 'cmt')],
+      [tk('await', 'kw'), tk(' '), tk('fetch', 'fn'), tk('('), tk('"https://api.veralithai.com/v1/traces"', 'str'), tk(', {')],
+      [tk('  method'), tk(': '), tk('"POST"', 'str'), tk(',')],
+      [tk('  headers'), tk(': {')],
+      [tk('    '), tk('"Authorization"', 'str'), tk(': '), tk(`"Bearer ${key}"`, 'str'), tk(',')],
+      [tk('    '), tk('"Content-Type"', 'str'), tk(': '), tk('"application/json"', 'str'), tk(',')],
+      [tk('  },')],
+      [tk('  body'), tk(': '), tk('JSON', 'fn'), tk('.'), tk('stringify', 'fn'), tk('({')],
+      [tk('    query'), tk(': '), tk('"What is the Rule of 72?"', 'str'), tk(',')],
+      [tk('    response'), tk(': '), tk('"At 8%, money doubles in ~9 years."', 'str'), tk(',')],
+      [tk('    retrieved_chunks'), tk(': ['), tk('"Divide 72 by the annual rate…"', 'str'), tk('],')],
+      [tk('  }),')],
+      [tk('});')],
+    ];
   }
-  return `curl -X POST https://api.veralithai.com/v1/traces \\
-  -H "Authorization: Bearer ${key}" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "query": "What is the Rule of 72?",
-    "response": "Divide 72 by the rate of return…",
-    "context": [{"rank": 0, "text": "…", "score": 0.82}]
-  }'`;
+  // curl
+  return [
+    [tk('# POST a trace to the REST API', 'cmt')],
+    [tk('curl', 'fn'), tk(' -X POST https://api.veralithai.com/v1/traces \\')],
+    [tk('  -H '), tk(`"Authorization: Bearer ${key}"`, 'str'), tk(' \\')],
+    [tk('  -H '), tk('"Content-Type: application/json"', 'str'), tk(' \\')],
+    [tk("  -d '{")],
+    [tk('    '), tk('"query"', 'str'), tk(': '), tk('"What is the Rule of 72?"', 'str'), tk(',')],
+    [tk('    '), tk('"response"', 'str'), tk(': '), tk('"At 8%, money doubles in ~9 years."', 'str'), tk(',')],
+    [tk('    '), tk('"retrieved_chunks"', 'str'), tk(': ['), tk('"Divide 72 by the annual rate…"', 'str'), tk(']')],
+    [tk("  }'")],
+  ];
+}
+
+/** Flatten tokenized lines into a copyable plain-text snippet. */
+function plainCopy(lines: CodeLine[]): string {
+  return lines.map((line) => line.map((t) => t.t).join('')).join('\n');
+}
+
+/* Token color map for the (intentionally fixed) dark code surface.
+   These are code-editor syntax hues, not themeable surfaces, so they
+   are deliberately hard-coded against the #0d1117 background. */
+const TOK_COLOR: Record<TokKind, string> = {
+  cmt: '#6b7689', // muted comment grey
+  kw: '#c792ea', // mauve keyword (import / export / await)
+  str: '#9ad8a0', // soft emerald-leaning green for strings
+  fn: '#79b8ff', // function / identifier blue
+  num: '#f2a96b', // numeric / literal amber
+  punct: '#8b94a3', // punctuation
+  plain: '#cdd4df', // default code foreground
+};
+
+function CodeBlock({ lines }: { lines: CodeLine[] }) {
+  return (
+    <pre
+      style={{
+        margin: 0,
+        padding: '14px 16px 16px',
+        background: 'transparent',
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+        fontSize: 12.5,
+        lineHeight: 1.7,
+        color: TOK_COLOR.plain,
+        overflowX: 'auto',
+        whiteSpace: 'pre',
+        tabSize: 2,
+      }}
+    >
+      <code>
+        {lines.map((line, i) => (
+          <span key={i} style={{ display: 'block', minHeight: '1.7em' }}>
+            {line.map((seg, j) => (
+              <span key={j} style={{ color: TOK_COLOR[seg.k] }}>
+                {seg.t}
+              </span>
+            ))}
+          </span>
+        ))}
+      </code>
+    </pre>
+  );
 }
 
 function ConnectionCard({
@@ -386,9 +503,13 @@ function ConnectionCard({
   const [copied, setCopied] = useState(false);
   const lastAgo = lastTrace ? relativeTime(lastTrace.created_at) : '—';
 
+  // Masked key prefix for the snippets. The full secret is only ever shown
+  // once at creation; here we show the real `vk_live_…` prefix from useApiKeys.
+  const keyDisplay = apiKey ?? 'vk_live_…';
+
   async function copy() {
     try {
-      await navigator.clipboard.writeText(snippetFor(lang, apiKey ?? 'vk_live_…'));
+      await navigator.clipboard.writeText(plainCopy(snippetLines(lang, keyDisplay)));
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
     } catch {
@@ -468,13 +589,17 @@ function ConnectionCard({
     );
   }
 
-  // never
+  // never — the polished centerpiece: a dark IDE-style integration block.
+  // The editor surface is an INTENTIONALLY fixed dark code surface (#0d1117)
+  // even in light theme, so syntax coloring reads correctly. The outer card
+  // frame still uses --po-* tokens to sit in the layered-dark layout.
+  const langs: Lang[] = ['python', 'node', 'curl'];
   return (
-    <div className="po-card po-conn po-conn-never">
-      <div className="po-card-head">
+    <div className="po-card po-conn po-conn-never" style={{ overflow: 'hidden', padding: 0 }}>
+      <div className="po-card-head" style={{ padding: 'var(--card-pad)', marginBottom: 0 }}>
         <div>
           <div className="po-card-title">Connect your SDK</div>
-          <div className="po-card-sub">Three lines to start receiving traces</div>
+          <div className="po-card-sub">One line in your RAG pipeline starts the stream</div>
         </div>
         <div className="po-conn-state">
           <span className="po-dot po-dot-grey" />
@@ -482,46 +607,149 @@ function ConnectionCard({
         </div>
       </div>
 
-      <div className="po-conn-tabs">
-        {(['python', 'node', 'curl'] as Lang[]).map((l) => (
-          <button
-            key={l}
-            type="button"
-            className={'po-conn-tab' + (lang === l ? ' is-active' : '')}
-            onClick={() => setLang(l)}
+      {/* ── IDE editor surface (fixed dark, not themeable) ───────────────── */}
+      <div
+        style={{
+          margin: '0 var(--space-6) var(--space-4)',
+          borderRadius: 'var(--po-radius-sm)',
+          border: '1px solid #1c2430',
+          background: '#0d1117',
+          overflow: 'hidden',
+          boxShadow: '0 8px 28px rgba(0, 0, 0, 0.32)',
+        }}
+      >
+        {/* window chrome: traffic-light dots + filename tab */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            height: 38,
+            padding: '0 12px',
+            background: '#11161f',
+            borderBottom: '1px solid #1c2430',
+          }}
+        >
+          <span style={{ display: 'flex', gap: 7 }} aria-hidden="true">
+            <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#ff5f57' }} />
+            <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#febc2e' }} />
+            <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#28c840' }} />
+          </span>
+          <span
+            style={{
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+              fontSize: 12,
+              color: '#8b94a3',
+              padding: '4px 10px',
+              borderRadius: 5,
+              background: '#0d1117',
+              border: '1px solid #1c2430',
+            }}
           >
-            {l}
+            {fileNameFor(lang)}
+          </span>
+          <span style={{ flex: 1 }} />
+          <button
+            type="button"
+            onClick={copy}
+            aria-label="Copy snippet"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              height: 26,
+              padding: '0 10px',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+              fontSize: 11.5,
+              color: copied ? 'var(--po-live)' : '#9aa3b2',
+              background: '#0d1117',
+              border: '1px solid #1c2430',
+              borderRadius: 6,
+              cursor: 'pointer',
+            }}
+          >
+            {copied ? (
+              <>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2.5 6.5l2.3 2.3 4.7-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                copied
+              </>
+            ) : (
+              <>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <rect x="3.5" y="3.5" width="5.5" height="5.5" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                  <path d="M5.5 3.5V2.5a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H9.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                </svg>
+                copy
+              </>
+            )}
           </button>
-        ))}
-        <span className="po-conn-tabs-fill" />
-        <button type="button" className="po-conn-copy" onClick={copy} aria-label="Copy snippet">
-          {copied ? (
-            <>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M2.5 6.5l2.3 2.3 4.7-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              copied
-            </>
-          ) : (
-            <>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <rect x="3.5" y="3.5" width="5.5" height="5.5" rx="1" stroke="currentColor" strokeWidth="1.2" />
-                <path d="M5.5 3.5V2.5a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H9.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
-              </svg>
-              copy
-            </>
-          )}
-        </button>
+        </div>
+
+        {/* language tabs */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'stretch',
+            gap: 2,
+            padding: '0 8px',
+            background: '#0f141c',
+            borderBottom: '1px solid #1c2430',
+          }}
+        >
+          {langs.map((l) => {
+            const active = l === lang;
+            return (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLang(l)}
+                style={{
+                  appearance: 'none',
+                  border: 'none',
+                  background: 'transparent',
+                  padding: '9px 12px 8px',
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+                  fontSize: 12,
+                  color: active ? '#e6edf3' : '#6b7689',
+                  borderBottom: active ? '2px solid var(--po-live)' : '2px solid transparent',
+                  cursor: 'pointer',
+                  letterSpacing: 0.2,
+                }}
+              >
+                {l}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* the code, with subtle syntax coloring */}
+        <CodeBlock lines={snippetLines(lang, keyDisplay)} />
       </div>
 
-      <pre className="po-snippet">
-        <code>{snippetFor(lang, apiKey ?? 'vk_live_…')}</code>
-      </pre>
-
-      <div className="po-conn-foot">
-        <span className="po-conn-poll">
-          <span className="po-poll-dot" />
-          <span className="po-mono">Polling for first trace…</span>
+      {/* live polling status with pulsing emerald dot */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '0 var(--space-6) var(--space-6)',
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: 'var(--po-live)',
+            animation: 'pulse 1.8s ease-out infinite',
+            flex: '0 0 auto',
+          }}
+        />
+        <span className="po-mono" style={{ fontSize: 12.5, color: 'var(--po-fg-3)' }}>
+          Polling for first trace…
         </span>
       </div>
     </div>

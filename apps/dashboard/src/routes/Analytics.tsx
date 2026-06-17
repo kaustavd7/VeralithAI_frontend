@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
-import { ErrorState } from '../components/StateViews';
+import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
 import { tracesPath } from '../lib/nav';
 import { useProjects } from '../hooks/useProjects';
 import { useStats, useTraces } from '../hooks/useOverviewData';
@@ -20,7 +20,14 @@ function sinceForWindow(win: TimeWindow): string {
     win === '24h' ? 86_400_000 :
     win === '7d' ? 7 * 86_400_000 :
     30 * 86_400_000;
-  return new Date(Date.now() - ms).toISOString();
+  // Quantize "now" to the start of the current minute so successive renders get
+  // the SAME string — otherwise this is recomputed every render, the react-query
+  // key changes every render, and the queries never settle (infinite refetch loop
+  // that hammers the backend and hangs panels on "Loading…"). 60s granularity
+  // means at most one natural refresh per minute.
+  const QUANTUM = 60_000;
+  const now = Math.floor(Date.now() / QUANTUM) * QUANTUM;
+  return new Date(now - ms).toISOString();
 }
 function bucketForWindow(win: TimeWindow): 'hour' | 'day' {
   return win === '7d' || win === '30d' ? 'day' : 'hour';
@@ -258,21 +265,33 @@ function TraceVolumePanel({ slug, pageWindow }: { slug: string; pageWindow: Time
     () => ({ since: sinceForWindow(win), bucket: bucketForWindow(win) }),
     [win],
   ));
-  const stats = statsQuery.data;
   const [hi, setHi] = useState<number | null>(null);
   const [mode, setMode] = useState<'line' | 'bar'>('line');
   const [hidden, setHidden] = useState<Set<'ok' | 'bad'>>(new Set());
   const chartRef = useRef<HTMLDivElement>(null);
 
-  if (!stats) {
+  if (statsQuery.isPending) {
     return (
       <AnPanel title="Trace volume" subtitle={subtitleForWindow(win)} span={12}
         windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
-        <div style={{ padding: '20px 0', color: 'var(--po-fg-3)' }}>Loading…</div>
+        <LoadingState />
       </AnPanel>
     );
   }
 
+  if (statsQuery.isError) {
+    return (
+      <AnPanel title="Trace volume" subtitle={subtitleForWindow(win)} span={12}
+        windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
+        <ErrorState
+          message={statsQuery.error instanceof Error ? statsQuery.error.message : undefined}
+          onRetry={() => statsQuery.refetch()}
+        />
+      </AnPanel>
+    );
+  }
+
+  const stats = statsQuery.data;
   const series = stats.timeseries;
   const okSeries = series.map((b) => b.ok);
   const badSeries = series.map((b) => b.failed);
@@ -281,6 +300,18 @@ function TraceVolumePanel({ slug, pageWindow }: { slug: string; pageWindow: Time
   const totalBad = badSeries.reduce((s, v) => s + v, 0);
   const total = totalOk + totalBad;
   const badPct = total > 0 ? ((totalBad / total) * 100).toFixed(1) : '0.0';
+
+  if (stats.total_traces === 0 || total === 0) {
+    return (
+      <AnPanel title="Trace volume" subtitle={subtitleForWindow(win)} span={12}
+        windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
+        <EmptyState
+          title="No traces in this window"
+          sub="Adjust the time range, or connect your SDK to start receiving traces."
+        />
+      </AnPanel>
+    );
+  }
 
   const showOk = !hidden.has('ok');
   const showBad = !hidden.has('bad');
@@ -731,6 +762,63 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
     ? Math.round(((byCell?.complete_grounded ?? 0) / grandTotal) * 100)
     : 0;
 
+  if (statsQuery.isPending) {
+    return (
+      <AnPanel
+        title="Failure-cell distribution"
+        subtitle={subtitleForWindow(win)}
+        span={5}
+        windowed
+        win={win}
+        override={override}
+        onWin={setOverride}
+        onClearWin={clearOverride}
+      >
+        <LoadingState />
+      </AnPanel>
+    );
+  }
+
+  if (statsQuery.isError) {
+    return (
+      <AnPanel
+        title="Failure-cell distribution"
+        subtitle={subtitleForWindow(win)}
+        span={5}
+        windowed
+        win={win}
+        override={override}
+        onWin={setOverride}
+        onClearWin={clearOverride}
+      >
+        <ErrorState
+          message={statsQuery.error instanceof Error ? statsQuery.error.message : undefined}
+          onRetry={() => statsQuery.refetch()}
+        />
+      </AnPanel>
+    );
+  }
+
+  if (grandTotal === 0) {
+    return (
+      <AnPanel
+        title="Failure-cell distribution"
+        subtitle={subtitleForWindow(win)}
+        span={5}
+        windowed
+        win={win}
+        override={override}
+        onWin={setOverride}
+        onClearWin={clearOverride}
+      >
+        <EmptyState
+          title="No traces in this window"
+          sub="Adjust the time range, or connect your SDK to start receiving traces."
+        />
+      </AnPanel>
+    );
+  }
+
   return (
     <AnPanel
       title="Failure-cell distribution"
@@ -923,6 +1011,63 @@ function TopFailingPanel({
       .slice(0, 7);
   }, [tracesQuery.data]);
 
+  if (tracesQuery.isPending) {
+    return (
+      <AnPanel
+        title="Top failing queries"
+        subtitle={`sufficiency ↑ · worst-first · ${subtitleForWindow(win)}`}
+        span={12}
+        windowed
+        win={win}
+        override={override}
+        onWin={setOverride}
+        onClearWin={clearOverride}
+      >
+        <LoadingState />
+      </AnPanel>
+    );
+  }
+
+  if (tracesQuery.isError) {
+    return (
+      <AnPanel
+        title="Top failing queries"
+        subtitle={`sufficiency ↑ · worst-first · ${subtitleForWindow(win)}`}
+        span={12}
+        windowed
+        win={win}
+        override={override}
+        onWin={setOverride}
+        onClearWin={clearOverride}
+      >
+        <ErrorState
+          message={tracesQuery.error instanceof Error ? tracesQuery.error.message : undefined}
+          onRetry={() => tracesQuery.refetch()}
+        />
+      </AnPanel>
+    );
+  }
+
+  if (rows.length === 0) {
+    return (
+      <AnPanel
+        title="Top failing queries"
+        subtitle={`sufficiency ↑ · worst-first · ${subtitleForWindow(win)}`}
+        span={12}
+        windowed
+        win={win}
+        override={override}
+        onWin={setOverride}
+        onClearWin={clearOverride}
+      >
+        <EmptyState
+          title="No traces in this window"
+          sub="Adjust the time range, or connect your SDK to start receiving traces."
+        />
+      </AnPanel>
+    );
+  }
+
   return (
     <AnPanel
       title="Top failing queries"
@@ -935,11 +1080,6 @@ function TopFailingPanel({
       onClearWin={clearOverride}
     >
       <div className="an-leaderboard">
-        {rows.length === 0 && (
-          <div style={{ color: 'var(--po-fg-3)', fontSize: 12, padding: '12px 0' }}>
-            No evaluated traces in this window.
-          </div>
-        )}
         {rows.map((r, i) => {
           const s = r.sufficiency_fraction ?? 0;
           const fill =
@@ -1117,11 +1257,42 @@ function HallucinationTrendPanel({
         }
       : null;
 
-  if (!statsQuery.data || !tracesQuery.data) {
+  if (statsQuery.isPending || tracesQuery.isPending) {
     return (
       <AnPanel title="Hallucination trend" subtitle={subtitleForWindow(win)} span={7}
         windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
-        <div style={{ padding: '20px 0', color: 'var(--po-fg-3)' }}>Loading…</div>
+        <LoadingState />
+      </AnPanel>
+    );
+  }
+
+  if (statsQuery.isError || tracesQuery.isError) {
+    return (
+      <AnPanel title="Hallucination trend" subtitle={subtitleForWindow(win)} span={7}
+        windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
+        <ErrorState
+          message={
+            (statsQuery.error instanceof Error ? statsQuery.error.message : null) ??
+            (tracesQuery.error instanceof Error ? tracesQuery.error.message : null) ??
+            undefined
+          }
+          onRetry={() => {
+            if (statsQuery.isError) statsQuery.refetch();
+            if (tracesQuery.isError) tracesQuery.refetch();
+          }}
+        />
+      </AnPanel>
+    );
+  }
+
+  if (totalTraces === 0 || (statsQuery.data?.total_traces ?? 0) === 0) {
+    return (
+      <AnPanel title="Hallucination trend" subtitle={subtitleForWindow(win)} span={7}
+        windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
+        <EmptyState
+          title="No traces in this window"
+          sub="Adjust the time range, or connect your SDK to start receiving traces."
+        />
       </AnPanel>
     );
   }

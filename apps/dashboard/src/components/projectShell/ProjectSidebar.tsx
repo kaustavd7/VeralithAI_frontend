@@ -168,10 +168,10 @@ function SbIcon({ name }: { name: keyof typeof ICONS }) {
   );
 }
 
-/* Slide-out shortcut tooltip: "Go to X" + keycaps (G then F). Appears to the right
-   of the row after a deliberate ~2s hover rest (CSS transition-delay drives the
-   timing). Works collapsed and expanded; escapes the rail because .sb / .sb-scroll
-   are overflow:visible. */
+/* Slide-out shortcut tooltip: "Go to X" + keycaps (G then F). Appears promptly to
+   the right of the 56px rail on hover — ONLY while the sidebar is collapsed (i.e.
+   the inline label is hidden). When expanded the label is already visible, so CSS
+   suppresses the tip. Escapes the rail because .sb / .sb-scroll are overflow:visible. */
 function SbTip({ label, kbd }: { label: string; kbd?: string }) {
   const keys = kbd ? kbd.trim().split(/\s+/) : [];
   return (

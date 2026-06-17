@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
-import { ErrorState } from '../components/StateViews';
+import { EmptyState, ErrorState } from '../components/StateViews';
 import { useProjects } from '../hooks/useProjects';
 import { useStats, useTraces } from '../hooks/useOverviewData';
 import type { FailureCell, TraceListItem } from '../api/types';
@@ -388,7 +388,16 @@ export default function TraceExplorer() {
     setPage(0);
   }
 
-  const isEmptyAfterFilters = !traces.isLoading && rows.length === 0;
+  const isEmpty = !traces.isLoading && rows.length === 0;
+  // A genuinely empty project (no traces ever ingested) shows the "connect your
+  // SDK" empty state. The project-wide stats total is window-independent, so it
+  // distinguishes a brand-new project from a filter/window that simply matched
+  // nothing. If we can't yet read stats, fall back to "no filters active".
+  const hasActiveFilters = activeCells.size > 0 || search.trim() !== '';
+  const projectHasNoTraces =
+    stats.data != null ? stats.data.total_traces === 0 : !hasActiveFilters;
+  const isEmptyProject = isEmpty && projectHasNoTraces;
+  const isEmptyAfterFilters = isEmpty && !isEmptyProject;
   const sortLabel =
     sort === 'oldest' ? 'oldest' :
     sort === 'sufficiency_asc' ? 'sufficiency ↑' :
@@ -469,6 +478,20 @@ export default function TraceExplorer() {
           />
         ) : traces.isLoading ? (
           <div style={{ padding: '40px 0', color: 'var(--po-fg-3)' }}>Loading traces…</div>
+        ) : isEmptyProject ? (
+          <EmptyState
+            title="No traces yet"
+            sub="Connect your SDK and send your first trace — they'll appear here in real time."
+            action={
+              <Link
+                to={`/projects/${slug}`}
+                className="po-btn"
+                style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
+              >
+                Connect your SDK
+              </Link>
+            }
+          />
         ) : isEmptyAfterFilters ? (
           <div className="te-empty">
             <div className="te-empty-mark">
