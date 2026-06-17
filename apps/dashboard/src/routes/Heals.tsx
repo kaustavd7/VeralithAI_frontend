@@ -39,19 +39,28 @@ const STATUS_META: Record<HealStatus, StatusMeta> = {
 };
 
 const TERMINAL: HealStatus[] = ['resolved', 'manually_fixed', 'wont_fix', 'superseded'];
-const STATUS_RANK: Partial<Record<HealStatus, number>> = {
-  open: 0, pr_raised: 1, in_progress: 2, failed: 3,
+
+/* ─────────────────────────────────────────────────────────────
+   Kanban columns — the heal lifecycle, left → right. Each column owns one or
+   more statuses; "Done" archives every terminal outcome.
+   ─────────────────────────────────────────────────────────── */
+
+type ColumnDef = {
+  id: string;
+  label: string;
+  hint: string;
+  empty: string;
+  color: string;
+  statuses: HealStatus[];
 };
 
-const FILTERS = [
-  { id: 'all',         label: 'All' },
-  { id: 'open',        label: 'Open' },
-  { id: 'pr_raised',   label: 'PR Raised' },
-  { id: 'in_progress', label: 'In Progress' },
-  { id: 'failed',      label: 'Failed' },
-  { id: 'terminal',    label: 'Terminal' },
-] as const;
-type FilterId = (typeof FILTERS)[number]['id'];
+const COLUMNS: ColumnDef[] = [
+  { id: 'open',        label: 'Open',        hint: 'Awaiting decision',   empty: 'Nothing awaiting decision', color: 'var(--accent)',  statuses: ['open'] },
+  { id: 'in_progress', label: 'In progress', hint: 'Claude Code working', empty: 'Nothing in progress',       color: 'var(--cell-ig)', statuses: ['in_progress'] },
+  { id: 'pr_raised',   label: 'PR raised',   hint: 'Review needed',       empty: 'No PRs to review',          color: 'var(--cell-cg)', statuses: ['pr_raised'] },
+  { id: 'failed',      label: 'Failed',      hint: 'Needs retry',         empty: 'No failures',               color: 'var(--cell-cu)', statuses: ['failed'] },
+  { id: 'done',        label: 'Done',        hint: 'Archived outcomes',   empty: 'No archived outcomes yet',  color: 'var(--po-grey)', statuses: ['resolved', 'manually_fixed', 'wont_fix', 'superseded'] },
+];
 
 /* ─────────────────────────────────────────────────────────────
    Tiny SVGs
@@ -68,6 +77,13 @@ function ExtLink() {
   return (
     <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ marginLeft: 4, verticalAlign: '-1px' }}>
       <path d="M4 2h6v6M10 2L5 7M9 7v3H2V3h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function TracesIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+      <path d="M1.5 9.5h9M1.5 6h6M1.5 2.5h9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -109,10 +125,69 @@ function shortId(id: string): string {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Queue row
+   KPI strip + achievement badges (computed client-side from the list)
    ─────────────────────────────────────────────────────────── */
 
-function QueueRow({
+function KpiStrip({ cards }: { cards: HealCardSummary[] }) {
+  const count = (s: HealStatus) => cards.filter((c) => c.status === s).length;
+  const open = count('open');
+  const prog = count('in_progress');
+  const pr = count('pr_raised');
+  const resolved = count('resolved');
+  const failed = count('failed');
+  const denom = resolved + failed;
+  const success = denom > 0 ? `${Math.round((resolved / denom) * 100)}%` : '—';
+
+  const items: { label: string; value: string | number; tone?: 'accent' | 'good' | 'bad'; hint?: string }[] = [
+    { label: 'Open', value: open, tone: open > 0 ? 'accent' : undefined, hint: 'Cards awaiting a decision' },
+    { label: 'In progress', value: prog, hint: 'Claude Code is working on these' },
+    { label: 'PR raised', value: pr, tone: pr > 0 ? 'good' : undefined, hint: 'PRs waiting for your review' },
+    { label: 'Resolved', value: resolved, tone: 'good', hint: 'PRs accepted and merged' },
+    { label: 'Success rate', value: success, hint: 'Resolved ÷ (Resolved + Failed) heal attempts' },
+  ];
+
+  return (
+    <div className="he-kpis">
+      {items.map((it) => (
+        <div className="he-kpi" key={it.label} title={it.hint}>
+          <span className="he-kpi-label">{it.label}</span>
+          <span className={'he-kpi-val' + (it.tone ? ` is-${it.tone}` : '')}>{it.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HealBadges({ cards }: { cards: HealCardSummary[] }) {
+  const healed = cards.filter((c) => c.status === 'resolved' || c.status === 'manually_fixed').length;
+  const anyPr = cards.some((c) => c.pr_url);
+  const open = cards.filter((c) => c.status === 'open').length;
+
+  const badges: { icon: string; label: string; got: boolean }[] = [
+    { icon: '🩹', label: 'First heal', got: healed >= 1 },
+    { icon: '🔀', label: 'First PR', got: anyPr },
+    { icon: '🏅', label: '10 healed', got: healed >= 10 },
+    { icon: '🥇', label: '50 healed', got: healed >= 50 },
+    { icon: '✨', label: 'Inbox zero', got: cards.length > 0 && open === 0 },
+  ];
+
+  return (
+    <div className="he-badges" title={`${healed} healed all-time`}>
+      {badges.map((b) => (
+        <span className={'he-bchip' + (b.got ? ' is-got' : '')} key={b.label}>
+          <span className="he-bchip-ic">{b.icon}</span>
+          {b.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Kanban card + column
+   ─────────────────────────────────────────────────────────── */
+
+function KanbanCard({
   card, selected, flash, onClick,
 }: {
   card: HealCardSummary;
@@ -123,29 +198,57 @@ function QueueRow({
   const m = STATUS_META[card.status] ?? { label: card.status, phrase: null, color: 'var(--po-grey)' };
   return (
     <button
-      className={'he-card-row' + (selected ? ' is-selected' : '') + (flash ? ' is-flash' : '')}
+      className={'he-kc' + (selected ? ' is-selected' : '') + (flash ? ' is-flash' : '')}
       style={{ '--c': m.color } as React.CSSProperties}
       onClick={onClick}
     >
-      <span className="he-card-stripe" />
-      <div className="he-card-title">{card.title}</div>
-      <div className="he-card-meta">
-        <StatusBadge status={card.status} />
-        <span className="he-card-traces">
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-            <path d="M1.5 9.5h9M1.5 6h6M1.5 2.5h9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-          </svg>
-          {card.n_traces}
-        </span>
-        {card.pr_url && <span className="he-card-pr"><ExtLink /></span>}
-        <span className="he-card-time">{relativeTime(card.last_trace_at)}</span>
+      <div className="he-kc-top">
+        <span className={'he-kc-dot' + (m.pulse ? ' is-pulse' : '')} />
+        <span className="he-kc-title">{card.title}</span>
       </div>
-      <span className="he-card-go" aria-hidden="true">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </span>
+      <div className="he-kc-meta">
+        <span className="he-kc-traces"><TracesIcon />{card.n_traces}</span>
+        {card.pr_url && <span className="he-kc-pr">PR<ExtLink /></span>}
+        <span className="he-kc-time">{relativeTime(card.last_trace_at)}</span>
+      </div>
     </button>
+  );
+}
+
+function KanbanColumn({
+  col, cards, selectedId, flashId, searching, onSelect,
+}: {
+  col: ColumnDef;
+  cards: HealCardSummary[];
+  selectedId: string | undefined;
+  flashId: string | null;
+  searching: boolean;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className={'he-col he-col-' + col.id} style={{ '--c': col.color } as React.CSSProperties}>
+      <div className="he-col-head">
+        <span className="he-col-dot" />
+        <span className="he-col-label">{col.label}</span>
+        <span className="he-col-count">{cards.length}</span>
+      </div>
+      <div className="he-col-hint">{col.hint}</div>
+      <div className="he-col-body">
+        {cards.length === 0 ? (
+          <div className="he-col-empty">{searching ? 'No matches' : col.empty}</div>
+        ) : (
+          cards.map((c) => (
+            <KanbanCard
+              key={c.id}
+              card={c}
+              selected={c.id === selectedId}
+              flash={c.id === flashId}
+              onClick={() => onSelect(c.id)}
+            />
+          ))
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -268,14 +371,30 @@ function ConfirmModal({
   onCancel: () => void;
 }) {
   const c = CONFIRMS[kind];
+  const ctaRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    ctaRef.current?.focus();
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onCancel();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onCancel]);
   return (
     <div className="he-modal-scrim" onClick={onCancel}>
-      <div className="he-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="he-modal-title">{c.title}</div>
+      <div
+        className="he-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="he-confirm-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="he-modal-title" id="he-confirm-title">{c.title}</div>
         <div className="he-modal-body">{c.body}</div>
         <div className="he-modal-actions">
           <button className="he-btn he-btn-ghost" onClick={onCancel}>Cancel</button>
           <button
+            ref={ctaRef}
             className={'he-btn ' + (c.danger ? 'he-btn-danger' : 'he-btn-primary')}
             onClick={onConfirm}
           >{c.cta}</button>
@@ -426,7 +545,7 @@ function ActionBar({
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Detail pane
+   Detail pane — rendered inside the slide-over
    ─────────────────────────────────────────────────────────── */
 
 function DetailPane({
@@ -436,7 +555,7 @@ function DetailPane({
   loadError,
   onRetry,
   onAction,
-  onCollapse,
+  onClose,
   pendingAction,
   actionError,
 }: {
@@ -446,15 +565,25 @@ function DetailPane({
   loadError: string | undefined;
   onRetry: () => void;
   onAction: (a: ActionKind) => void;
-  onCollapse: () => void;
+  onClose: () => void;
   pendingAction: ActionKind | null;
   actionError: string | null;
 }) {
   const { slug = '' } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+
+  const CloseBtn = (
+    <button className="he-detail-close" onClick={onClose} title="Close (Esc)" aria-label="Close">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+        <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    </button>
+  );
+
   if (isError && !card) {
     return (
       <div className="he-detail he-detail-empty">
+        {CloseBtn}
         <ErrorState message={loadError} onRetry={onRetry} />
       </div>
     );
@@ -462,16 +591,9 @@ function DetailPane({
   if (isLoading || !card) {
     return (
       <div className="he-detail he-detail-empty">
+        {CloseBtn}
         <div className="he-placeholder">
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-            <g transform="rotate(45 17 17)">
-              <rect x="4" y="12" width="26" height="10" rx="5" stroke="var(--po-fg-4)" strokeWidth="1.6" />
-              <circle cx="17" cy="17" r="3" stroke="var(--po-fg-4)" strokeWidth="1.4" />
-            </g>
-          </svg>
-          <div className="he-placeholder-t">
-            {isLoading ? 'Loading heal card…' : 'Select a heal to view details'}
-          </div>
+          <LoadingState label="Loading heal card…" />
         </div>
       </div>
     );
@@ -481,13 +603,7 @@ function DetailPane({
   return (
     <div className="he-detail">
       <div className="he-detail-head">
-        <button className="he-detail-collapse" onClick={onCollapse} title="Hide detail panel">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <path d="M9.5 3l-4 5 4 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M13 3v10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-          <span>Hide</span>
-        </button>
+        {CloseBtn}
         <div className="he-detail-statusline">
           <StatusBadge status={card.status} size="lg" />
           <span
@@ -572,7 +688,7 @@ function DetailPane({
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Page — rendered inside the project shell (sidebar + topbar)
+   Page — Kanban triage board + slide-over detail, inside the project shell
    ─────────────────────────────────────────────────────────── */
 
 export default function Heals() {
@@ -584,25 +700,19 @@ export default function Heals() {
   const projectName = activeProject?.name ?? slug;
   const projectId = activeProject?.id ?? null;
 
-  const [filter, setFilter] = useState<FilterId>('all');
-  const [splitPct, setSplitPct] = useState(42);
-  const [detailOpen, setDetailOpen] = useState(true);
-  const [dragging, setDragging] = useState(false);
+  const [search, setSearch] = useState('');
   const [confirm, setConfirm] = useState<ConfirmKind | null>(null);
   const [flashId, setFlashId] = useState<string | null>(null);
-  const pageRef = useRef<HTMLDivElement>(null);
   const lastStatusRef = useRef<Record<string, HealStatus>>({});
+  const slideoverRef = useRef<HTMLDivElement>(null);
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
 
-  // GET /v1/heals is global across the user's projects (no projectId param),
-  // so we pass the active tab as status_filter and scope to this project below.
-  // 'all' / 'terminal' aren't single statuses → no server-side status_filter.
-  const statusFilter: HealStatus | undefined =
-    filter === 'all' || filter === 'terminal' ? undefined : filter;
-
-  // Polling cadence per the contract: 10–15s for list.
+  // GET /v1/heals is global across the user's projects; we fetch everything and
+  // scope to the active project client-side. Columns own the status grouping,
+  // so we no longer pass a server-side status_filter. Polling: 12s.
   const listQuery = useQuery({
-    queryKey: ['heals', projectId, statusFilter ?? 'all'],
-    queryFn: () => api.listHeals({ status_filter: statusFilter, limit: 100 }),
+    queryKey: ['heals', projectId, 'all'],
+    queryFn: () => api.listHeals({ limit: 100 }),
     refetchInterval: 12_000,
   });
 
@@ -618,13 +728,16 @@ export default function Heals() {
     },
   });
 
-  // GET /v1/heals is global → scope to the current project client-side.
+  // Scope the global list to the current project. Until the project resolves we
+  // return nothing rather than the unscoped global list, so no cross-project
+  // cards ever paint into the board / KPIs.
   const cards: HealCardSummary[] = useMemo(() => {
+    if (!projectId) return [];
     const all = listQuery.data ?? [];
-    return projectId ? all.filter((c) => c.project_id === projectId) : all;
+    return all.filter((c) => c.project_id === projectId);
   }, [listQuery.data, projectId]);
 
-  // Flash a card row when its status changes during a poll.
+  // Flash a card when its status changes during a poll.
   useEffect(() => {
     if (!listQuery.data) return;
     const timers: number[] = [];
@@ -641,19 +754,24 @@ export default function Heals() {
     };
   }, [cards, listQuery.data]);
 
-  const visible = useMemo(() => {
-    const filtered = cards.filter((c) => {
-      if (filter === 'all') return true;
-      if (filter === 'terminal') return TERMINAL.includes(c.status);
-      return c.status === filter;
-    });
-    return [...filtered].sort((a, b) => {
-      const ra = STATUS_RANK[a.status] ?? 9;
-      const rb = STATUS_RANK[b.status] ?? 9;
-      if (ra !== rb) return ra - rb;
-      return b.updated_at.localeCompare(a.updated_at);
-    });
-  }, [cards, filter]);
+  // Group cards into columns (newest-updated first), applying the search over
+  // both title and suggestion slug.
+  const byColumn = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const matches = (c: HealCardSummary) =>
+      !q || c.title.toLowerCase().includes(q) || c.suggestion_slug.toLowerCase().includes(q);
+    const map: Record<string, HealCardSummary[]> = {};
+    for (const col of COLUMNS) {
+      map[col.id] = cards
+        .filter((c) => col.statuses.includes(c.status) && matches(c))
+        .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    }
+    return map;
+  }, [cards, search]);
+
+  const searching = search.trim() !== '';
+  const filteredTotal = COLUMNS.reduce((n, col) => n + (byColumn[col.id]?.length ?? 0), 0);
+  const noMatches = searching && filteredTotal === 0 && cards.length > 0;
 
   const openCount = cards.filter((c) => c.status === 'open').length;
   const selectedCard = detailQuery.data;
@@ -666,8 +784,7 @@ export default function Heals() {
     },
   });
 
-  // Clear any stale action error/pending affordance when switching cards so an
-  // error from one card never bleeds onto another.
+  // Clear any stale action error/pending affordance when switching cards.
   const mutationReset = actionMutation.reset;
   useEffect(() => {
     mutationReset();
@@ -675,7 +792,6 @@ export default function Heals() {
 
   function doAction(action: ActionKind) {
     if (!cardId || actionMutation.isPending) return;
-    // Clear any prior action error when starting a new action.
     actionMutation.reset();
     if (action === 'decline' || action === 'dismiss-fixed' || action === 'dismiss-ignore') {
       setConfirm(action);
@@ -690,8 +806,6 @@ export default function Heals() {
     setConfirm(null);
   }
 
-  // Which action (if any) is currently in flight, and any error from the last
-  // action — surfaced inline near the action bar.
   const pendingAction: ActionKind | null = actionMutation.isPending
     ? actionMutation.variables?.action ?? null
     : null;
@@ -702,46 +816,65 @@ export default function Heals() {
     : null;
 
   function selectCard(id: string) {
-    if (!detailOpen) setDetailOpen(true);
+    // Remember the trigger so focus can return there when the slide-over closes.
+    lastFocusedRef.current = document.activeElement as HTMLElement | null;
     navigate(`/projects/${slug}/heals/${id}`);
   }
-
-  // Splitter drag
-  function startDrag(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    const rect = pageRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setDragging(true);
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    function move(ev: MouseEvent) {
-      const pct = ((ev.clientX - rect!.left) / rect!.width) * 100;
-      setSplitPct(Math.max(26, Math.min(74, pct)));
-    }
-    function up() {
-      setDragging(false);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      document.removeEventListener('mousemove', move);
-      document.removeEventListener('mouseup', up);
-    }
-    document.addEventListener('mousemove', move);
-    document.addEventListener('mouseup', up);
+  function closeDetail() {
+    lastFocusedRef.current?.focus?.();
+    navigate(`/projects/${slug}/heals`);
   }
 
-  const isEmpty = !listQuery.isLoading && cards.length === 0;
-  const showDetail = detailOpen && !isEmpty;
+  // Move focus into the slide-over when it opens (backs up the aria-modal).
+  useEffect(() => {
+    if (cardId) slideoverRef.current?.focus();
+  }, [cardId]);
+
+  // While the slide-over is open: Esc closes it (unless a confirm dialog is up),
+  // and Tab is trapped within the panel.
+  useEffect(() => {
+    if (!cardId) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        if (!confirm) closeDetail();
+        return;
+      }
+      if (e.key === 'Tab' && !confirm) {
+        const panel = slideoverRef.current;
+        if (!panel) return;
+        const f = panel.querySelectorAll<HTMLElement>(
+          'a[href],button:not([disabled]),input:not([disabled]),textarea,select,[tabindex]:not([tabindex="-1"])',
+        );
+        if (f.length === 0) {
+          e.preventDefault();
+          panel.focus();
+          return;
+        }
+        const first = f[0]!;
+        const last = f[f.length - 1]!;
+        const active = document.activeElement;
+        if (e.shiftKey && (active === first || active === panel)) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardId, confirm]);
+
+  const loading = listQuery.isLoading || projects.isLoading;
+  const isEmpty = !loading && cards.length === 0;
 
   return (
     <ProjectShell slug={slug} active="heals" project={projectName}>
-      <div
-        className={'he-page' + (dragging ? ' is-dragging' : '')}
-        ref={pageRef}
-        style={{ display: 'flex', flexDirection: 'column' }}
-      >
-        <div className="page-header">
-          <div>
+      <div className="he-page he-board-page" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="he-board-header">
+          <div className="he-board-titles">
             <h1 className="page-title">Heals</h1>
             <div className="page-sub">
               <span className="he-live" title="Updated every 12 seconds">
@@ -750,105 +883,96 @@ export default function Heals() {
               {isEmpty ? '0 cards' : `${cards.length} cards · ${openCount} awaiting decision`}
             </div>
           </div>
-        </div>
-
-        <div
-          className="he-split-row"
-          style={{ display: 'flex', flex: 1, minHeight: 0 }}
-        >
-        <div
-          className="he-queue"
-          style={showDetail ? { width: `${splitPct}%` } : { flex: 1, width: 'auto' }}
-        >
-          <div className="he-queue-head">
-            <div className="he-chips">
-              {FILTERS.map((f) => (
-                <button
-                  key={f.id}
-                  className={'he-chip' + (filter === f.id ? ' is-active' : '')}
-                  onClick={() => setFilter(f.id)}
-                >{f.label}</button>
-              ))}
-            </div>
-          </div>
-
-          <div className="he-queue-list">
-            {listQuery.isLoading ? (
-              <LoadingState label="Loading heals…" />
-            ) : listQuery.isError ? (
-              <ErrorState
-                message={listQuery.error instanceof Error ? listQuery.error.message : undefined}
-                onRetry={() => listQuery.refetch()}
-              />
-            ) : isEmpty ? (
-              <div className="he-queue-empty">
-                <svg width="30" height="30" viewBox="0 0 34 34" fill="none">
-                  <g transform="rotate(45 17 17)">
-                    <rect x="4" y="12" width="26" height="10" rx="5" stroke="var(--po-fg-4)" strokeWidth="1.6" />
-                    <circle cx="17" cy="17" r="3" stroke="var(--po-fg-4)" strokeWidth="1.4" />
-                  </g>
-                </svg>
-                <div className="he-queue-empty-t">No heals yet. Failing traces will cluster here.</div>
-                <div className="he-queue-empty-s">Heals appear automatically as the eval worker finds patterns.</div>
-              </div>
-            ) : (
-              visible.map((c) => (
-                <QueueRow
-                  key={c.id}
-                  card={c}
-                  selected={c.id === cardId}
-                  flash={c.id === flashId}
-                  onClick={() => selectCard(c.id)}
-                />
-              ))
-            )}
-          </div>
-        </div>
-
-        {showDetail && (
-          <div
-            className={'he-splitter' + (dragging ? ' is-dragging' : '')}
-            onMouseDown={startDrag}
-            onDoubleClick={() => setSplitPct(42)}
-            title="Drag to resize · double-click to reset"
-          >
-            <span className="he-splitter-grip" />
-            <button
-              type="button"
-              className="he-splitter-collapse"
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={() => setDetailOpen(false)}
-              title="Hide detail panel"
-            >
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                <path d="M10 3l-4 5 4 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          {!isEmpty && (
+            <div className="he-board-search">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.3" />
+                <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
               </svg>
+              <input
+                type="text"
+                placeholder="Search by title or slug…"
+                aria-label="Search heals by title or slug"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
+        {!loading && !listQuery.isError && !isEmpty && (
+          <>
+            <KpiStrip cards={cards} />
+            <HealBadges cards={cards} />
+          </>
+        )}
+
+        {loading ? (
+          <LoadingState label="Loading heals…" />
+        ) : listQuery.isError ? (
+          <ErrorState
+            message={listQuery.error instanceof Error ? listQuery.error.message : undefined}
+            onRetry={() => listQuery.refetch()}
+          />
+        ) : isEmpty ? (
+          <div className="he-queue-empty">
+            <svg width="30" height="30" viewBox="0 0 34 34" fill="none">
+              <g transform="rotate(45 17 17)">
+                <rect x="4" y="12" width="26" height="10" rx="5" stroke="var(--po-fg-4)" strokeWidth="1.6" />
+                <circle cx="17" cy="17" r="3" stroke="var(--po-fg-4)" strokeWidth="1.4" />
+              </g>
+            </svg>
+            <div className="he-queue-empty-t">No heals yet. Failing traces will cluster here.</div>
+            <div className="he-queue-empty-s">Heals appear automatically as the eval worker finds patterns.</div>
+          </div>
+        ) : noMatches ? (
+          <div className="he-queue-empty">
+            <div className="he-queue-empty-t">No heals match “{search.trim()}”.</div>
+            <button type="button" className="he-btn he-btn-ghost" onClick={() => setSearch('')}>
+              Clear search
             </button>
+          </div>
+        ) : (
+          <div className="he-board">
+            {COLUMNS.map((col) => (
+              <KanbanColumn
+                key={col.id}
+                col={col}
+                cards={byColumn[col.id] ?? []}
+                selectedId={cardId}
+                flashId={flashId}
+                searching={searching}
+                onSelect={selectCard}
+              />
+            ))}
           </div>
         )}
 
-        {showDetail ? (
-          <DetailPane
-            card={selectedCard}
-            isLoading={!!cardId && detailQuery.isLoading}
-            isError={!!cardId && detailQuery.isError}
-            loadError={detailQuery.error instanceof Error ? detailQuery.error.message : undefined}
-            onRetry={() => detailQuery.refetch()}
-            onAction={doAction}
-            onCollapse={() => setDetailOpen(false)}
-            pendingAction={pendingAction}
-            actionError={actionError}
-          />
-        ) : (!isEmpty && (
-          <button type="button" className="he-reopen" onClick={() => setDetailOpen(true)} title="Show detail panel">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-              <path d="M6.5 3l4 5-4 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M3 3v10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            <span className="he-reopen-label">Detail</span>
-          </button>
-        ))}
-        </div>
+        {cardId && (
+          <div className="he-slideover-scrim" onClick={closeDetail}>
+            <div
+              className="he-slideover"
+              ref={slideoverRef}
+              tabIndex={-1}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Heal card detail"
+            >
+              <DetailPane
+                card={selectedCard}
+                isLoading={detailQuery.isLoading}
+                isError={detailQuery.isError}
+                loadError={detailQuery.error instanceof Error ? detailQuery.error.message : undefined}
+                onRetry={() => detailQuery.refetch()}
+                onAction={doAction}
+                onClose={closeDetail}
+                pendingAction={pendingAction}
+                actionError={actionError}
+              />
+            </div>
+          </div>
+        )}
 
         {confirm && (
           <ConfirmModal
