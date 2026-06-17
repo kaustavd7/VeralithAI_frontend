@@ -7,7 +7,7 @@ import AuthCallback from './routes/AuthCallback';
 import Onboarding from './routes/Onboarding';
 import Placeholder from './routes/Placeholder';
 import ProjectsHome from './routes/ProjectsHome';
-import ProjectOverview from './routes/ProjectOverview';
+import TodayOverview from './routes/TodayOverview';
 import TraceExplorer from './routes/TraceExplorer';
 import Analytics from './routes/Analytics';
 import FailureCells from './routes/FailureCells';
@@ -66,13 +66,14 @@ function AppRoutes() {
         }
       />
 
-      {/* Project Overview — the "Today" command-center (B2 glow) + Workbench.
-          Demo data for now; ProjectOverview.tsx kept for backend wiring later. */}
+      {/* Project Overview — the "Today" command-center (B2 glow) + Overview grid.
+          Demo data. ProjectOverview.tsx (live stats + connect-SDK + API keys)
+          is kept for when this design is wired to the backend. */}
       <Route
         path="/projects/:slug"
         element={
           <RequireAuth>
-            <ProjectOverview />
+            <TodayOverview />
           </RequireAuth>
         }
       />
