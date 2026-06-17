@@ -14,7 +14,6 @@ import FailureCells from './routes/FailureCells';
 import TraceDetail from './routes/TraceDetail';
 import Heals from './routes/Heals';
 import ApiKeys from './routes/ApiKeys';
-import Calibration from './routes/Calibration';
 import Settings from './routes/Settings';
 
 export default function App() {
@@ -100,15 +99,6 @@ function AppRoutes() {
         }
       />
 
-      {/* Calibration — the sufficiency judge's calibrated grounding threshold. */}
-      <Route
-        path="/projects/:slug/calibration"
-        element={
-          <RequireAuth>
-            <Calibration />
-          </RequireAuth>
-        }
-      />
 
       {/* Legacy dense analytics dashboard, preserved at its own URL. */}
       <Route

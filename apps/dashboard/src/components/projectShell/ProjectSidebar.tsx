@@ -9,7 +9,6 @@ export type SidebarNavId =
   | 'analytics'
   | 'heals'
   | 'cells'
-  | 'calibration'
   // workspace-level (top of the app, no project selected)
   | 'projects'
   | 'billing'
@@ -42,7 +41,6 @@ function projectGroups(slug: string): Group[] {
       items: [
         { id: 'overview', label: 'Project overview', kbd: 'g o', icon: 'overview', route: `/projects/${slug}` },
         { id: 'traces', label: 'Trace explorer', kbd: 'g t', icon: 'traces', route: `/projects/${slug}/traces` },
-        { id: 'apiKeys', label: 'API keys', kbd: 'g k', icon: 'key', route: `/projects/${slug}/api-keys` },
       ],
     },
     {
@@ -51,7 +49,6 @@ function projectGroups(slug: string): Group[] {
         { id: 'analytics', label: 'Analytics', kbd: 'g a', icon: 'chart', route: `/projects/${slug}/analytics` },
         { id: 'heals', label: 'Heals', kbd: 'g h', icon: 'heal', route: `/projects/${slug}/heals` },
         { id: 'cells', label: 'Failure cells', kbd: 'g f', icon: 'cells', route: `/projects/${slug}/analytics/cells` },
-        { id: 'calibration', label: 'Calibration', kbd: 'g c', icon: 'calib', route: `/projects/${slug}/calibration` },
       ],
     },
   ];
