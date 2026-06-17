@@ -7,8 +7,8 @@
    component's data hooks and route it here, then retire the demo. (See the
    consistency-audit openQuestion on ProjectOverview vs TodayOverview.)
    ============================================================================ */
-import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { LoadingState, ErrorState } from '../components/StateViews';
@@ -795,6 +795,7 @@ export default function ProjectOverview() {
   const lastTrace = useTraces(slug, { limit: 1 });
   const apiKeys = useApiKeys(slug);
   const projects = useProjects();
+  const location = useLocation();
 
   const foundProject = useMemo<Project | undefined>(() => {
     return projects.data?.projects.find((p) => p.slug === slug || p.id === slug);
@@ -821,6 +822,14 @@ export default function ProjectOverview() {
   // secondary (its section self-hides when empty), so it doesn't block render.
   const isPending = stats.isPending || lastTrace.isPending;
   const isError = stats.isError || lastTrace.isError;
+
+  // Deep-link: when navigated here with #api-keys (e.g. from the account menu),
+  // scroll the keys section into view once the data has settled and it rendered.
+  useEffect(() => {
+    if (location.hash !== '#api-keys') return;
+    const el = document.getElementById('api-keys');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [location.hash, apiKeys.data, stats.data]);
 
   if (isPending) {
     return (
@@ -891,7 +900,7 @@ function ApiKeysSection({ projectId, apiKeys }: { projectId: string; apiKeys: Ap
   if (apiKeys.length === 0) return null;
 
   return (
-    <div className="ak-card" style={{ marginTop: 24 }}>
+    <div className="ak-card" id="api-keys" style={{ marginTop: 24 }}>
       <div className="ak-card-head">
         <div>
           <div className="ak-card-title">API keys</div>

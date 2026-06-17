@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme, type ThemeChoice } from '../../hooks/useTheme';
 
@@ -12,6 +12,8 @@ export function AccountMenu({ onClose }: Props) {
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  // Present when the menu is opened from inside a project (/projects/:slug/…).
+  const { slug } = useParams<{ slug: string }>();
 
   // Display name + email derived from the Supabase user.
   const displayName = useMemo(() => {
@@ -81,6 +83,14 @@ export function AccountMenu({ onClose }: Props) {
     navigate('/settings');
   }
 
+  // API keys are per-project. Inside a project, jump to that project's keys
+  // section; otherwise send to the projects list to pick one.
+  function goApiKeys() {
+    onClose();
+    if (slug) navigate(`/projects/${slug}#api-keys`);
+    else navigate('/projects');
+  }
+
   return (
     <div className="am" ref={ref} role="menu">
       <div className="am-header">
@@ -116,7 +126,7 @@ export function AccountMenu({ onClose }: Props) {
           className="am-item"
           role="menuitem"
           type="button"
-          onClick={goSettings}
+          onClick={goApiKeys}
         >
           <svg className="am-ic" width="14" height="14" viewBox="0 0 16 16" fill="none">
             <circle cx="5" cy="8" r="3" stroke="currentColor" strokeWidth="1.3" />
