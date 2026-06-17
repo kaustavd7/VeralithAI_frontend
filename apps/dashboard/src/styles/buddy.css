@@ -26,8 +26,16 @@
   border: none;
   background: none;
   padding: 0;
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
   -webkit-tap-highlight-color: transparent;
+}
+.buddy.is-drag {
+  cursor: grabbing;
+}
+.buddy.is-drag .buddy-svg {
+  animation: none;
+  transform: scale(1.12);
 }
 .buddy-svg {
   display: block;

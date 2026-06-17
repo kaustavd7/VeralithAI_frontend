@@ -2,20 +2,25 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import '../../styles/buddy.css';
 
-/* Lith — a cute cartoon pebble that roams the dashboard. He wanders to random
-   spots, waddles, naps, hops, spins and mutters little thoughts so the screen
-   feels alive. Hovering pauses him (so you can grab him); clicking opens a
-   speech bubble. Phase 2 turns that bubble into a real chat over the data. */
+/* Lith — a cute cartoon pebble that lives at the edge of the screen. He patrols
+   his column vertically (so he never drifts across your content), with idle
+   antics: hop, spin, nap, sparkle, little thoughts, and cursor-tracking eyes.
+   You can grab and drag him anywhere; clicking opens a speech bubble. Phase 2
+   turns that bubble into a real chat over the trace/heal data. */
 
 type Action = 'idle' | 'walk' | 'jump' | 'spin' | 'sleep';
 
 const LINES: ((name: string) => string)[] = [
   (n) => `Hey ${n}! 👋 I'm Lith — your pet rock for debugging.`,
-  () => `I roam around keeping an eye on your traces.`,
+  () => `I hang out on the edge, keeping an eye on your traces.`,
   () => `Soon you'll be able to ask me things like "what failed today?" or "what healed this week?"`,
-  () => `Until then… I'll just be here. Being a rock. 🪨`,
+  () => `Drag me anywhere you like. Until then… I'll just be a rock. 🪨`,
 ];
-const QUIPS = ['hmm…', 'ooh ✨', 'rock solid', 'just vibing', '👀', 'all healthy', 'wandering…', '🪨'];
+const QUIPS = ['hmm…', 'ooh ✨', 'rock solid', 'just vibing', '👀', 'all healthy', '🪨'];
+
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+const rand = (a: number, b: number) => a + Math.random() * (b - a);
+const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]!;
 
 function prefersReducedMotion(): boolean {
   try {
@@ -24,8 +29,14 @@ function prefersReducedMotion(): boolean {
     return false;
   }
 }
-const rand = (a: number, b: number) => a + Math.random() * (b - a);
-const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]!;
+function computeBounds() {
+  return {
+    minX: 66,
+    maxX: Math.max(120, window.innerWidth - 66),
+    minY: 74,
+    maxY: Math.max(150, window.innerHeight - 118),
+  };
+}
 
 export function Buddy() {
   const { user } = useAuth();
@@ -36,8 +47,13 @@ export function Buddy() {
     return src.split(/[\s.@]+/)[0].replace(/^\w/, (c) => c.toUpperCase());
   }, [user]);
 
-  const [pos, setPos] = useState(() => ({ x: Math.max(40, window.innerWidth - 96), y: 86 }));
-  const [walkMs, setWalkMs] = useState(2000);
+  const initial = useMemo(() => {
+    const b = computeBounds();
+    return { x: b.maxX, y: 120 };
+  }, []);
+
+  const [pos, setPos] = useState(initial);
+  const [walkMs, setWalkMs] = useState(1600);
   const [dir, setDir] = useState<1 | -1>(-1);
   const [action, setAction] = useState<Action>('idle');
   const [thought, setThought] = useState<string | null>(null);
@@ -46,13 +62,16 @@ export function Buddy() {
   const [open, setOpen] = useState(false);
   const [line, setLine] = useState(0);
   const [frozen, setFrozen] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const pupilsRef = useRef<SVGGElement>(null);
-  const posRef = useRef(pos);
-  const dirRef = useRef<1 | -1>(dir);
+  const posRef = useRef(initial);
+  const dirRef = useRef<1 | -1>(-1);
+  const laneXRef = useRef(initial.x);
   const pausedRef = useRef(false);
+  const dragRef = useRef<{ ox: number; oy: number; sx: number; sy: number; moved: boolean } | null>(null);
 
   function moveTo(x: number, y: number) {
     posRef.current = { x, y };
@@ -85,7 +104,18 @@ export function Buddy() {
     };
   }, []);
 
-  // Roam engine — a self-scheduling behaviour loop.
+  // Keep him on-screen when the window resizes.
+  useEffect(() => {
+    function onResize() {
+      const b = computeBounds();
+      laneXRef.current = clamp(laneXRef.current, b.minX, b.maxX);
+      moveTo(clamp(posRef.current.x, b.minX, b.maxX), clamp(posRef.current.y, b.minY, b.maxY));
+    }
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Roam engine — vertical-only patrol within his lane, plus idle antics.
   useEffect(() => {
     if (prefersReducedMotion()) return;
     let alive = true;
@@ -93,70 +123,45 @@ export function Buddy() {
     const wait = (ms: number, fn: () => void) => {
       timer = window.setTimeout(() => { if (alive) fn(); }, ms);
     };
-    function bounds() {
-      return {
-        minX: 70,
-        maxX: Math.max(120, window.innerWidth - 88),
-        minY: 74,
-        maxY: Math.max(140, window.innerHeight - 120),
-      };
-    }
     function step() {
       if (!alive) return;
       if (pausedRef.current) { wait(700, step); return; }
       const r = Math.random();
-      if (r < 0.5) {
-        // wander to a new spot
-        const b = bounds();
-        const tx = Math.round(rand(b.minX, b.maxX));
-        const ty = Math.round(rand(b.minY, b.maxY));
-        const dist = Math.hypot(tx - posRef.current.x, ty - posRef.current.y);
-        const ms = Math.min(4200, Math.max(1300, dist * 6));
-        setDir(tx < posRef.current.x ? -1 : 1);
+      if (r < 0.34) {
+        // short vertical shuffle along the lane (never sideways over content)
+        const b = computeBounds();
+        const ty = Math.round(clamp(posRef.current.y + rand(-150, 150), b.minY, b.maxY));
+        setDir(laneXRef.current > window.innerWidth / 2 ? -1 : 1);
+        const dist = Math.abs(ty - posRef.current.y);
+        const ms = clamp(dist * 8, 700, 2600);
         setWalkMs(ms);
         setAction('walk');
-        moveTo(tx, ty);
-        wait(ms + 150, () => { setAction('idle'); wait(rand(500, 1600), step); });
-      } else if (r < 0.64) {
+        moveTo(laneXRef.current, ty);
+        wait(ms + 150, () => { setAction('idle'); wait(rand(1200, 2800), step); });
+      } else if (r < 0.48) {
         setAction('jump');
-        wait(640, () => { setAction('idle'); wait(rand(600, 1200), step); });
-      } else if (r < 0.76) {
+        wait(640, () => { setAction('idle'); wait(rand(1200, 2200), step); });
+      } else if (r < 0.6) {
         setAction('spin');
-        wait(820, () => { setAction('idle'); wait(rand(700, 1300), step); });
-      } else if (r < 0.86) {
+        wait(820, () => { setAction('idle'); wait(rand(1400, 2400), step); });
+      } else if (r < 0.74) {
         setAction('sleep');
         setThought('Zzz');
-        wait(3800, () => { setThought(null); setAction('idle'); wait(600, step); });
-      } else if (r < 0.95) {
+        wait(4200, () => { setThought(null); setAction('idle'); wait(800, step); });
+      } else if (r < 0.88) {
         setSparkle(true);
         setThought(pick(QUIPS));
-        wait(1400, () => { setSparkle(false); setThought(null); wait(rand(700, 1400), step); });
+        wait(1400, () => { setSparkle(false); setThought(null); wait(rand(1400, 2400), step); });
       } else {
         setThought(pick(QUIPS));
-        wait(1700, () => { setThought(null); wait(rand(600, 1200), step); });
+        wait(1700, () => { setThought(null); wait(rand(1200, 2200), step); });
       }
     }
-    timer = window.setTimeout(step, 1600);
+    timer = window.setTimeout(step, 1800);
     return () => { alive = false; window.clearTimeout(timer); };
   }, []);
 
-  function onEnter() {
-    pausedRef.current = true;
-    // Freeze where he currently is so he's grabbable.
-    const el = rootRef.current;
-    if (el) {
-      const rect = el.getBoundingClientRect();
-      setFrozen(true);
-      moveTo(rect.left, rect.top);
-    }
-    setAction('idle');
-  }
-  function onLeave() {
-    setFrozen(false);
-    pausedRef.current = open;
-  }
-
-  function onClick() {
+  function handleClick() {
     setPop(true);
     window.setTimeout(() => setPop(false), 400);
     setAction('idle');
@@ -173,6 +178,47 @@ export function Buddy() {
     });
   }
 
+  // ── drag to reposition ────────────────────────────────────────────────
+  function onPointerDown(e: React.PointerEvent<HTMLButtonElement>) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    pausedRef.current = true;
+    setFrozen(true);
+    setAction('idle');
+    const rect = rootRef.current?.getBoundingClientRect();
+    const left = rect?.left ?? posRef.current.x;
+    const top = rect?.top ?? posRef.current.y;
+    moveTo(left, top);
+    dragRef.current = { ox: e.clientX - left, oy: e.clientY - top, sx: e.clientX, sy: e.clientY, moved: false };
+  }
+  function onPointerMove(e: React.PointerEvent<HTMLButtonElement>) {
+    const d = dragRef.current;
+    if (!d) return;
+    if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) > 4) {
+      d.moved = true;
+      setDragging(true);
+    }
+    if (d.moved) {
+      const b = computeBounds();
+      moveTo(clamp(e.clientX - d.ox, b.minX, b.maxX), clamp(e.clientY - d.oy, b.minY, b.maxY));
+    }
+  }
+  function onPointerUp(e: React.PointerEvent<HTMLButtonElement>) {
+    const d = dragRef.current;
+    dragRef.current = null;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    setFrozen(false);
+    if (d && d.moved) {
+      setDragging(false);
+      laneXRef.current = posRef.current.x; // new home column
+      setDir(posRef.current.x > window.innerWidth / 2 ? -1 : 1);
+      pausedRef.current = open;
+    } else {
+      handleClick();
+    }
+  }
+
   return (
     <div
       className="buddy-root"
@@ -181,18 +227,20 @@ export function Buddy() {
         transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
         transitionDuration: frozen ? '0ms' : walkMs + 'ms',
       }}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
     >
       {thought && <div className="buddy-thought">{thought}</div>}
 
       <button
         type="button"
-        className={'buddy is-' + action + (pop ? ' is-pop' : '') + (open ? ' is-active' : '')}
+        className={
+          'buddy is-' + action + (pop ? ' is-pop' : '') + (open ? ' is-active' : '') + (dragging ? ' is-drag' : '')
+        }
         style={{ transform: `scaleX(${dir})` }}
-        onClick={onClick}
-        aria-label="Lith — your coding buddy"
-        title="Lith"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        aria-label="Lith — your coding buddy (drag to move)"
+        title="Lith — drag me!"
       >
         <span className="buddy-shadow" aria-hidden="true" />
         <svg ref={svgRef} className="buddy-svg" width="58" height="58" viewBox="0 0 64 64" fill="none" aria-hidden="true">
