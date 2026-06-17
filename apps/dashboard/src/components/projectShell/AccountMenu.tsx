@@ -83,11 +83,11 @@ export function AccountMenu({ onClose }: Props) {
     navigate('/settings');
   }
 
-  // API keys are per-project. Inside a project, jump to that project's keys
-  // section; otherwise send to the projects list to pick one.
+  // API keys are per-project. Inside a project, open that project's keys page;
+  // otherwise send to the projects list to pick one.
   function goApiKeys() {
     onClose();
-    if (slug) navigate(`/projects/${slug}#api-keys`);
+    if (slug) navigate(`/projects/${slug}/api-keys`);
     else navigate('/projects');
   }
 

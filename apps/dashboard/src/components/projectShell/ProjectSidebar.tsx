@@ -5,14 +5,11 @@ import { useSidebarMode, type SidebarMode } from '../../lib/sidebarMode';
 export type SidebarNavId =
   | 'overview'
   | 'traces'
-  | 'live'
+  | 'apiKeys'
   | 'analytics'
   | 'heals'
   | 'cells'
   | 'calibration'
-  | 'judges'
-  | 'chunks'
-  | 'queue'
   // workspace-level (top of the app, no project selected)
   | 'projects'
   | 'billing'
@@ -45,7 +42,7 @@ function projectGroups(slug: string): Group[] {
       items: [
         { id: 'overview', label: 'Project overview', kbd: 'g o', icon: 'overview', route: `/projects/${slug}` },
         { id: 'traces', label: 'Trace explorer', kbd: 'g t', icon: 'traces', route: `/projects/${slug}/traces` },
-        { id: 'live', label: 'Live stream', kbd: 'g l', icon: 'live' },
+        { id: 'apiKeys', label: 'API keys', kbd: 'g k', icon: 'key', route: `/projects/${slug}/api-keys` },
       ],
     },
     {
@@ -54,15 +51,7 @@ function projectGroups(slug: string): Group[] {
         { id: 'analytics', label: 'Analytics', kbd: 'g a', icon: 'chart', route: `/projects/${slug}/analytics` },
         { id: 'heals', label: 'Heals', kbd: 'g h', icon: 'heal', route: `/projects/${slug}/heals` },
         { id: 'cells', label: 'Failure cells', kbd: 'g f', icon: 'cells', route: `/projects/${slug}/analytics/cells` },
-        { id: 'calibration', label: 'Calibration', kbd: 'g c', icon: 'calib' },
-      ],
-    },
-    {
-      label: 'pipeline',
-      items: [
-        { id: 'judges', label: 'Judges', icon: 'judges' },
-        { id: 'chunks', label: 'Retrieval chunks', icon: 'chunks' },
-        { id: 'queue', label: 'Worker queue', icon: 'queue' },
+        { id: 'calibration', label: 'Calibration', kbd: 'g c', icon: 'calib', route: `/projects/${slug}/calibration` },
       ],
     },
   ];
@@ -90,6 +79,12 @@ const ICONS = {
     </>
   ),
   traces: <path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />,
+  key: (
+    <>
+      <circle cx="5.5" cy="8" r="2.8" stroke="currentColor" strokeWidth="1.3" fill="none" />
+      <path d="M8.3 8H14M11.5 8v2.4M13.2 8v1.8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </>
+  ),
   live: (
     <>
       <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.3" fill="none" />
