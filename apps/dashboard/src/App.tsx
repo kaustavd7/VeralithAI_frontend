@@ -3,6 +3,7 @@ import { RequireAuth } from './components/RequireAuth';
 import { WorkbenchDrawer } from './components/workbench/WorkbenchDrawer';
 import { useAuth } from './hooks/useAuth';
 import Login from './routes/Login';
+import AuthCallback from './routes/AuthCallback';
 import Onboarding from './routes/Onboarding';
 import Placeholder from './routes/Placeholder';
 import ProjectsHome from './routes/ProjectsHome';
@@ -40,6 +41,10 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Navigate to="/projects" replace />} />
       <Route path="/login" element={<Login />} />
+
+      {/* OAuth PKCE / magic-link callback — PUBLIC (not behind RequireAuth, which
+          would bounce to /login mid-exchange). Finishes the URL code exchange. */}
+      <Route path="/auth/callback" element={<AuthCallback />} />
 
       {/* Projects Home — post-login landing. Lists the user's projects;
           empty-state CTA links to /onboarding for the first project. */}

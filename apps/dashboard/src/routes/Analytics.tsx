@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
+import { ErrorState } from '../components/StateViews';
 import { tracesPath } from '../lib/nav';
 import { useProjects } from '../hooks/useProjects';
 import { useStats, useTraces } from '../hooks/useOverviewData';
@@ -1301,6 +1302,28 @@ export default function Analytics() {
   const [pageWindow, setPageWindow] = useState<TimeWindow>('24h');
   const projectName = project?.name ?? slug;
 
+  // Page-level primary data probes. These share react-query keys with the
+  // panels' page-window fetches (same slug + params), so they dedupe to the
+  // same request and add no network cost. We only read their error flags here
+  // to gate the whole grid on a hard failure of the primary data — each panel
+  // keeps its own loading/empty handling intact.
+  const since = sinceForWindow(pageWindow);
+  const statsQuery = useStats(
+    slug,
+    useMemo(
+      () => ({ since, bucket: bucketForWindow(pageWindow) }),
+      [since, pageWindow],
+    ),
+  );
+  const tracesQuery = useTraces(
+    slug,
+    useMemo(
+      () => ({ limit: 200, sort: 'newest' as const, since }),
+      [since],
+    ),
+  );
+  const primaryError = statsQuery.isError || tracesQuery.isError;
+
   return (
     <ProjectShell slug={slug} active="analytics" project={projectName}>
       <div className="an-page">
@@ -1331,12 +1354,26 @@ export default function Analytics() {
           </div>
         </header>
 
-        <div className="an-grid">
-          <TraceVolumePanel slug={slug} pageWindow={pageWindow} />
-          <CellBubblePanel slug={slug} pageWindow={pageWindow} />
-          <HallucinationTrendPanel slug={slug} pageWindow={pageWindow} />
-          <TopFailingPanel slug={slug} pageWindow={pageWindow} />
-        </div>
+        {primaryError ? (
+          <ErrorState
+            message={
+              (statsQuery.error instanceof Error ? statsQuery.error.message : null) ??
+              (tracesQuery.error instanceof Error ? tracesQuery.error.message : null) ??
+              'Could not load analytics. Please try again.'
+            }
+            onRetry={() => {
+              if (statsQuery.isError) statsQuery.refetch();
+              if (tracesQuery.isError) tracesQuery.refetch();
+            }}
+          />
+        ) : (
+          <div className="an-grid">
+            <TraceVolumePanel slug={slug} pageWindow={pageWindow} />
+            <CellBubblePanel slug={slug} pageWindow={pageWindow} />
+            <HallucinationTrendPanel slug={slug} pageWindow={pageWindow} />
+            <TopFailingPanel slug={slug} pageWindow={pageWindow} />
+          </div>
+        )}
 
         <div className="an-status">
           <span className="an-s-dot" />

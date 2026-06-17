@@ -74,7 +74,7 @@ export default function Login() {
     try {
       const { error: err } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}/projects` },
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
       if (err) throw err;
       // Browser is about to be redirected to the provider's consent screen.

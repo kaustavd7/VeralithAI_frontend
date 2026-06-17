@@ -4,6 +4,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
+import { LoadingState, ErrorState } from '../components/StateViews';
 import { traceDetailPath, healsPath } from '../lib/nav';
 import '../styles/project-shell.css';
 import '../styles/project-page.css';
@@ -293,17 +294,33 @@ type ActionKind = 'heal' | 'accept' | 'decline' | 'retry' | 'dismiss-fixed' | 'd
 function ActionBar({
   card,
   onAction,
+  pendingAction,
+  errorMessage,
 }: {
   card: HealCardDetail;
   onAction: (a: ActionKind) => void;
+  pendingAction: ActionKind | null;
+  errorMessage: string | null;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const st = card.status;
+  const busy = pendingAction !== null;
+
+  // Label for an action button: a pending affordance (spinner + "…") while that
+  // action is in flight, otherwise its normal label.
+  const actionLabel = (a: ActionKind, label: string): React.ReactNode =>
+    pendingAction === a ? <><span className="he-spinner" />…</> : label;
 
   const IgnoreSplit = (
     <div className="he-split">
-      <button className="he-btn he-btn-ghost" onClick={() => setMenuOpen((o) => !o)}>
-        Ignore
+      <button
+        className="he-btn he-btn-ghost"
+        disabled={busy}
+        onClick={() => setMenuOpen((o) => !o)}
+      >
+        {pendingAction === 'dismiss-fixed' || pendingAction === 'dismiss-ignore'
+          ? <><span className="he-spinner" />…</>
+          : 'Ignore'}
         <svg width="9" height="9" viewBox="0 0 10 10" fill="none" style={{ marginLeft: 5 }}>
           <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -320,12 +337,16 @@ function ActionBar({
   let buttons: React.ReactNode = null;
   if (st === 'open') {
     buttons = <>
-      <button className="he-btn he-btn-primary" onClick={() => onAction('heal')}>Heal with Claude Code</button>
+      <button className="he-btn he-btn-primary" disabled={busy} onClick={() => onAction('heal')}>
+        {actionLabel('heal', 'Heal with Claude Code')}
+      </button>
       {IgnoreSplit}
     </>;
   } else if (st === 'failed') {
     buttons = <>
-      <button className="he-btn he-btn-primary" onClick={() => onAction('retry')}>Retry</button>
+      <button className="he-btn he-btn-primary" disabled={busy} onClick={() => onAction('retry')}>
+        {actionLabel('retry', 'Retry')}
+      </button>
       {IgnoreSplit}
     </>;
   } else if (st === 'in_progress') {
@@ -336,8 +357,12 @@ function ActionBar({
     );
   } else if (st === 'pr_raised') {
     buttons = <>
-      <button className="he-btn he-btn-good" onClick={() => onAction('accept')}>Accept PR</button>
-      <button className="he-btn he-btn-ghost" onClick={() => onAction('decline')}>Decline</button>
+      <button className="he-btn he-btn-good" disabled={busy} onClick={() => onAction('accept')}>
+        {actionLabel('accept', 'Accept PR')}
+      </button>
+      <button className="he-btn he-btn-ghost" disabled={busy} onClick={() => onAction('decline')}>
+        {actionLabel('decline', 'Decline')}
+      </button>
       {card.pr_url && (
         <a className="he-pr-badge" href={card.pr_url} target="_blank" rel="noreferrer">
           View PR<ExtLink />
@@ -362,6 +387,31 @@ function ActionBar({
   return (
     <div className="he-action-wrap">
       <div className="he-action-bar">{buttons}</div>
+      {errorMessage && (
+        <div
+          className="he-action-error"
+          role="alert"
+          style={{
+            marginTop: 10,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8,
+            padding: '8px 12px',
+            borderRadius: 'var(--po-radius-sm)',
+            border: '1px solid color-mix(in oklab, var(--po-bad) 40%, transparent)',
+            background: 'color-mix(in oklab, var(--po-bad) 10%, transparent)',
+            color: 'var(--po-bad)',
+            fontSize: 13,
+            lineHeight: 1.45,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flex: '0 0 auto', marginTop: 1 }} aria-hidden="true">
+            <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
+            <path d="M8 4.5v4M8 11h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+          <span>Action failed: {errorMessage}</span>
+        </div>
+      )}
       {!terminal && (
         <div className="he-mcp-hint">
           <span className="he-mcp-ic">🤝</span>
@@ -382,16 +432,33 @@ function ActionBar({
 function DetailPane({
   card,
   isLoading,
+  isError,
+  loadError,
+  onRetry,
   onAction,
   onCollapse,
+  pendingAction,
+  actionError,
 }: {
   card: HealCardDetail | undefined;
   isLoading: boolean;
+  isError: boolean;
+  loadError: string | undefined;
+  onRetry: () => void;
   onAction: (a: ActionKind) => void;
   onCollapse: () => void;
+  pendingAction: ActionKind | null;
+  actionError: string | null;
 }) {
   const { slug = '' } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  if (isError && !card) {
+    return (
+      <div className="he-detail he-detail-empty">
+        <ErrorState message={loadError} onRetry={onRetry} />
+      </div>
+    );
+  }
   if (isLoading || !card) {
     return (
       <div className="he-detail he-detail-empty">
@@ -443,7 +510,12 @@ function DetailPane({
         )}
       </div>
 
-      <ActionBar card={card} onAction={onAction} />
+      <ActionBar
+        card={card}
+        onAction={onAction}
+        pendingAction={pendingAction}
+        errorMessage={actionError}
+      />
 
       <div className="he-section">
         <div className="he-section-h">Suggestion</div>
@@ -594,8 +666,17 @@ export default function Heals() {
     },
   });
 
+  // Clear any stale action error/pending affordance when switching cards so an
+  // error from one card never bleeds onto another.
+  const mutationReset = actionMutation.reset;
+  useEffect(() => {
+    mutationReset();
+  }, [cardId, mutationReset]);
+
   function doAction(action: ActionKind) {
-    if (!cardId) return;
+    if (!cardId || actionMutation.isPending) return;
+    // Clear any prior action error when starting a new action.
+    actionMutation.reset();
     if (action === 'decline' || action === 'dismiss-fixed' || action === 'dismiss-ignore') {
       setConfirm(action);
       return;
@@ -608,6 +689,17 @@ export default function Heals() {
     actionMutation.mutate({ id: cardId, action: confirm });
     setConfirm(null);
   }
+
+  // Which action (if any) is currently in flight, and any error from the last
+  // action — surfaced inline near the action bar.
+  const pendingAction: ActionKind | null = actionMutation.isPending
+    ? actionMutation.variables?.action ?? null
+    : null;
+  const actionError: string | null = actionMutation.isError
+    ? actionMutation.error instanceof Error
+      ? actionMutation.error.message
+      : 'Something went wrong.'
+    : null;
 
   function selectCard(id: string) {
     if (!detailOpen) setDetailOpen(true);
@@ -681,7 +773,14 @@ export default function Heals() {
           </div>
 
           <div className="he-queue-list">
-            {isEmpty ? (
+            {listQuery.isLoading ? (
+              <LoadingState label="Loading heals…" />
+            ) : listQuery.isError ? (
+              <ErrorState
+                message={listQuery.error instanceof Error ? listQuery.error.message : undefined}
+                onRetry={() => listQuery.refetch()}
+              />
+            ) : isEmpty ? (
               <div className="he-queue-empty">
                 <svg width="30" height="30" viewBox="0 0 34 34" fill="none">
                   <g transform="rotate(45 17 17)">
@@ -732,8 +831,13 @@ export default function Heals() {
           <DetailPane
             card={selectedCard}
             isLoading={!!cardId && detailQuery.isLoading}
+            isError={!!cardId && detailQuery.isError}
+            loadError={detailQuery.error instanceof Error ? detailQuery.error.message : undefined}
+            onRetry={() => detailQuery.refetch()}
             onAction={doAction}
             onCollapse={() => setDetailOpen(false)}
+            pendingAction={pendingAction}
+            actionError={actionError}
           />
         ) : (!isEmpty && (
           <button type="button" className="he-reopen" onClick={() => setDetailOpen(true)} title="Show detail panel">

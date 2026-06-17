@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProjects } from '../hooks/useProjects';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
+import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import { api } from '../api/client';
 import type { Project } from '../api/types';
 
@@ -145,6 +146,12 @@ export default function ProjectsHome() {
     setDragId(null);
   }
 
+  const isLoading = projectsQuery.isLoading;
+  const isError = projectsQuery.isError;
+  // True-empty: a successful fetch with no projects at all (distinct from a
+  // search that filtered everything out — that keeps the normal grid).
+  const isEmpty = !isLoading && !isError && projects.length === 0;
+
   return (
     <ProjectShell variant="workspace" active="projects">
       <div className="ph-main">
@@ -152,42 +159,64 @@ export default function ProjectsHome() {
           <h1 className="ph-title">Projects</h1>
         </div>
 
-        <div className="ph-toolbar">
-          <div className="ph-field">
-            <SearchIcon size={14} />
-            <input
-              className="ph-input"
-              placeholder="Search projects…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
+        {isLoading ? (
+          <LoadingState label="Loading projects…" />
+        ) : isError ? (
+          <ErrorState
+            message={(projectsQuery.error as Error)?.message}
+            onRetry={() => projectsQuery.refetch()}
+          />
+        ) : isEmpty ? (
+          <EmptyState
+            title="No projects yet"
+            sub="Create your first project to start sending traces and running judges behind one API key."
+            action={
+              <button type="button" className="ph-btn-primary" onClick={() => setCreating(true)}>
+                <PlusIcon size={15} />
+                New project
+              </button>
+            }
+          />
+        ) : (
+          <>
+            <div className="ph-toolbar">
+              <div className="ph-field">
+                <SearchIcon size={14} />
+                <input
+                  className="ph-input"
+                  placeholder="Search projects…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
 
-        <div className="ph-grid">
-          {visibleProjects.map((p) => (
-            <ProjectCard
-              key={p.id}
-              project={p}
-              onOpen={() => navigate(`/projects/${p.slug ?? p.id}`)}
-              pinned={pinnedSet.has(p.id)}
-              onTogglePin={() => togglePin(p.id)}
-              draggable={!search.trim()}
-              dragging={dragId === p.id}
-              onDragStart={() => setDragId(p.id)}
-              onDragEnd={() => setDragId(null)}
-              onDropCard={() => reorder(p.id)}
-            />
-          ))}
-          <button
-            type="button"
-            className="ph-card ph-card-ghost"
-            onClick={() => setCreating(true)}
-          >
-            <PlusIcon size={16} />
-            New project
-          </button>
-        </div>
+            <div className="ph-grid">
+              {visibleProjects.map((p) => (
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  onOpen={() => navigate(`/projects/${p.slug ?? p.id}`)}
+                  pinned={pinnedSet.has(p.id)}
+                  onTogglePin={() => togglePin(p.id)}
+                  draggable={!search.trim()}
+                  dragging={dragId === p.id}
+                  onDragStart={() => setDragId(p.id)}
+                  onDragEnd={() => setDragId(null)}
+                  onDropCard={() => reorder(p.id)}
+                />
+              ))}
+              <button
+                type="button"
+                className="ph-card ph-card-ghost"
+                onClick={() => setCreating(true)}
+              >
+                <PlusIcon size={16} />
+                New project
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {creating && <CreateProjectModal onClose={() => setCreating(false)} />}

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
+import { ErrorState } from '../components/StateViews';
 import { useProjects } from '../hooks/useProjects';
 import { useStats, useTraces } from '../hooks/useOverviewData';
 import type { FailureCell, TraceListItem } from '../api/types';
@@ -454,7 +455,19 @@ export default function TraceExplorer() {
           </div>
         </div>
 
-        {traces.isLoading ? (
+        {traces.isError || stats.isError ? (
+          <ErrorState
+            message={
+              (traces.error instanceof Error ? traces.error.message : null) ??
+              (stats.error instanceof Error ? stats.error.message : null) ??
+              'Could not load traces. Please try again.'
+            }
+            onRetry={() => {
+              if (traces.isError) traces.refetch();
+              if (stats.isError) stats.refetch();
+            }}
+          />
+        ) : traces.isLoading ? (
           <div style={{ padding: '40px 0', color: 'var(--po-fg-3)' }}>Loading traces…</div>
         ) : isEmptyAfterFilters ? (
           <div className="te-empty">

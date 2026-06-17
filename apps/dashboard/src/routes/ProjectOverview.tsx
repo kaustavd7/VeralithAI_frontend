@@ -11,6 +11,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
+import { LoadingState, ErrorState } from '../components/StateViews';
 import {
   useApiKeys,
   useStats,
@@ -583,20 +584,30 @@ export default function ProjectOverview() {
   const state = deriveConnState(stats.data, last);
   const keyPrefix = apiKeys.data?.api_keys[0]?.prefix ?? null;
 
-  const isLoading = stats.isLoading || lastTrace.isLoading || apiKeys.isLoading;
-  const isError = stats.isError;
+  // Primary queries gate the page: stats + traces (last-trace). apiKeys is
+  // secondary (its section self-hides when empty), so it doesn't block render.
+  const isPending = stats.isPending || lastTrace.isPending;
+  const isError = stats.isError || lastTrace.isError;
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <ProjectShell slug={slug} active="overview" project={project.name}>
-        <div className="po-page-loading">Loading project overview…</div>
+        <LoadingState label="Loading project overview…" />
       </ProjectShell>
     );
   }
   if (isError || !stats.data) {
+    const message =
+      (stats.error ?? lastTrace.error)?.message ?? 'Failed to load project overview.';
     return (
       <ProjectShell slug={slug} active="overview" project={project.name}>
-        <div className="po-page-error">Failed to load project overview.</div>
+        <ErrorState
+          message={message}
+          onRetry={() => {
+            stats.refetch();
+            lastTrace.refetch();
+          }}
+        />
       </ProjectShell>
     );
   }

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../api/client';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
+import { LoadingState, ErrorState } from '../components/StateViews';
 import type { Me } from '../api/types';
 
 /* ─────────────────────────────────────────────────────────────
@@ -260,10 +261,13 @@ export default function Settings() {
         <div className="se-main">
           <div className="se-content">
             <h1 className="se-title">Profile</h1>
-            {meQuery.isLoading || !me ? (
-              <p className="se-empty-line">Loading profile…</p>
-            ) : meQuery.isError ? (
-              <p className="se-empty-line">Failed to load profile.</p>
+            {meQuery.isError ? (
+              <ErrorState
+                message={meQuery.error instanceof Error ? meQuery.error.message : 'Failed to load your profile.'}
+                onRetry={() => meQuery.refetch()}
+              />
+            ) : meQuery.isLoading || !me ? (
+              <LoadingState label="Loading profile…" />
             ) : (
               <>
                 <IdentityPanel me={me} />

@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { SHELL_CATALOG, methodById, type ShellMethod } from './shellCatalog';
+// The Workbench's `.wb-*` styles live in today-workbench.css. Import them here so
+// they're always bundled — TodayOverview (the former importer) is now unrouted.
+import '../../styles/today-workbench.css';
 
 /* Workbench — Stripe-Workbench-style bottom drawer, re-pointed at traces /
    judges / scores. Persistent, pinned to the bottom of the content frame;
@@ -96,22 +99,8 @@ const RESOURCES: [string, string][] = [
   ['Code samples', 'RAG, agents, batch eval'],
 ];
 
-const PUB_KEY = 'vk_live_a39f8c2b1d4e2f';
-const SECRET_KEY = 'sk_live_8x2b3d9c4f1a7e';
-
 function WbIntegration() {
   const [lang, setLang] = useState<'python' | 'node' | 'curl'>('python');
-  const [copied, setCopied] = useState<string | null>(null);
-  const [reveal, setReveal] = useState(false);
-  const copy = async (id: string, val: string) => {
-    try {
-      await navigator.clipboard.writeText(val);
-      setCopied(id);
-      setTimeout(() => setCopied(null), 1200);
-    } catch {
-      /* clipboard blocked */
-    }
-  };
   return (
     <div className="wb-body wb-overview">
       <div className="wb-ov-main">
@@ -125,28 +114,9 @@ function WbIntegration() {
             <span className="wb-int-block-t">API keys</span>
             <a className="wf-rec-link">Manage API keys →</a>
           </div>
-          <div className="wb-int-keys">
-            <div className="wb-key">
-              <div className="wb-key-l">Publishable key</div>
-              <div className="wb-key-sub">Use in your client / SDK init.</div>
-              <div className="wb-key-row"><span className="po-mono">{PUB_KEY.slice(0, 18)}…</span><button type="button" className="wb-copy" aria-label="Copy publishable key" title="Copy" onClick={() => copy('pub', PUB_KEY)}>{copied === 'pub' ? '✓' : '⧉'}</button></div>
-            </div>
-            <div className="wb-key">
-              <div className="wb-key-l">Secret key</div>
-              <div className="wb-key-sub">Authenticate ingest from your server.</div>
-              <div className="wb-key-row"><span className="po-mono">{reveal ? SECRET_KEY : 'sk_live_••••••••••••'}</span><span className="wb-key-acts"><button type="button" className="wb-copy" aria-label={reveal ? 'Hide secret key' : 'Reveal secret key'} title={reveal ? 'Hide' : 'Reveal'} onClick={() => setReveal((v) => !v)}>{reveal ? (
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path d="M6.3 3.5A6.6 6.6 0 0 1 8 3.3c4.3 0 6.7 4.7 6.7 4.7a12.7 12.7 0 0 1-1.8 2.4 M3.1 4.8A11.5 11.5 0 0 0 1.3 8S3.7 12.7 8 12.7a6.5 6.5 0 0 0 2.6-.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                  <path d="M6.6 6.7a2 2 0 0 0 2.7 2.7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                  <path d="M2 2 L14 14" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                </svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path d="M1.3 8S3.7 3.5 8 3.5 14.7 8 14.7 8 12.3 12.5 8 12.5 1.3 8 1.3 8Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-                  <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3" />
-                </svg>
-              )}</button><button type="button" className="wb-copy" aria-label="Copy secret key" title="Copy" onClick={() => copy('sec', SECRET_KEY)}>{copied === 'sec' ? '✓' : '⧉'}</button></span></div>
-            </div>
+          <div className="wb-int-keynote">
+            Your API key is shown <b>once</b>, when you create it (Onboarding).
+            For your security it can never be displayed again — manage and rotate keys in Settings.
           </div>
         </div>
 
