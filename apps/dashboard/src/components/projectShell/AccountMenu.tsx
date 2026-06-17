@@ -152,19 +152,6 @@ export function AccountMenu({ onClose }: Props) {
               stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </a>
-        <button className="am-item" role="menuitem" type="button" disabled>
-          <svg className="am-ic" width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <rect x="1.5" y="3.5" width="13" height="9" rx="1" stroke="currentColor" strokeWidth="1.3" />
-            <path
-              d="M4 7h.5 M6.5 7h.5 M9 7h.5 M11.5 7h.5 M4.5 10h7"
-              stroke="currentColor"
-              strokeWidth="1.2"
-              strokeLinecap="round"
-            />
-          </svg>
-          <span className="am-item-label">Keyboard shortcuts</span>
-          <span className="am-kbd po-mono">⌘?</span>
-        </button>
       </div>
 
       <div className="am-sep" />
