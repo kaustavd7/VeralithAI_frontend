@@ -80,6 +80,23 @@ export function Buddy() {
   useEffect(() => { dirRef.current = dir; }, [dir]);
   useEffect(() => { pausedRef.current = open; }, [open]);
 
+  // Click-outside / Esc closes the bubble.
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
   // Pupils drift toward the cursor (countering the facing flip).
   useEffect(() => {
     let raf = 0;
