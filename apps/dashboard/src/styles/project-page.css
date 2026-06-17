@@ -877,13 +877,18 @@
 .an-sk-chart {
   display: block;
   border-radius: 6px;
-  background: var(--po-panel-2);
+  /* Mix into the panel surface so the block stays visible in BOTH themes
+     (--po-panel-2 is nearly the panel colour in light mode). */
+  background: color-mix(in oklab, var(--po-fg) 8%, var(--po-panel));
 }
 .an-sk-line {
   height: 11px;
 }
 .an-sk-chart {
-  height: 138px;
+  /* Fill the panel body exactly like a real chart: full width, and grow to
+     occupy the remaining height instead of a fixed-size inset block. */
+  flex: 1;
+  min-height: 150px;
   width: 100%;
   margin-top: 4px;
 }
@@ -891,9 +896,9 @@
 .an-sk-chart.is-live {
   background: linear-gradient(
     90deg,
-    var(--po-panel-2) 0%,
-    color-mix(in oklab, var(--po-fg-4) 16%, var(--po-panel-2)) 50%,
-    var(--po-panel-2) 100%
+    color-mix(in oklab, var(--po-fg) 6%, var(--po-panel)) 0%,
+    color-mix(in oklab, var(--po-fg) 15%, var(--po-panel)) 50%,
+    color-mix(in oklab, var(--po-fg) 6%, var(--po-panel)) 100%
   );
   background-size: 200% 100%;
   animation: te-shimmer 1.4s ease-in-out infinite;
