@@ -1,0 +1,148 @@
+/* ════════════════════════════════════════════════════════════════
+   Lith — the persistent stone "coding buddy". Floats top-right on every
+   signed-in page (mounted once, survives navigation). Idles: bob + blink +
+   cursor-tracking pupils + the odd healing sparkle. Click → speech bubble.
+   ════════════════════════════════════════════════════════════════ */
+
+.buddy-root {
+  position: fixed;
+  top: 70px;
+  right: 22px;
+  z-index: 95; /* above page content, below slide-overs (200) + modals (300) */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 9px;
+  pointer-events: none; /* only the buddy + bubble are interactive */
+}
+
+.buddy {
+  pointer-events: auto;
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.buddy-svg {
+  display: block;
+  filter: drop-shadow(0 7px 12px rgba(0, 0, 0, 0.45));
+  animation: buddy-bob 3.4s ease-in-out infinite;
+}
+.buddy:hover .buddy-svg {
+  animation-duration: 1.9s; /* perks up when you hover */
+}
+.buddy.is-pop .buddy-svg {
+  animation: buddy-pop 0.4s ease;
+}
+.buddy-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 34px;
+  height: 7px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.5), transparent 70%);
+  border-radius: 50%;
+  animation: buddy-shadow 3.4s ease-in-out infinite;
+}
+.buddy-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: buddy-blink 4.8s ease-in-out infinite;
+}
+.buddy-pupils {
+  transition: transform 0.1s ease-out;
+}
+.buddy-sparkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: buddy-sparkle 1.05s ease;
+}
+
+@keyframes buddy-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@keyframes buddy-shadow {
+  0%, 100% { opacity: 0.5; width: 34px; }
+  50% { opacity: 0.3; width: 27px; }
+}
+@keyframes buddy-blink {
+  0%, 93%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.1); }
+}
+@keyframes buddy-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.16) rotate(-5deg); }
+  70% { transform: scale(0.95) rotate(2deg); }
+  100% { transform: scale(1); }
+}
+@keyframes buddy-sparkle {
+  0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+  40% { transform: scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: scale(0.6) rotate(20deg); opacity: 0; }
+}
+
+/* speech bubble (below the buddy, tail pointing up) */
+.buddy-bubble {
+  pointer-events: auto;
+  position: relative;
+  max-width: 250px;
+  background: var(--po-panel);
+  border: 1px solid var(--po-line-strong);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.42);
+  animation: buddy-bubble-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.buddy-bubble-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--po-fg);
+}
+.buddy-bubble-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 9px;
+}
+.buddy-bubble-hint {
+  font-size: 10.5px;
+  color: var(--po-fg-4);
+}
+.buddy-bubble-next {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.buddy-bubble-tail {
+  position: absolute;
+  right: 18px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  background: var(--po-panel);
+  border-left: 1px solid var(--po-line-strong);
+  border-top: 1px solid var(--po-line-strong);
+  transform: rotate(45deg);
+}
+@keyframes buddy-bubble-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buddy-svg,
+  .buddy-shadow,
+  .buddy-eyes,
+  .buddy-sparkle,
+  .buddy.is-pop .buddy-svg {
+    animation: none;
+  }
+}

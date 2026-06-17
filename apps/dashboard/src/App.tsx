@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { RequireAuth } from './components/RequireAuth';
 import { WorkbenchDrawer } from './components/workbench/WorkbenchDrawer';
+import { Buddy } from './components/buddy/Buddy';
 import { useAuth } from './hooks/useAuth';
 import Login from './routes/Login';
 import AuthCallback from './routes/AuthCallback';
@@ -22,6 +23,8 @@ export default function App() {
       {/* Persistent Workbench — fixed to the bottom of every authenticated page,
           mounted once here so its open/tab state survives navigation. */}
       <GlobalWorkbench />
+      {/* Lith — the persistent stone buddy, mounted once so it survives navigation. */}
+      <GlobalBuddy />
     </>
   );
 }
@@ -34,6 +37,13 @@ function GlobalWorkbench() {
   const { pathname } = useLocation();
   if (!user || pathname === '/login') return null;
   return <WorkbenchDrawer />;
+}
+
+function GlobalBuddy() {
+  const { user } = useAuth();
+  const { pathname } = useLocation();
+  if (!user || pathname === '/login') return null;
+  return <Buddy />;
 }
 
 function AppRoutes() {
