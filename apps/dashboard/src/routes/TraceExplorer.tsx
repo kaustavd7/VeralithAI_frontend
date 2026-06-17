@@ -37,9 +37,15 @@ type SortKey =
   | 'faithfulness_asc'
   | 'faithfulness_desc';
 
+// Quantize the window start to a 5-minute bucket so the react-query key stays
+// STABLE across re-mounts (navigating away and back). With raw Date.now() the
+// key gets fresh millisecond precision every visit → cache miss → a "Loading…"
+// flash even though react-query already has the data cached.
+const SINCE_QUANTUM = 5 * 60_000;
 function sinceFor(win: TimeWindow): string {
   const ms = win === '1h' ? 3_600_000 : win === '24h' ? 86_400_000 : win === '7d' ? 7 * 86_400_000 : 30 * 86_400_000;
-  return new Date(Date.now() - ms).toISOString();
+  const now = Math.floor(Date.now() / SINCE_QUANTUM) * SINCE_QUANTUM;
+  return new Date(now - ms).toISOString();
 }
 
 function relativeTime(iso: string): string {

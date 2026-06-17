@@ -11,6 +11,10 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false,
       staleTime: 30_000,
+      // Keep inactive query data cached for 10 min so navigating between pages
+      // (Traces ↔ Heals ↔ Overview) serves cached data instantly instead of a
+      // fresh "Loading…" on every visit.
+      gcTime: 10 * 60_000,
       // In dev, fail fast so "stuck loading" surfaces as a visible error
       // (3-retry default makes 404s look like infinite spinners).
       retry: import.meta.env.DEV ? 0 : 2,
