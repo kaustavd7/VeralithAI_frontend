@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
-import { EmptyState, ErrorState } from '../components/StateViews';
+import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
 import { tracesPath } from '../lib/nav';
 import { useProjects } from '../hooks/useProjects';
 import { useStats, useTraces } from '../hooks/useOverviewData';
@@ -280,16 +280,6 @@ function AnSkeletonPanel({ span, shimmer }: { span: number; shimmer: boolean }) 
   );
 }
 
-function AnalyticsSkeleton() {
-  return (
-    <div className="an-grid" aria-hidden="true">
-      {AN_SK_SPANS.map((s, i) => (
-        <AnSkeletonPanel key={i} span={s} shimmer />
-      ))}
-    </div>
-  );
-}
-
 function AnalyticsEmpty({ slug }: { slug: string }) {
   return (
     <div className="an-empty-wrap">
@@ -333,7 +323,7 @@ function TraceVolumePanel({ slug, pageWindow }: { slug: string; pageWindow: Time
     return (
       <AnPanel title="Trace volume" subtitle={subtitleForWindow(win)} span={12}
         windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
-        <div className="an-sk-chart is-live" />
+        <LoadingState />
       </AnPanel>
     );
   }
@@ -833,7 +823,7 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
         onWin={setOverride}
         onClearWin={clearOverride}
       >
-        <div className="an-sk-chart is-live" />
+        <LoadingState />
       </AnPanel>
     );
   }
@@ -1082,7 +1072,7 @@ function TopFailingPanel({
         onWin={setOverride}
         onClearWin={clearOverride}
       >
-        <div className="an-sk-chart is-live" />
+        <LoadingState />
       </AnPanel>
     );
   }
@@ -1320,7 +1310,7 @@ function HallucinationTrendPanel({
     return (
       <AnPanel title="Hallucination trend" subtitle={subtitleForWindow(win)} span={7}
         windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
-        <div className="an-sk-chart is-live" />
+        <LoadingState />
       </AnPanel>
     );
   }
@@ -1597,7 +1587,7 @@ export default function Analytics() {
             }}
           />
         ) : statsQuery.isPending ? (
-          <AnalyticsSkeleton />
+          <LoadingState label="Loading analytics…" />
         ) : (statsQuery.data?.total_traces ?? 0) === 0 ? (
           <AnalyticsEmpty slug={slug} />
         ) : (
