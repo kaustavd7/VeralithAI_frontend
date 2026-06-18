@@ -14,6 +14,7 @@ import type {
   Me,
   Project,
   StatsResponse,
+  SystemHealthResponse,
   TraceDetail,
   TraceDetailResponse,
   TraceListItem,
@@ -468,6 +469,8 @@ export const mockApi = {
     return {
       ...SEED_STATS,
       completeness_rate: 0.89,
+      connection_state: 'live',
+      sdk_version: '0.2.1',
       rag_latency_ms: { p50: 1100, p90: 2400, p95: 2900, p99: 3300, sample_size: SEED_STATS.total_traces },
       timeseries,
       deltas: { ...SEED_STATS.deltas, completeness_rate_pp_24h: -0.03 },
@@ -694,6 +697,22 @@ export const mockApi = {
       ],
       based_on: { window_days: 7, total_traces: SEED_STATS.total_traces },
       generated_at: new Date().toISOString(),
+    };
+  },
+
+  async getSystemHealth(_projectIdOrSlug: string): Promise<SystemHealthResponse> {
+    await delay(140);
+    return {
+      status: 'operational',
+      components: [
+        { key: 'api', name: 'API', status: 'operational', detail: 'responding' },
+        { key: 'database', name: 'Database', status: 'operational', detail: 'query ok' },
+        { key: 'ingestion', name: 'Ingestion', status: 'operational', detail: '1,247 traces / 24h' },
+        { key: 'evaluation', name: 'Evaluation (judges)', status: 'operational', detail: '1,180 evaluated / 24h' },
+        { key: 'realtime', name: 'Realtime (SSE)', status: 'operational', detail: 'in-process' },
+        { key: 'llm', name: 'LLM (OpenAI)', status: 'operational', detail: 'configured' },
+      ],
+      checked_at: new Date().toISOString(),
     };
   },
 };

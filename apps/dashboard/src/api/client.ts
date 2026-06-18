@@ -16,6 +16,7 @@ import type {
   Me,
   Project,
   StatsResponse,
+  SystemHealthResponse,
   TraceDetailResponse,
   TracesQuery,
   TracesResponse,
@@ -141,6 +142,11 @@ export const api = {
   async getInsightSummary(projectId: string): Promise<InsightSummaryResponse> {
     if (USE_MOCK) return mockApi.getInsightSummary(projectId);
     return request(`/v1/projects/${projectId}/insights/summary`);
+  },
+
+  async getSystemHealth(projectId: string): Promise<SystemHealthResponse> {
+    if (USE_MOCK) return mockApi.getSystemHealth(projectId);
+    return request(`/v1/projects/${projectId}/system/health`);
   },
 
   async listTraces(projectId: string, q: TracesQuery = {}): Promise<TracesResponse> {

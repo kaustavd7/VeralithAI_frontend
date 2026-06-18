@@ -1,8 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
-import { SHELL_CATALOG, methodById, type ShellMethod } from './shellCatalog';
+import { useMatch, useNavigate } from 'react-router-dom';
+import { SHELL_CATALOG, methodById, type ShellMethod, type ShellParam } from './shellCatalog';
 // The Workbench's `.wb-*` styles live in today-workbench.css. Import them here so
 // they're always bundled — TodayOverview (the former importer) is now unrouted.
 import '../../styles/today-workbench.css';
+import { supabase } from '../../lib/supabase';
+import { useProjects } from '../../hooks/useProjects';
+import { useStats, useSystemHealth } from '../../hooks/useOverviewData';
+import { useEventLog } from '../../lib/eventLog';
+
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_API === 'true';
+const FETCH_BASE = import.meta.env.VITE_API_URL ?? '';
+const LINK_RESET = { background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer', textAlign: 'left' as const };
+
+/* Resolve the project the Workbench acts on: the one in the URL, else the first
+   project (the drawer is global and also shows on pages without a :slug). */
+function useCurrentProject(): { slug: string; id: string } {
+  const exact = useMatch('/projects/:slug');
+  const nested = useMatch('/projects/:slug/*');
+  const projects = useProjects();
+  const slug = nested?.params.slug ?? exact?.params.slug ?? projects.data?.projects[0]?.slug ?? '';
+  const id =
+    projects.data?.projects.find((p) => p.slug === slug || p.id === slug)?.id ??
+    projects.data?.projects[0]?.id ??
+    '';
+  return { slug, id };
+}
+
+/* In live mode, default any `project_id` param to the current project's real id. */
+function defaultParamVal(p: ShellParam, projectId: string): string {
+  if (p.name === 'project_id' && projectId && !USE_MOCK) return projectId;
+  return p.example;
+}
 
 /* Workbench — Stripe-Workbench-style bottom drawer, re-pointed at traces /
    judges / scores. Persistent, pinned to the bottom of the content frame;
@@ -99,20 +128,33 @@ const RESOURCES: [string, string][] = [
   ['Code samples', 'RAG, agents, batch eval'],
 ];
 
-function WbIntegration() {
+function WbIntegration({ slug, onTab, onManageKeys }: { slug: string; onTab: (t: WbTab) => void; onManageKeys: () => void }) {
   const [lang, setLang] = useState<'python' | 'node' | 'curl'>('python');
+  const stats = useStats(slug, {}, { refetchInterval: 30_000 });
+  const conn = stats.data?.connection_state;
+  const sdkV = stats.data?.sdk_version;
+  const statusEl =
+    conn === 'live' ? (
+      <span className="wf-mlabel"><span className="po-dot po-dot-live" /> receiving traces · live</span>
+    ) : conn === 'idle' ? (
+      <span className="wf-mlabel"><span className="po-dot po-dot-idle" /> connected · no recent traces</span>
+    ) : conn === 'never' ? (
+      <span className="wf-mlabel"><span className="po-dot po-dot-idle" /> no traces yet</span>
+    ) : (
+      <span className="wf-mlabel"><span className="po-dot po-dot-idle" /> —</span>
+    );
   return (
     <div className="wb-body wb-overview">
       <div className="wb-ov-main">
         <div className="wb-ov-head">
           <span className="wb-ov-title">Your integration</span>
-          <span className="wf-mlabel"><span className="po-dot po-dot-live" /> receiving traces · live</span>
+          {statusEl}
         </div>
 
         <div className="wb-int-block">
           <div className="wb-int-block-head">
             <span className="wb-int-block-t">API keys</span>
-            <a className="wf-rec-link">Manage API keys →</a>
+            <button type="button" className="wf-rec-link" style={LINK_RESET} onClick={onManageKeys}>Manage API keys →</button>
           </div>
           <div className="wb-int-keynote">
             Your API key is shown <b>once</b>, when you create it (Onboarding).
@@ -139,9 +181,9 @@ function WbIntegration() {
 
       <aside className="wb-testing">
         <div className="wb-testing-head"><span>Developer tools</span></div>
-        <a className="wf-rec-link">Send a test trace →</a>
+        <button type="button" className="wf-rec-link" style={LINK_RESET} onClick={() => onTab('Shell')}>Send a test trace →</button>
         <div className="wb-int-meta">
-          <span className="po-mono">SDK v0.3.0</span><span className="wb-int-dot">·</span><span className="po-mono">API 2026-05-31</span>
+          <span className="po-mono">SDK {sdkV ? 'v' + sdkV : '—'}</span><span className="wb-int-dot">·</span><span className="po-mono">{slug || 'no project'}</span>
         </div>
         <div className="wb-testing-sep" />
         <div className="wb-testing-head"><span>Developer resources</span></div>
@@ -370,22 +412,22 @@ function ConsoleEntryView({ e }: { e: ConsoleEntry }) {
   );
 }
 
-function WbShell() {
+function WbShell({ projectId }: { projectId: string }) {
   const [mode, setMode] = useState<ShellMode>('API');
   const [methodId, setMethodId] = useState('traces.list');
   const [paramValues, setParamValues] = useState<Record<string, string>>(() => {
     const m = methodById('traces.list');
-    return m ? Object.fromEntries(m.params.map((p) => [p.name, p.example])) : {};
+    return m ? Object.fromEntries(m.params.map((p) => [p.name, defaultParamVal(p, projectId)])) : {};
   });
   const [lang, setLang] = useState<SnippetLang>('python');
   const [snipCopied, setSnipCopied] = useState(false);
   const tl = methodById('traces.list');
   const [history, setHistory] = useState<ConsoleEntry[]>(() =>
-    tl ? [{ kind: 'api', command: tl.cli, http: tl.http, path: tl.path, status: '200 OK', ok: true, body: tl.sampleResponse }] : [],
+    tl && USE_MOCK ? [{ kind: 'api', command: tl.cli, http: tl.http, path: tl.path, status: '200 OK', ok: true, body: tl.sampleResponse }] : [],
   );
   const [query, setQuery] = useState(() => {
     if (!tl) return '';
-    const vals = Object.fromEntries(tl.params.map((p) => [p.name, p.example]));
+    const vals = Object.fromEntries(tl.params.map((p) => [p.name, defaultParamVal(p, projectId)]));
     return buildSnippet(tl, vals, 'python');
   });
   const [running, setRunning] = useState(false);
@@ -401,6 +443,11 @@ function WbShell() {
   const shellRef = useRef<HTMLDivElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const atBottomRef = useRef(true);
+  // Mounted-guard + abort so an in-flight live request is cancelled and never
+  // setState()s after a tab switch / drawer close / project remount.
+  const aliveRef = useRef(true);
+  const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => () => { aliveRef.current = false; abortRef.current?.abort(); }, []);
 
   const method = methodById(methodId);
   const curResource = SHELL_CATALOG.find((r) => r.methods.some((m) => m.id === methodId)) ?? SHELL_CATALOG[0];
@@ -440,7 +487,7 @@ function WbShell() {
     const m = methodById(id);
     if (!m) return;
     setMethodId(id);
-    const vals = Object.fromEntries(m.params.map((p) => [p.name, p.example]));
+    const vals = Object.fromEntries(m.params.map((p) => [p.name, defaultParamVal(p, projectId)]));
     setParamValues(vals);
     if (mode === 'API') setCmd(buildSnippet(m, vals, lang));
   };
@@ -475,14 +522,56 @@ function WbShell() {
   };
 
   const push = (e: ConsoleEntry) => setHistory((h) => [...h, e]);
-  // DEMO resolver — replace this body with a real fetch() to go live.
   const execApi = (m: ShellMethod, command: string) => {
+    // Mock mode: no backend — echo the grounded demo response from the catalog.
+    if (USE_MOCK) {
+      setRunning(true);
+      setTimeout(() => {
+        setRunning(false);
+        const status = m.http === 'GET' ? '200 OK' : m.kind === 'operate' || m.id === 'traces.send' ? '202 Accepted' : '200 OK';
+        push({ kind: 'api', command, http: m.http, path: m.path, status, ok: true, body: m.sampleResponse });
+      }, 430);
+      return;
+    }
+    // Ingestion authenticates with a project API key, not the dashboard session,
+    // so it can't be fired from here — point the user at the copy-paste snippet.
+    if (m.id === 'traces.send') {
+      push({
+        kind: 'info',
+        command,
+        message: 'Ingestion uses your project API key (sk_live_…), not your dashboard session. Copy the snippet on the left to send a real trace.',
+      });
+      return;
+    }
+    // Live: run the real request as the signed-in user (Supabase JWT). Abortable
+    // + mounted-guarded so a tab switch / drawer close mid-request is clean.
     setRunning(true);
-    setTimeout(() => {
-      setRunning(false);
-      const status = m.http === 'GET' ? '200 OK' : m.kind === 'operate' || m.id === 'traces.send' ? '202 Accepted' : '200 OK';
-      push({ kind: 'api', command, http: m.http, path: m.path, status, ok: true, body: m.sampleResponse });
-    }, 430);
+    const ac = new AbortController();
+    abortRef.current = ac;
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        const path = m.path.replace(/\{(\w+)\}/g, (_, k) => encodeURIComponent(paramValues[k] ?? ''));
+        const qp = m.params.filter((p) => p.loc === 'query' && (paramValues[p.name] ?? '').trim() !== '');
+        const qs = qp.map((p) => `${encodeURIComponent(p.name)}=${encodeURIComponent(paramValues[p.name])}`).join('&');
+        const url = `${FETCH_BASE}${path}${qs ? `?${qs}` : ''}`;
+        const reqBody = bodyObject(m, paramValues);
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (reqBody) headers['Content-Type'] = 'application/json';
+        const resp = await fetch(url, { method: m.http, headers, body: reqBody ? JSON.stringify(reqBody) : undefined, signal: ac.signal });
+        const text = await resp.text();
+        let parsed: unknown;
+        try { parsed = text ? JSON.parse(text) : null; } catch { parsed = text; }
+        if (aliveRef.current) push({ kind: 'api', command, http: m.http, path: m.path, status: `${resp.status} ${resp.statusText}`.trim(), ok: resp.ok, body: parsed });
+      } catch (err) {
+        if ((err as { name?: string } | null)?.name === 'AbortError') return;
+        if (aliveRef.current) push({ kind: 'error', command, message: err instanceof Error ? err.message : 'request failed' });
+      } finally {
+        if (aliveRef.current) setRunning(false);
+      }
+    })();
   };
   const runQuery = (text: string, qmode: 'VQL' | 'NL') => {
     setRunning(true);
@@ -698,11 +787,16 @@ const LOGS: [string, 'info' | 'warn' | 'error', string][] = [
   ['Jun 1 2026 22:08:31', 'warn', 'queue · depth 6 — autoscaling judge workers 3→4'],
 ];
 
-function WbLogs() {
+function WbLogs({ slug }: { slug: string }) {
   const [q, setQ] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
-  const rows = LOGS.filter(
-    (l) => q.trim() === '' || (l[0] + ' ' + l[1] + ' ' + l[2]).toLowerCase().includes(q.toLowerCase()),
+  // Live mode: subscribe to the SSE event stream. Mock mode: the demo LOGS array.
+  const { events, connected, failed } = useEventLog(slug, true);
+  const displayRows: { time: string; level: 'info' | 'warn' | 'error'; msg: string }[] = USE_MOCK
+    ? LOGS.map((l) => ({ time: l[0], level: l[1], msg: l[2] }))
+    : events.map((e) => ({ time: new Date(e.ts).toLocaleTimeString(), level: e.level, msg: e.message }));
+  const rows = displayRows.filter(
+    (r) => q.trim() === '' || (r.time + ' ' + r.level + ' ' + r.msg).toLowerCase().includes(q.toLowerCase()),
   );
 
   // "/" focuses the search bar (matching the keyboard hint), unless already typing.
@@ -720,7 +814,7 @@ function WbLogs() {
 
   // Download the (filtered) log lines as a plain-text file.
   const download = () => {
-    const text = rows.map((l) => `${l[0]}  ${l[1].toUpperCase()}:  ${l[2]}`).join('\n');
+    const text = rows.map((l) => `${l.time}  ${l.level.toUpperCase()}:  ${l.msg}`).join('\n');
     const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
     const a = document.createElement('a');
     a.href = url;
@@ -747,6 +841,15 @@ function WbLogs() {
           />
           <kbd className="wb-logs-kbd">/</kbd>
         </div>
+        {!USE_MOCK && (
+          <span className="wf-mlabel" style={{ marginLeft: 8 }}>
+            <span
+              className={'po-dot' + (connected ? ' po-dot-live' : failed ? '' : ' po-dot-idle')}
+              style={failed ? { background: 'var(--po-bad)' } : undefined}
+            />{' '}
+            {connected ? 'live' : failed ? 'disconnected' : 'connecting…'}
+          </span>
+        )}
         <button type="button" className="wb-logs-dl" onClick={download} aria-label="Download logs" title="Download logs">
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path d="M8 2v8 M5 7.5 8 10.5 11 7.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
@@ -755,17 +858,27 @@ function WbLogs() {
         </button>
       </div>
       <div className="wb-logs-head">
-        <span className="wb-logs-col-time">Time (IST)</span>
+        <span className="wb-logs-col-time">Time</span>
         <span className="wb-logs-col-data">Data</span>
       </div>
       <div className="wb-logs-list po-mono">
-        {rows.length === 0 && <div className="wb-log-row wb-log-empty">no matching log lines</div>}
+        {rows.length === 0 && (
+          <div className="wb-log-row wb-log-empty">
+            {USE_MOCK
+              ? 'no matching log lines'
+              : q.trim()
+                ? 'no matching events'
+                : failed
+                  ? 'disconnected — event stream unavailable'
+                  : 'waiting for live events…'}
+          </div>
+        )}
         {rows.map((l, i) => (
-          <div className={'wb-log-row is-' + l[1]} key={i}>
-            <span className="wb-log-time">{l[0]}</span>
+          <div className={'wb-log-row is-' + l.level} key={i}>
+            <span className="wb-log-time">{l.time}</span>
             <span className="wb-log-data">
-              <span className={'wb-log-lvl is-' + l[1]}>{l[1].toUpperCase()}:</span>
-              <span className="wb-log-msg">{l[2]}</span>
+              <span className={'wb-log-lvl is-' + l.level}>{l.level.toUpperCase()}:</span>
+              <span className="wb-log-msg">{l.msg}</span>
             </span>
           </div>
         ))}
@@ -774,58 +887,64 @@ function WbLogs() {
   );
 }
 
-/* ── Health — pipeline & judge uptime ───────────────────────────────── */
+/* ── Health — derived component status (live: GET /system/health) ─────── */
 
-const HEALTH_COMPS: [string, 'live' | 'idle', string][] = [
-  ['Ingest pipeline', 'live', '99.98%'],
-  ['Judge workers', 'live', '99.91%'],
-  ['Retrieval store', 'idle', '99.40%'],
-  ['Webhook delivery', 'live', '100%'],
-  ['Worker queue', 'live', 'depth 3'],
-  ['Score writer', 'live', '99.97%'],
-];
-
-function healthHist(seed: number): ('live' | 'idle' | 'bad')[] {
-  let s = seed;
-  const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
-  return Array.from({ length: 44 }, () => {
-    const v = r();
-    return v > 0.94 ? 'bad' : v > 0.86 ? 'idle' : 'live';
-  });
+function HealthDot({ status }: { status: string }) {
+  if (status === 'operational') return <span className="po-dot po-dot-live" />;
+  if (status === 'down') return <span className="po-dot" style={{ background: 'var(--po-bad)' }} />;
+  return <span className="po-dot po-dot-idle" />;
 }
 
-function WbHealth() {
+function WbHealth({ slug }: { slug: string }) {
+  const q = useSystemHealth(slug);
+  const data = q.data;
+  const comps = data?.components ?? [];
+  const overall = data?.status;
+  const notNominal = comps.filter((c) => c.status !== 'operational').length;
+  const overallLabel =
+    overall === 'operational' ? 'All systems operational'
+    : overall === 'down' ? 'Service disruption'
+    : overall === 'degraded' ? 'Degraded performance'
+    : 'Checking…';
   return (
     <div className="wb-body wb-health">
       <div className="wb-health-top">
-        <span className="wb-health-status"><span className="po-dot po-dot-live" /> All systems operational</span>
-        <span className="wf-mlabel" style={{ marginLeft: 12 }}>1 component degraded</span>
-        <span className="wf-chip" style={{ marginLeft: 'auto' }}>90-day uptime ⌄</span>
+        <span className="wb-health-status"><HealthDot status={overall ?? 'idle'} /> {overallLabel}</span>
+        {data && notNominal > 0 && (
+          <span className="wf-mlabel" style={{ marginLeft: 12 }}>{notNominal} component{notNominal === 1 ? '' : 's'} not nominal</span>
+        )}
+        <span className="wf-chip" style={{ marginLeft: 'auto' }}>live · derived</span>
       </div>
       <div className="wb-health-grid">
-        {HEALTH_COMPS.map(([n, st, up], i) => (
-          <div className="wb-hc" key={n}>
+        {comps.map((c) => (
+          <div className="wb-hc" key={c.key}>
             <div className="wb-hc-head">
-              <span className={'po-dot po-dot-' + (st === 'live' ? 'live' : 'idle')} />
-              <span className="wb-hc-name">{n}</span>
-              <span className="wb-hc-up po-mono">{up}</span>
-            </div>
-            <div className="wb-hc-hist">
-              {healthHist(7 + i * 13).map((c, j) => <span key={j} className={'wb-hc-seg is-' + c} />)}
+              <HealthDot status={c.status} />
+              <span className="wb-hc-name">{c.name}</span>
+              <span className="wb-hc-up po-mono">{c.detail}</span>
             </div>
           </div>
         ))}
+        {!data && q.isLoading && <div className="wf-mlabel" style={{ padding: 8 }}>Checking components…</div>}
+        {!data && q.isError && <div className="wf-mlabel" style={{ padding: 8 }}>Health unavailable.</div>}
       </div>
     </div>
   );
 }
 
-function WbBody({ tab }: { tab: WbTab }) {
+function WbBody({ tab, slug, projectId, onTab, onManageKeys }: {
+  tab: WbTab;
+  slug: string;
+  projectId: string;
+  onTab: (t: WbTab) => void;
+  onManageKeys: () => void;
+}) {
   switch (tab) {
-    case 'Shell': return <WbShell />;
-    case 'Logs': return <WbLogs />;
-    case 'Health': return <WbHealth />;
-    default: return <WbIntegration />;
+    // key={projectId} → remount (and re-default project_id) on project switch.
+    case 'Shell': return <WbShell key={projectId} projectId={projectId} />;
+    case 'Logs': return <WbLogs slug={slug} />;
+    case 'Health': return <WbHealth slug={slug} />;
+    default: return <WbIntegration slug={slug} onTab={onTab} onManageKeys={onManageKeys} />;
   }
 }
 
@@ -842,6 +961,8 @@ function WbFooter({ open, onToggle }: { open: boolean; onToggle: () => void }) {
 
 /* Full drawer (header + body + footer), pinned bottom; collapses to footer-only. */
 export function WorkbenchDrawer({ defaultTab = 'Integration' }: { defaultTab?: WbTab }) {
+  const { slug, id: projectId } = useCurrentProject();
+  const navigate = useNavigate();
   // Collapsed by default — a fixed strip at the bottom of every page; click to open.
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<WbTab>(defaultTab);
@@ -924,7 +1045,13 @@ export function WorkbenchDrawer({ defaultTab = 'Integration' }: { defaultTab?: W
       <div className="wb-panel" style={{ height }} ref={panelRef} role="dialog" aria-modal="false" aria-label="For the Geeks workbench" tabIndex={-1}>
         <div className="wb-resize" onMouseDown={startResize} title="Drag to resize"><span className="wb-grip" /></div>
         <WbHeader active={active} onTab={setActive} onClose={() => setOpen(false)} />
-        <WbBody tab={active} />
+        <WbBody
+          tab={active}
+          slug={slug}
+          projectId={projectId}
+          onTab={setActive}
+          onManageKeys={() => { setOpen(false); navigate('/settings/api-keys'); }}
+        />
         <WbFooter open onToggle={() => setOpen(false)} />
       </div>
     </div>

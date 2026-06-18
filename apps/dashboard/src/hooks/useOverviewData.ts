@@ -13,12 +13,17 @@ export interface StatsQueryParams {
  * different time window, so this hook key includes the params and each panel
  * keeps its own cache slot.
  */
-export function useStats(projectId: string, params: StatsQueryParams = {}) {
+export function useStats(
+  projectId: string,
+  params: StatsQueryParams = {},
+  opts: { refetchInterval?: number } = {},
+) {
   return useQuery({
     queryKey: ['stats', projectId, params],
     queryFn: () => api.getStats(projectId, params),
     enabled: !!projectId,
     placeholderData: keepPreviousData,
+    refetchInterval: opts.refetchInterval,
   });
 }
 
@@ -65,6 +70,17 @@ export function useInsightSummary(projectId: string) {
     queryKey: ['insight-summary', projectId],
     queryFn: () => api.getInsightSummary(projectId),
     enabled: !!projectId,
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** Derived system health for the Workbench Health tab (polls while open). */
+export function useSystemHealth(projectId: string, enabled = true) {
+  return useQuery({
+    queryKey: ['system-health', projectId],
+    queryFn: () => api.getSystemHealth(projectId),
+    enabled: !!projectId && enabled,
+    refetchInterval: 30_000,
     placeholderData: keepPreviousData,
   });
 }

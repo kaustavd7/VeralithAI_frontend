@@ -75,6 +75,12 @@ export interface StatsResponse {
   total_cost_usd: number;
   // Customer RAG latency percentiles over the window (ms); null if none carried it.
   rag_latency_ms?: LatencyPercentiles | null;
+  // Connection/stream awareness — used by the Workbench Integration tab.
+  connection_state?: string; // live | idle | never
+  sdk_version?: string | null;
+  last_trace_at?: string | null;
+  uptime_pct?: number | null;
+  usage?: { traces_this_month: number };
   timeseries: StatsTimeseriesPoint[];
   deltas: StatsDeltas;
 }
@@ -131,6 +137,23 @@ export interface InsightSummaryResponse {
   highlights: string[];
   based_on: Record<string, unknown>;
   generated_at: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// System health — GET /v1/projects/{id}/system/health (Workbench Health tab).
+// Derived from real signals (DB ping, ingest recency, eval backlog, LLM config).
+// ---------------------------------------------------------------------------
+export interface HealthComponentDTO {
+  key: string;
+  name: string;
+  status: string; // operational | degraded | idle | down
+  detail: string;
+}
+
+export interface SystemHealthResponse {
+  status: string; // operational | degraded | down
+  components: HealthComponentDTO[];
+  checked_at: string;
 }
 
 export interface TraceListItem {
