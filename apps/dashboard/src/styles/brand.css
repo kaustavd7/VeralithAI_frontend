@@ -1,0 +1,71 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   Veralith brand mark + loader — a faceted emerald "V" gem on a circular stone
+   tile (vera + lith = "true stone").
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.vgem { display: block; }
+.vgem .vg-shine { opacity: 0.85; transform-box: fill-box; transform-origin: center; }
+
+/* circular stone tile (the disc the gem sits in) */
+.logo-tile {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(120% 120% at 30% 24%, #1d2c23, #0c120e);
+  border: 1px solid #2a3a30;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+/* ── Loader: the V draws left→right (whip at the vertex), the gem solidifies,
+      then a shine sweeps the disc. ─────────────────────────────────────────── */
+.brand-loader { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.brand-loader-label { font-size: 13px; color: var(--po-fg-3); }
+
+.vg-draw .vg-facet,
+.vg-draw .vg-seam,
+.vg-draw .vg-shine { opacity: 0; animation: vg-fill 2.6s ease-in-out infinite; }
+.vg-draw .vg-stroke {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: vg-stroke 2.6s ease-in-out infinite;
+}
+@keyframes vg-stroke {
+  0% { stroke-dashoffset: 100; opacity: 1; animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.35); }
+  22% { stroke-dashoffset: 50; animation-timing-function: cubic-bezier(0.12, 0.7, 0.4, 1); }
+  44% { stroke-dashoffset: 0; opacity: 1; }
+  58% { stroke-dashoffset: 0; opacity: 0; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes vg-fill {
+  0%, 34% { opacity: 0; }
+  52% { opacity: 1; }
+  84% { opacity: 1; }
+  94% { opacity: 0; }
+  100% { opacity: 0; }
+}
+.logo-tile.is-build::after {
+  content: '';
+  position: absolute; top: -10%; left: 0; width: 55%; height: 120%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transform: translateX(-180%) skewX(-12deg);
+  opacity: 0;
+  pointer-events: none;
+  animation: tile-sweep 2.6s ease-in-out infinite;
+}
+@keyframes tile-sweep {
+  0%, 52% { transform: translateX(-180%) skewX(-12deg); opacity: 0; }
+  58% { opacity: 1; }
+  72% { transform: translateX(280%) skewX(-12deg); opacity: 1; }
+  78% { transform: translateX(280%) skewX(-12deg); opacity: 0; }
+  100% { transform: translateX(280%) skewX(-12deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vg-draw .vg-facet,
+  .vg-draw .vg-seam,
+  .vg-draw .vg-shine { animation: none !important; opacity: 1 !important; }
+  .vg-draw .vg-stroke { animation: none !important; opacity: 0 !important; }
+  .logo-tile.is-build::after { animation: none !important; opacity: 0 !important; }
+}

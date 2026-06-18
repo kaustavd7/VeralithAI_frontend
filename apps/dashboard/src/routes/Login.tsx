@@ -3,6 +3,7 @@ import type { Provider } from '@supabase/supabase-js';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { BrandMark } from '../components/brand/Brand';
 import '../styles/login.css';
 
 type Mode = 'sign-in' | 'sign-up';
@@ -91,7 +92,7 @@ export default function Login() {
       <div className="lg-form-col">
         <div className="lg-form">
           <div className="lg-brandline">
-            <CrystalMark size={42} />
+            <BrandMark size={42} />
             <span className="lg-brandline-name">veralith</span>
           </div>
 
@@ -223,7 +224,7 @@ export default function Login() {
 
       <aside className="lg-brand-col" aria-hidden="true">
         <div className="lg-brand-glow" />
-        <CrystalMark size={540} className="lg-brand-watermark" />
+        <BrandMark size={540} tile={false} className="lg-brand-watermark" />
 
         <div className="lg-brand-body">
           <div className="lg-brand-eyebrow">RAG observability &amp; self-healing</div>
@@ -270,33 +271,6 @@ function OAuthButton({
       {provider === 'google' ? <GoogleIcon /> : <GitHubIcon />}
       <span>{loading ? 'Redirecting…' : label}</span>
     </button>
-  );
-}
-
-/* The Veralith crystal mark — same geometry as the shell Brand, drawn with
-   currentColor so the watermark can inherit a faint sage tint and the inline
-   marks can pick up --accent. */
-function CrystalMark({ size = 22, className }: { size?: number; className?: string }) {
-  const stroke = className ? 'currentColor' : 'var(--accent)';
-  return (
-    <svg width={size} height={size} viewBox="0 0 22 22" className={className} aria-hidden="true">
-      <path
-        d="M4 13.5 L7.5 6.5 L13 5 L18.5 9.5 L18 15 L11.5 19 L5 17.5 Z"
-        fill={stroke}
-        fillOpacity="0.16"
-        stroke={stroke}
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M7.5 6.5 L11 11 L18.5 9.5 M11 11 L11.5 19 M11 11 L5 17.5"
-        stroke={stroke}
-        strokeWidth="1.4"
-        strokeOpacity="0.55"
-        fill="none"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
 

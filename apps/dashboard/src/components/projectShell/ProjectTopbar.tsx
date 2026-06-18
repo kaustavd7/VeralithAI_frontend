@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useProjects } from '../../hooks/useProjects';
 import { api } from '../../api/client';
 import { AccountMenu } from './AccountMenu';
+import { BrandMark } from '../brand/Brand';
 
 type Props = {
   workspace?: string;
@@ -92,7 +93,7 @@ export function ProjectTopbar({ workspace = 'workspace', project }: Props) {
     <div className="tb">
       <div className="tb-crumbs">
         <button type="button" className="tb-logo" aria-label="All projects" onClick={() => navigate('/projects')}>
-          <VeralithMark />
+          <BrandMark size={24} />
         </button>
         <span className="tb-crumb-sep">/</span>
         <button type="button" className="tb-crumb tb-crumb-link" onClick={() => navigate('/projects')}>
@@ -219,29 +220,6 @@ function CheckIcon() {
   return (
     <svg className="check" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path d="M3.5 8.5l3 3 6-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function VeralithMark() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-      <path
-        d="M4 13.5 L7.5 6.5 L13 5 L18.5 9.5 L18 15 L11.5 19 L5 17.5 Z"
-        fill="var(--accent)"
-        fillOpacity="0.32"
-        stroke="var(--accent)"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M7.5 6.5 L11 11 L18.5 9.5 M11 11 L11.5 19 M11 11 L5 17.5"
-        stroke="var(--accent)"
-        strokeWidth="1.4"
-        strokeOpacity="0.78"
-        fill="none"
-        strokeLinejoin="round"
-      />
     </svg>
   );
 }
