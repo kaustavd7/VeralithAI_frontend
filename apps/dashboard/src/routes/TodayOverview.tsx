@@ -899,6 +899,10 @@ function TodayContent() {
         )}
       </section>
 
+      {/* Profile + Overview only mount once stats are loaded, so the page shows
+          a single loader (no second donut loader) during the initial load. */}
+      {s && (
+      <>
       <section className="wf-profile-sec">
         <div className="wf-card wf-profile">
           <div className="ovc-head">
@@ -909,9 +913,7 @@ function TodayContent() {
             <div className="wf-profile-donut">
               {cells ? (
                 <HealthDonut counts={cells} onCellClick={(cell) => navigate(tracesPath(slug, cell))} />
-              ) : (
-                <LoadingState label="Loading…" />
-              )}
+              ) : null}
             </div>
             <div className="wf-profile-side"><ProfileBadges /></div>
           </div>
@@ -936,6 +938,8 @@ function TodayContent() {
           </div>
         </div>
       </section>
+      </>
+      )}
     </div>
   );
 }
