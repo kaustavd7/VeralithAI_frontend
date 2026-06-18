@@ -24,7 +24,7 @@ const subStyle: React.CSSProperties = { fontSize: 13, color: 'var(--po-fg-3)', m
 export function LoadingState({ label = 'Loading…' }: { label?: string }) {
   return (
     <div style={wrap}>
-      <BrandLoader size={60} label={label} />
+      <BrandLoader label={label} />
     </div>
   );
 }
