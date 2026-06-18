@@ -6,6 +6,7 @@ import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { ErrorState, EmptyState } from '../components/StateViews';
 import { Skel, SkelStatus } from '../components/Skeleton';
 import { api } from '../api/client';
+import { prefetchProjectData } from '../lib/prefetch';
 import type { Project } from '../api/types';
 
 /* ─────────────────────────────────────────────────────────────
@@ -83,6 +84,7 @@ function writeIds(key: string, ids: string[]) {
 
 export default function ProjectsHome() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const projectsQuery = useProjects();
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
@@ -198,6 +200,7 @@ export default function ProjectsHome() {
                   key={p.id}
                   project={p}
                   onOpen={() => navigate(`/projects/${p.slug ?? p.id}`)}
+                  onPrefetch={() => prefetchProjectData(qc, p.slug ?? p.id, p.id)}
                   pinned={pinnedSet.has(p.id)}
                   onTogglePin={() => togglePin(p.id)}
                   draggable={!search.trim()}
@@ -367,6 +370,7 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
 function ProjectCard({
   project,
   onOpen,
+  onPrefetch,
   pinned,
   onTogglePin,
   draggable,
@@ -377,6 +381,7 @@ function ProjectCard({
 }: {
   project: Project;
   onOpen: () => void;
+  onPrefetch: () => void;
   pinned: boolean;
   onTogglePin: () => void;
   draggable: boolean;
@@ -386,6 +391,14 @@ function ProjectCard({
   onDropCard: () => void;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
+  // Warm this project's data on first intent (hover/focus/press) so the project
+  // pages paint instantly. Guarded so we only kick off the prefetch once.
+  const prefetchedRef = useRef(false);
+  const warm = () => {
+    if (prefetchedRef.current) return;
+    prefetchedRef.current = true;
+    onPrefetch();
+  };
   const { name, trace_count } = project;
   // env + key-prefix are not yet exposed on the Project shape (see
   // BACKEND_GAPS.md). Show neutral placeholders until they land.
@@ -399,6 +412,9 @@ function ProjectCard({
       className={'ph-card' + (pinned ? ' is-pinned' : '') + (dragging ? ' is-dragging' : '')}
       role="button"
       tabIndex={0}
+      onMouseEnter={warm}
+      onFocus={warm}
+      onPointerDown={warm}
       onClick={onOpen}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
