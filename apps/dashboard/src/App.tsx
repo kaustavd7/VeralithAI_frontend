@@ -1,7 +1,8 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useMatch } from 'react-router-dom';
 import { RequireAuth } from './components/RequireAuth';
 import { WorkbenchDrawer } from './components/workbench/WorkbenchDrawer';
 import { Buddy } from './components/buddy/Buddy';
+import { useProjectEvents } from './lib/projectEvents';
 import { useAuth } from './hooks/useAuth';
 import Login from './routes/Login';
 import AuthCallback from './routes/AuthCallback';
@@ -25,8 +26,19 @@ export default function App() {
       <GlobalWorkbench />
       {/* Lith — the persistent stone buddy, mounted once so it survives navigation. */}
       <GlobalBuddy />
+      {/* Live SSE subscription for the current project (trace/heal events). */}
+      <GlobalProjectEvents />
     </>
   );
+}
+
+function GlobalProjectEvents() {
+  const { user } = useAuth();
+  const exact = useMatch('/projects/:slug');
+  const nested = useMatch('/projects/:slug/*');
+  const slug = nested?.params.slug ?? exact?.params.slug ?? null;
+  useProjectEvents(user ? slug : null);
+  return null;
 }
 
 /* The Workbench dev drawer is global (Stripe "Developers"-bar model): a fixed
