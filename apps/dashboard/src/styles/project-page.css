@@ -1304,7 +1304,7 @@
   top: 14px;                       /* gap below the topbar (not till the top) */
   bottom: 0;                       /* extend till the bottom */
   right: 16px;
-  width: min(840px, 96vw);
+  width: min(680px, 94vw);
   transform: translateX(calc(var(--d, 0) * -14px));   /* deeper = peek further left */
   transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
