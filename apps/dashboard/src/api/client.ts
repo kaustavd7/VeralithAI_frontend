@@ -5,12 +5,14 @@ import type {
   ApiKey,
   ApiKeyWithSecret,
   CalibrationResponse,
+  CategoriesResponse,
   CellTimeseriesResponse,
   ErrorEnvelope,
   HealActionResponse,
   HealCardDetail,
   HealCardSummary,
   HealsListQuery,
+  InsightSummaryResponse,
   Me,
   Project,
   StatsResponse,
@@ -121,6 +123,24 @@ export const api = {
     if (q.bucket) params.set('bucket', q.bucket);
     const qs = params.toString();
     return request(`/v1/projects/${projectId}/analytics/cells/timeseries${qs ? `?${qs}` : ''}`);
+  },
+
+  async getCategoryInsights(
+    projectId: string,
+    q: { since?: string; until?: string; limit?: number } = {},
+  ): Promise<CategoriesResponse> {
+    if (USE_MOCK) return mockApi.getCategoryInsights(projectId, q);
+    const params = new URLSearchParams();
+    if (q.since) params.set('since', q.since);
+    if (q.until) params.set('until', q.until);
+    if (q.limit != null) params.set('limit', String(q.limit));
+    const qs = params.toString();
+    return request(`/v1/projects/${projectId}/insights/categories${qs ? `?${qs}` : ''}`);
+  },
+
+  async getInsightSummary(projectId: string): Promise<InsightSummaryResponse> {
+    if (USE_MOCK) return mockApi.getInsightSummary(projectId);
+    return request(`/v1/projects/${projectId}/insights/summary`);
   },
 
   async listTraces(projectId: string, q: TracesQuery = {}): Promise<TracesResponse> {

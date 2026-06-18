@@ -6,8 +6,9 @@ import { useAuth } from '../hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { HealthDonut } from '../components/charts/HealthDonut';
 import { ProfileBadges } from '../components/charts/ProfileBadges';
-import { useStats } from '../hooks/useOverviewData';
+import { useStats, useCategoryInsights, useInsightSummary } from '../hooks/useOverviewData';
 import { api } from '../api/client';
+import type { CategoryInsight, FailureCell, StatsResponse } from '../api/types';
 import { LoadingState, ErrorState } from '../components/StateViews';
 import { analyticsPath, cellsPath, healsPath, tracesPath } from '../lib/nav';
 import '../styles/today-workbench.css';
@@ -53,9 +54,13 @@ function wfVals(seed: number, n: number, trend = 0.0, base = 0.42): number[] {
   return out;
 }
 function wfPath(vals: number[], w: number, h: number, pad = 2): string {
-  const n = vals.length;
+  // Guard single-point / empty series: (i/(n-1)) is 0/0 = NaN when n<2, which
+  // emits an invalid "M NaN …" path (the chart silently vanishes). Duplicate the
+  // lone point so the line renders flat. Protects every caller (BigChart, Spark).
+  const safe = vals.length >= 2 ? vals : [vals[0] ?? 0, vals[0] ?? 0];
+  const n = safe.length;
   const inner = h - pad * 2;
-  const pts = vals.map((v, i) => [(i / (n - 1)) * w, pad + (1 - v) * inner] as [number, number]);
+  const pts = safe.map((v, i) => [(i / (n - 1)) * w, pad + (1 - v) * inner] as [number, number]);
   let d = 'M ' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
   for (let i = 0; i < pts.length - 1; i++) {
     const p0 = pts[i - 1] || pts[i];
@@ -77,12 +82,12 @@ function useGradId(seed: number) {
 }
 
 /* small inline sparkline (gradient fade fill) */
-function Spark({ seed = 7, w = 132, h = 38, n = 13, trend = 0.012, color = 'var(--accent)', dot = true }: {
-  seed?: number; w?: number; h?: number; n?: number; trend?: number; color?: string; dot?: boolean;
+function Spark({ seed = 7, w = 132, h = 38, n = 13, trend = 0.012, color = 'var(--accent)', dot = true, values }: {
+  seed?: number; w?: number; h?: number; n?: number; trend?: number; color?: string; dot?: boolean; values?: number[];
 }) {
-  const vals = wfVals(seed, n, trend);
+  const vals = values && values.length >= 2 ? values : wfVals(seed, n, trend);
   const d = wfPath(vals, w, h, 3);
-  const lastY = 3 + (1 - vals[n - 1]) * (h - 6);
+  const lastY = 3 + (1 - vals[vals.length - 1]) * (h - 6);
   const gid = useGradId(seed);
   return (
     <svg className="wf-spark" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
@@ -332,24 +337,32 @@ function OvCell({ title, sub, grow, children }: { title: string; sub?: string; g
   );
 }
 
-/* RAG health — composite index + 3 metric rows with microtrend sparklines */
-const RH_METRICS = [
-  { k: 'suff', label: 'Sufficiency', v: 0.81, prev: 0.78, target: 0.85, seed: 7, trend: 0.004 },
-  { k: 'faith', label: 'Faithfulness', v: 0.88, prev: 0.87, target: 0.85, seed: 12, trend: 0.001 },
-  { k: 'comp', label: 'Completeness', v: 0.72, prev: 0.75, target: 0.85, seed: 19, trend: -0.004 },
-];
-const RH_COMPOSITE = RH_METRICS.reduce((a, m) => a + m.v, 0) / RH_METRICS.length;
-const rhColor = (m: { v: number; target: number }) => (m.v >= m.target ? 'var(--po-live)' : m.v >= m.target - 0.12 ? 'var(--po-idle)' : 'var(--po-bad)');
+/* RAG health — composite index + 3 metric rows with microtrend sparklines (live) */
+const RH_TARGET = 0.85;
+const rhColor = (v: number) => (v >= RH_TARGET ? 'var(--po-live)' : v >= RH_TARGET - 0.12 ? 'var(--po-idle)' : 'var(--po-bad)');
 const fmt2 = (v: number) => v.toFixed(2);
 
-function MetricDelta({ v, prev }: { v: number; prev: number }) {
-  const d = v - prev;
+function MetricDelta({ d }: { d: number }) {
   const dir = d > 0.005 ? 'up' : d < -0.005 ? 'down' : 'flat';
   const sym = dir === 'up' ? '↑' : dir === 'down' ? '↓' : '→';
   return <span className={'wf-delta wf-delta-' + dir}>{sym} {(d >= 0 ? '+' : '') + d.toFixed(2)}</span>;
 }
 
-function RagHealthCard({ play = true }: { play?: boolean }) {
+type RhMetric = { k: string; label: string; v: number; delta: number; spark: number[] };
+
+function rhMetrics(s: StatsResponse | undefined): RhMetric[] {
+  if (!s) return [];
+  return [
+    { k: 'suff', label: 'Sufficiency', v: s.avg_sufficiency ?? 0, delta: s.deltas?.avg_sufficiency_delta_24h ?? 0, spark: s.timeseries.map((b) => b.avg_sufficiency ?? 0) },
+    { k: 'faith', label: 'Faithfulness', v: s.avg_faithfulness ?? 0, delta: s.deltas?.avg_faithfulness_delta_24h ?? 0, spark: s.timeseries.map((b) => b.avg_faithfulness ?? 0) },
+    { k: 'comp', label: 'Completeness', v: s.completeness_rate ?? 0, delta: s.deltas?.completeness_rate_pp_24h ?? 0, spark: s.timeseries.map((b) => b.completeness_rate ?? 0) },
+  ];
+}
+
+function RagHealthCard({ s, play = true }: { s: StatsResponse | undefined; play?: boolean }) {
+  const metrics = rhMetrics(s);
+  const hasData = metrics.length > 0 && (s?.total_traces ?? 0) > 0;
+  const composite = metrics.length ? metrics.reduce((a, m) => a + m.v, 0) / metrics.length : 0;
   return (
     <div className="rh-card">
       <div className="rh-head">
@@ -361,17 +374,17 @@ function RagHealthCard({ play = true }: { play?: boolean }) {
       </div>
       <div className="rh-index">
         <div className="rh-index-hero">
-          <div className="rh-ih-num"><ScrambleNumber value={fmt2(RH_COMPOSITE)} play={play} /></div>
+          <div className="rh-ih-num">{hasData ? <ScrambleNumber value={fmt2(composite)} play={play} /> : '—'}</div>
           <div className="rh-ih-l">RAG health<br /><span className="rh-ih-sub po-mono">mean of 3 · last 7d</span></div>
         </div>
         <div className="rh-index-rows">
-          {RH_METRICS.map((m) => (
+          {metrics.map((m) => (
             <div className="rh-irow" key={m.k}>
-              <span className="rh-ir-dot" style={{ background: rhColor(m) }} />
+              <span className="rh-ir-dot" style={{ background: rhColor(m.v) }} />
               <span className="rh-ir-l">{m.label}</span>
-              <span className="rh-ir-spark"><Spark seed={m.seed} w={72} h={24} n={24} trend={m.trend} color={rhColor(m)} dot={false} /></span>
-              <span className="rh-ir-v"><ScrambleNumber value={fmt2(m.v)} play={play} /></span>
-              <MetricDelta v={m.v} prev={m.prev} />
+              <span className="rh-ir-spark"><Spark seed={7} w={72} h={24} n={24} color={rhColor(m.v)} dot={false} values={m.spark} /></span>
+              <span className="rh-ir-v">{hasData ? <ScrambleNumber value={fmt2(m.v)} play={play} /> : '—'}</span>
+              <MetricDelta d={m.delta} />
             </div>
           ))}
         </div>
@@ -380,80 +393,119 @@ function RagHealthCard({ play = true }: { play?: boolean }) {
   );
 }
 
-/* Knowledge-gap topics — failing-query clusters */
-const KG_TOPICS = [
-  { name: 'Billing & refunds', q: 42, cell: 'cu', note: 'hallucinated', d: 6 },
-  { name: 'SSO / SAML setup', q: 34, cell: 'ig', note: 'retrieval gap', d: 3 },
-  { name: 'API rate limits', q: 30, cell: 'iu', note: 'worst case', d: 5 },
-  { name: 'Data residency', q: 24, cell: 'cu', note: 'hallucinated', d: 0 },
-  { name: 'Webhook retries', q: 20, cell: 'ig', note: 'retrieval gap', d: -2 },
-  { name: 'Export formats', q: 18, cell: 'eg', note: 'padded', d: 1 },
-];
-const KG_TOTAL = KG_TOPICS.reduce((a, t) => a + t.q, 0);
+/* Knowledge-gap topics — failing-query clusters (live: /insights/categories) */
 const cellColor = (k: string) => `var(--cell-${k})`;
+const CELL_SHORT: Record<FailureCell, string> = {
+  complete_grounded: 'cg',
+  complete_ungrounded: 'cu',
+  incomplete_grounded: 'ig',
+  incomplete_ungrounded: 'iu',
+  extra_grounded: 'eg',
+  extra_ungrounded: 'eu',
+};
+const CELL_NOTE: Record<FailureCell, string> = {
+  complete_grounded: 'grounded',
+  complete_ungrounded: 'hallucinated',
+  incomplete_grounded: 'retrieval gap',
+  incomplete_ungrounded: 'worst case',
+  extra_grounded: 'padded',
+  extra_ungrounded: 'hallucinated',
+};
 
-function KnowledgeGapCell({ play = true, onTopic, onExplore }: { play?: boolean; onTopic: (cell: string) => void; onExplore: () => void }) {
-  const max = KG_TOPICS[0].q;
+function KnowledgeGapCell({ categories, total, play = true, onTopic, onExplore }: {
+  categories: CategoryInsight[];
+  total: number;
+  play?: boolean;
+  onTopic: (cell: FailureCell | null) => void;
+  onExplore: () => void;
+}) {
+  if (!categories.length) {
+    return (
+      <div className="ovc-body kg-body">
+        <div className="ovc-subhead">No failing-query clusters yet</div>
+        <p className="va-rationale">Topics appear here as failures are grouped into heal categories. Keep sending traces and Veralith clusters them by root cause.</p>
+        <button type="button" className="ovc-link" style={LINK_BTN_RESET} onClick={onExplore}>Explore failure cells →</button>
+      </div>
+    );
+  }
+  const max = Math.max(...categories.map((c) => c.trace_count), 1);
   return (
     <div className="ovc-body kg-body">
-      <div className="ovc-subhead"><ScrambleNumber value={String(KG_TOTAL)} play={play} /> failing queries · {KG_TOPICS.length} topics · 7d</div>
+      <div className="ovc-subhead"><ScrambleNumber value={String(total)} play={play} /> failing queries · {categories.length} topics · 7d</div>
       <div className="kg-list">
-        {KG_TOPICS.map((t, i) => (
-          <div
-            className="kg-row"
-            key={t.name}
-            role="link"
-            tabIndex={0}
-            style={{ cursor: 'pointer' }}
-            onClick={() => onTopic(t.cell)}
-            onKeyDown={onActivateKey(() => onTopic(t.cell))}
-            aria-label={`View ${t.name} traces`}
-          >
-            <div className="kg-top">
-              <span className="kg-dot" style={{ background: cellColor(t.cell) }} />
-              <span className="kg-name">{t.name}</span>
-              <span className="kg-q"><ScrambleNumber value={String(t.q)} play={play} /></span>
-              <span className={'kg-d ' + (t.d > 0 ? 'is-up' : t.d < 0 ? 'is-down' : 'is-flat')}>{t.d > 0 ? '+' + t.d : t.d < 0 ? t.d : '—'}</span>
+        {categories.map((c, i) => {
+          const cell = c.dominant_cell;
+          const short = cell ? CELL_SHORT[cell] : 'ig';
+          const note = cell ? CELL_NOTE[cell] : 'failures';
+          const d = c.trace_count - c.trace_count_prev;
+          return (
+            <div
+              className="kg-row"
+              key={c.suggestion_key_id}
+              role="link"
+              tabIndex={0}
+              style={{ cursor: 'pointer' }}
+              onClick={() => onTopic(cell)}
+              onKeyDown={onActivateKey(() => onTopic(cell))}
+              aria-label={`View ${c.description || c.slug} traces`}
+            >
+              <div className="kg-top">
+                <span className="kg-dot" style={{ background: cellColor(short) }} />
+                <span className="kg-name">{c.description || c.slug}</span>
+                <span className="kg-q"><ScrambleNumber value={String(c.trace_count)} play={play} /></span>
+                <span className={'kg-d ' + (d > 0 ? 'is-up' : d < 0 ? 'is-down' : 'is-flat')}>{d > 0 ? '+' + d : d < 0 ? d : '—'}</span>
+              </div>
+              <div className="kg-meta">
+                <span className="kg-bar"><i style={{ width: (c.trace_count / max) * 100 + '%', background: cellColor(short), transitionDelay: i * 0.06 + 's' }} /></span>
+                <span className="kg-cell" style={{ color: cellColor(short) }}>{note}</span>
+              </div>
             </div>
-            <div className="kg-meta">
-              <span className="kg-bar"><i style={{ width: (t.q / max) * 100 + '%', background: cellColor(t.cell), transitionDelay: i * 0.06 + 's' }} /></span>
-              <span className="kg-cell" style={{ color: cellColor(t.cell) }}>{t.note}</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <button type="button" className="ovc-link" style={LINK_BTN_RESET} onClick={onExplore}>Explore topic clusters →</button>
     </div>
   );
 }
 
-/* Potential improvement — now → projected, + heal contributors */
-const PI_CURRENT = 0.869, PI_PROJECTED = 0.942, PI_PENDING = 18;
-const PI_HEALS = [
-  { name: 'Add billing-refund chunks', gain: 3.1, traces: 42 },
-  { name: 'Fix SSO doc retrieval', gain: 2.4, traces: 34 },
-  { name: 'Tighten rate-limit prompt', gain: 1.8, traces: 30 },
-];
-function PotentialImprovementCell({ play = true, onHeals }: { play?: boolean; onHeals: () => void }) {
-  const delta = ((PI_PROJECTED - PI_CURRENT) * 100).toFixed(1);
+/* Potential improvement — now → projected, + heal contributors (live, heuristic) */
+type PiContributor = { name: string; gain: number; traces: number };
+function PotentialImprovementCell({ current, projected, pending, contributors, play = true, onHeals }: {
+  current: number;
+  projected: number;
+  pending: number;
+  contributors: PiContributor[];
+  play?: boolean;
+  onHeals: () => void;
+}) {
+  const delta = ((projected - current) * 100).toFixed(1);
+  if (pending === 0) {
+    return (
+      <div className="ovc-body pi-body">
+        <div className="ovc-subhead">No pending heals</div>
+        <p className="va-rationale">Nothing is queued to improve right now. New heal cards appear here as failures cluster, with the projected lift if you resolve them.</p>
+        <button type="button" className="ovc-link" style={LINK_BTN_RESET} onClick={onHeals}>Open heals →</button>
+      </div>
+    );
+  }
   return (
     <div className="ovc-body pi-body">
       <div className="pi-hero">
-        <div className="pi-from"><span className="pi-from-n"><ScrambleNumber value={(PI_CURRENT * 100).toFixed(1) + '%'} play={play} /></span><span className="pi-lab">now</span></div>
+        <div className="pi-from"><span className="pi-from-n"><ScrambleNumber value={(current * 100).toFixed(1) + '%'} play={play} /></span><span className="pi-lab">now</span></div>
         <span className="pi-arrow">→</span>
-        <div className="pi-to"><span className="pi-to-n"><ScrambleNumber value={(PI_PROJECTED * 100).toFixed(1) + '%'} play={play} /></span><span className="pi-lab">if all heals done</span></div>
+        <div className="pi-to"><span className="pi-to-n"><ScrambleNumber value={(projected * 100).toFixed(1) + '%'} play={play} /></span><span className="pi-lab">if all heals done</span></div>
         <span className="pi-gain">+<ScrambleNumber value={delta} play={play} /> pp</span>
       </div>
       <div className="pi-meter">
-        <div className="pi-meter-now" style={{ width: PI_CURRENT * 100 + '%' }} />
-        <div className="pi-meter-gain" style={{ left: PI_CURRENT * 100 + '%', width: (PI_PROJECTED - PI_CURRENT) * 100 + '%' }} />
+        <div className="pi-meter-now" style={{ width: current * 100 + '%' }} />
+        <div className="pi-meter-gain" style={{ left: current * 100 + '%', width: (projected - current) * 100 + '%' }} />
       </div>
-      <div className="ovc-subhead">{PI_PENDING} pending heals · top contributors</div>
+      <div className="ovc-subhead">{pending} pending heals · top contributors</div>
       <div className="pi-rows">
-        {PI_HEALS.map((h) => (
+        {contributors.map((h, i) => (
           <div
             className="pi-row"
-            key={h.name}
+            key={i}
             role="link"
             tabIndex={0}
             style={{ cursor: 'pointer' }}
@@ -467,71 +519,104 @@ function PotentialImprovementCell({ play = true, onHeals }: { play?: boolean; on
           </div>
         ))}
       </div>
-      <button type="button" className="ovc-link" style={LINK_BTN_RESET} onClick={onHeals}>Review all {PI_PENDING} heals →</button>
+      <button type="button" className="ovc-link" style={LINK_BTN_RESET} onClick={onHeals}>Review all {pending} heals →</button>
     </div>
   );
 }
 
-/* Ver-advice — prescriptive recommendation */
-const VA_ACTIONS = [
-  { t: 'Close the billing-refund gap', d: 'Largest single lift — 42 failing queries, +3.1pp projected.', tag: 'high' },
-  { t: 'Audit completeness on long queries', d: 'Incomplete answers skew toward multi-part questions.', tag: 'med' },
-  { t: 'Watch rate-limit hallucinations', d: 'cu in this topic rose +5 today — worth a judge re-check.', tag: 'watch' },
-];
-function VerAdviceCell() {
+/* Ver-advice — prescriptive recommendation (live: /insights/summary, LLM, cached) */
+function VerAdviceCell({ summary, highlights, loading }: { summary: string; highlights: string[]; loading?: boolean }) {
+  if (loading && !summary) {
+    return (
+      <div className="ovc-body va-body">
+        <p className="va-rationale">Generating your "state of your RAG" digest…</p>
+      </div>
+    );
+  }
   return (
     <div className="ovc-body va-body">
-      <p className="va-headline">Spend this week on retrieval coverage, not prompt tuning.</p>
-      <p className="va-rationale">Faithfulness is already healthy at 0.88 — the model grounds well when it has the context. Your losses are completeness and grounding gaps that trace back to thin retrieval on a handful of topics. Fixing what gets retrieved will move the healthy rate more than any prompt change.</p>
-      <div className="va-actions-h">Recommended next, in priority order</div>
-      <div className="va-actions">
-        {VA_ACTIONS.map((a, i) => (
-          <div className="va-action" key={i}>
-            <span className="va-num po-mono">{i + 1}</span>
-            <div className="va-action-body">
-              <div className="va-action-t">{a.t}<span className={'va-pri va-pri-' + a.tag}>{a.tag}</span></div>
-              <div className="va-action-d">{a.d}</div>
-            </div>
+      <p className="va-headline">What we'd focus on next</p>
+      <p className="va-rationale">{summary || 'Recommendations will appear here as your RAG accumulates evaluated traces.'}</p>
+      {highlights.length > 0 && (
+        <>
+          <div className="va-actions-h">Recommended next, in priority order</div>
+          <div className="va-actions">
+            {highlights.map((a, i) => (
+              <div className="va-action" key={i}>
+                <span className="va-num po-mono">{i + 1}</span>
+                <div className="va-action-body">
+                  <div className="va-action-t">{a}</div>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="va-outcome"><span className="va-outcome-l">Expected outcome</span><span className="va-outcome-v">86.9% → ~92% within two weeks if the top two ship</span></div>
+        </>
+      )}
     </div>
   );
 }
 
-/* Latency over time — detailed time-axis chart (24h / 7d), p50 + p95 + SLA */
-const LAT_24_P95 = [1.4, 1.3, 1.3, 1.2, 1.3, 1.4, 1.6, 1.9, 2.2, 2.4, 2.5, 2.6, 2.7, 3.0, 3.2, 3.1, 2.8, 2.5, 2.2, 2.0, 1.9, 1.7, 1.6, 1.5];
-const LAT_24_P50 = [0.8, 0.8, 0.7, 0.7, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.2, 1.3, 1.3, 1.4, 1.5, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 0.9, 0.9];
-const LAT_7_P95 = [2.2, 2.4, 2.9, 3.1, 2.8, 1.7, 1.5];
-const LAT_7_P50 = [1.1, 1.2, 1.4, 1.5, 1.3, 1.0, 0.9];
-const LAT_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+/* Latency over time — detailed time-axis chart (24h / 7d), p50 + p95 + SLA (live) */
 const LAT_SLA = 2.5;
-const hourLabel = (h: number) => (h < 10 ? '0' + h : h) + ':00';
-type LatCfg = { p95: number[]; p50: number[]; N: number; ticks: number[]; xlab: (i: number) => string; slowFrom: number; slowTo: number; peak: number; p95peak: string; p50peak: string; insight: ReactNode };
-const LAT_CFG: Record<'24h' | '7d', LatCfg> = {
-  '24h': {
-    p95: LAT_24_P95, p50: LAT_24_P50, N: 24, ticks: [0, 4, 8, 12, 16, 20], xlab: hourLabel,
-    slowFrom: 13, slowTo: 16, peak: 14, p95peak: '3.2s', p50peak: '1.5s',
-    insight: (<>RAG slows through the afternoon — p95 climbs to <b>3.2s around 14:00</b> (~1.8× the overnight floor) and breaches the 2.5s SLA from <b>13:00–16:00</b>. Mornings and nights stay comfortably fast.</>),
-  },
-  '7d': {
-    p95: LAT_7_P95, p50: LAT_7_P50, N: 7, ticks: [0, 1, 2, 3, 4, 5, 6], xlab: (i) => LAT_DAYS[i],
-    slowFrom: 2, slowTo: 4, peak: 3, p95peak: '3.1s', p50peak: '1.5s',
-    insight: (<>Midweek is slowest — p95 peaks <b>Thursday at 3.1s</b> and breaches the 2.5s SLA <b>Wed–Fri</b>. Weekends run comfortably fast.</>),
-  },
-};
-function LatencyDetailCell() {
+type LatSeries = { p50: number[]; p95: number[]; labels: string[] };
+function latSeries(s: StatsResponse | undefined, kind: '24h' | '7d'): LatSeries {
+  const pts = (s?.timeseries ?? []).filter(
+    (b) => b.rag_latency_p95_ms != null || b.rag_latency_p50_ms != null,
+  );
+  const p50 = pts.map((b) => (b.rag_latency_p50_ms ?? 0) / 1000);
+  const p95 = pts.map((b) => (b.rag_latency_p95_ms ?? b.rag_latency_p50_ms ?? 0) / 1000);
+  const labels = pts.map((b, i) => {
+    // Only treat real ISO timestamps as dates. Mock buckets like '00'/'08'/'12'
+    // otherwise parse as valid Dates (year/month) and mislabel/duplicate the axis.
+    const isIso = /^\d{4}-\d{2}-\d{2}/.test(b.bucket);
+    const d = new Date(b.bucket);
+    if (!isIso || isNaN(d.getTime())) return b.bucket || String(i); // mock buckets ('00'…'now')
+    return kind === '24h'
+      ? String(d.getHours()).padStart(2, '0') + ':00'
+      : d.toLocaleDateString([], { weekday: 'short' });
+  });
+  return { p50, p95, labels };
+}
+
+function LatencyDetailCell({ s24, s7d }: { s24: StatsResponse | undefined; s7d: StatsResponse | undefined }) {
   const [range, setRange] = useState<'24h' | '7d'>('24h');
   const [hi, setHi] = useState<number | null>(null);
-  const cfg = LAT_CFG[range];
-  const N = cfg.N;
+  const series = latSeries(range === '24h' ? s24 : s7d, range);
+  const N = series.p95.length;
+  if (N < 2) {
+    return (
+      <div className="ovc-body lat-body">
+        <div className="lat-legend">
+          <span className="lat-toggle">
+            {(['24h', '7d'] as const).map((r) => (
+              <button key={r} type="button" className={range === r ? 'is-on' : ''} onClick={() => { setRange(r); setHi(null); }}>{r}</button>
+            ))}
+          </span>
+        </div>
+        <div className="lat-insight">
+          No latency captured in this window yet. It's recorded automatically when you use <code>@veralith.trace</code>, or pass <code>latency_ms</code> to <code>veralith.log()</code>.
+        </div>
+      </div>
+    );
+  }
   const W = 760, H = 232, pl = 38, pr = 16, pt = 16, pb = 30;
-  const iw = W - pl - pr, ih = H - pt - pb, ymax = 3.6;
-  const x = (h: number) => pl + (h / (N - 1)) * iw;
+  const iw = W - pl - pr, ih = H - pt - pb;
+  const ymax = Math.max(LAT_SLA, ...series.p95) * 1.15;
+  const x = (i: number) => pl + (i / (N - 1)) * iw;
   const y = (v: number) => pt + (1 - v / ymax) * ih;
   const line = (arr: number[]) => arr.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
   const area = (arr: number[]) => line(arr) + ' L' + x(N - 1).toFixed(1) + ' ' + y(0).toFixed(1) + ' L' + x(0).toFixed(1) + ' ' + y(0).toFixed(1) + ' Z';
+  let peakI = 0;
+  for (let i = 1; i < N; i++) if (series.p95[i] > series.p95[peakI]) peakI = i;
+  const p95peak = series.p95[peakI].toFixed(1) + 's';
+  const p50peak = Math.max(...series.p50).toFixed(1) + 's';
+  const slowFrom = Math.max(0, peakI - 1), slowTo = Math.min(N - 1, peakI + 1);
+  const tickCount = Math.min(6, N);
+  const ticks = Array.from({ length: tickCount }, (_, k) => Math.round((k / (tickCount - 1)) * (N - 1)));
+  const yGrid: number[] = [];
+  for (let g = 1; g <= Math.floor(ymax); g++) yGrid.push(g);
+  const breaches = series.p95.some((v) => v > LAT_SLA);
+  const xlab = (i: number) => series.labels[i] ?? '';
   function onMove(e: React.MouseEvent<HTMLDivElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
     const internalX = ((e.clientX - rect.left) / rect.width) * W;
@@ -542,50 +627,60 @@ function LatencyDetailCell() {
   return (
     <div className="ovc-body lat-body">
       <div className="lat-legend">
-        <span className="lat-key"><i style={{ background: 'var(--po-idle)' }} />p95<b>{cfg.p95peak}</b><small>peak</small></span>
-        <span className="lat-key"><i style={{ background: 'var(--po-fg-3)' }} />p50<b>{cfg.p50peak}</b><small>peak</small></span>
-        <span className="lat-key lat-key-sla"><i className="lat-dash" />SLA 2.5s</span>
+        <span className="lat-key"><i style={{ background: 'var(--po-idle)' }} />p95<b>{p95peak}</b><small>peak</small></span>
+        <span className="lat-key"><i style={{ background: 'var(--po-fg-3)' }} />p50<b>{p50peak}</b><small>peak</small></span>
+        <span className="lat-key lat-key-sla"><i className="lat-dash" />SLA {LAT_SLA}s</span>
         <span className="lat-toggle">
           {(['24h', '7d'] as const).map((r) => (
-            <button key={r} type="button" className={range === r ? 'is-on' : ''} onClick={() => setRange(r)}>{r}</button>
+            <button key={r} type="button" className={range === r ? 'is-on' : ''} onClick={() => { setRange(r); setHi(null); }}>{r}</button>
           ))}
         </span>
       </div>
       <div className="lat-plot" onMouseMove={onMove} onMouseLeave={() => setHi(null)}>
         <svg className="lat-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img">
-          {[1, 2, 3].map((g) => (
+          {yGrid.map((g) => (
             <g key={g}>
               <line x1={pl} y1={y(g)} x2={W - pr} y2={y(g)} stroke="var(--po-line)" strokeWidth="1" />
               <text x={pl - 7} y={y(g) + 3} textAnchor="end" className="lat-ylab">{g}s</text>
             </g>
           ))}
-          <rect x={x(cfg.slowFrom)} y={pt} width={x(cfg.slowTo) - x(cfg.slowFrom)} height={ih} fill="color-mix(in oklab, var(--po-idle) 14%, transparent)" />
-          <text x={(x(cfg.slowFrom) + x(cfg.slowTo)) / 2} y={pt + 13} textAnchor="middle" className="lat-windowlab">peak load</text>
+          {slowTo > slowFrom && (
+            <>
+              <rect x={x(slowFrom)} y={pt} width={x(slowTo) - x(slowFrom)} height={ih} fill="color-mix(in oklab, var(--po-idle) 14%, transparent)" />
+              <text x={(x(slowFrom) + x(slowTo)) / 2} y={pt + 13} textAnchor="middle" className="lat-windowlab">peak load</text>
+            </>
+          )}
           <line x1={pl} y1={y(LAT_SLA)} x2={W - pr} y2={y(LAT_SLA)} stroke="var(--po-bad)" strokeWidth="1.2" strokeDasharray="5 4" opacity="0.7" />
-          <path d={area(cfg.p95)} fill="color-mix(in oklab, var(--po-idle) 16%, transparent)" />
-          <path d={line(cfg.p95)} fill="none" stroke="var(--po-idle)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
-          <path d={line(cfg.p50)} fill="none" stroke="var(--po-fg-3)" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
-          {hi == null && <circle cx={x(cfg.peak)} cy={y(cfg.p95[cfg.peak])} r="3.5" fill="var(--po-idle)" stroke="var(--po-panel)" strokeWidth="2" />}
+          <path d={area(series.p95)} fill="color-mix(in oklab, var(--po-idle) 16%, transparent)" />
+          <path d={line(series.p95)} fill="none" stroke="var(--po-idle)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+          <path d={line(series.p50)} fill="none" stroke="var(--po-fg-3)" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+          {hi == null && <circle cx={x(peakI)} cy={y(series.p95[peakI])} r="3.5" fill="var(--po-idle)" stroke="var(--po-panel)" strokeWidth="2" />}
           {hi != null && (
             <g>
               <line x1={x(hi)} x2={x(hi)} y1={pt} y2={pt + ih} stroke="var(--po-line-strong)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-              <circle cx={x(hi)} cy={y(cfg.p95[hi])} r="3.4" fill="var(--po-idle)" stroke="var(--po-panel)" strokeWidth="2" />
-              <circle cx={x(hi)} cy={y(cfg.p50[hi])} r="3.4" fill="var(--po-fg-3)" stroke="var(--po-panel)" strokeWidth="2" />
+              <circle cx={x(hi)} cy={y(series.p95[hi])} r="3.4" fill="var(--po-idle)" stroke="var(--po-panel)" strokeWidth="2" />
+              <circle cx={x(hi)} cy={y(series.p50[hi])} r="3.4" fill="var(--po-fg-3)" stroke="var(--po-panel)" strokeWidth="2" />
             </g>
           )}
-          {cfg.ticks.map((h) => (
-            <text key={h} x={x(h)} y={H - 9} textAnchor="middle" className="lat-xlab">{cfg.xlab(h)}</text>
+          {ticks.map((i) => (
+            <text key={i} x={x(i)} y={H - 9} textAnchor="middle" className="lat-xlab">{xlab(i)}</text>
           ))}
         </svg>
         {hi != null && (
-          <div className="wf-chart-tip lat-tip" style={{ left: tipPct + '%', top: y(cfg.p95[hi]) }}>
-            <span className="wf-chart-tip-x po-mono">{cfg.xlab(hi)}</span>
-            <span className="lat-tip-row"><i style={{ background: 'var(--po-idle)' }} />p95 <b>{cfg.p95[hi].toFixed(1)}s</b></span>
-            <span className="lat-tip-row"><i style={{ background: 'var(--po-fg-3)' }} />p50 <b>{cfg.p50[hi].toFixed(1)}s</b></span>
+          <div className="wf-chart-tip lat-tip" style={{ left: tipPct + '%', top: y(series.p95[hi]) }}>
+            <span className="wf-chart-tip-x po-mono">{xlab(hi)}</span>
+            <span className="lat-tip-row"><i style={{ background: 'var(--po-idle)' }} />p95 <b>{series.p95[hi].toFixed(1)}s</b></span>
+            <span className="lat-tip-row"><i style={{ background: 'var(--po-fg-3)' }} />p50 <b>{series.p50[hi].toFixed(1)}s</b></span>
           </div>
         )}
       </div>
-      <div className="lat-insight">{cfg.insight}</div>
+      <div className="lat-insight">
+        {breaches ? (
+          <>p95 peaks at <b>{p95peak}</b> and breaches the {LAT_SLA}s SLA at points in this window.</>
+        ) : (
+          <>p95 stays under the {LAT_SLA}s SLA, peaking at <b>{p95peak}</b>. p50 holds around <b>{p50peak}</b>.</>
+        )}
+      </div>
     </div>
   );
 }
@@ -624,6 +719,20 @@ function TodayContent() {
 
   const win = useMemo(() => periodWindow(period), [period]);
   const stats = useStats(slug, win);
+
+  // Overview-grid data — fixed windows (stable per mount → stable query keys).
+  const ov7d = useMemo(() => periodWindow('week'), []);
+  const ov24h = useMemo(() => {
+    const since = new Date();
+    since.setMinutes(0, 0, 0); // floor to the hour so the key doesn't churn
+    return { since: new Date(since.getTime() - 86_400_000).toISOString(), bucket: 'hour' as const };
+  }, []);
+  const stats7d = useStats(slug, ov7d);
+  const stats24h = useStats(slug, ov24h);
+  const catParams = useMemo(() => ({ since: ov7d.since, limit: 8 }), [ov7d.since]);
+  const categoriesQuery = useCategoryInsights(slug, catParams);
+  const summaryQuery = useInsightSummary(slug);
+
   const healsQuery = useQuery({
     queryKey: ['heals', projectId, 'overview'],
     queryFn: () => api.listHeals({ limit: 100 }),
@@ -631,7 +740,39 @@ function TodayContent() {
   });
 
   const s = stats.data;
-  const healsCount = (healsQuery.data ?? []).filter((c) => !projectId || c.project_id === projectId).length;
+  const projectHeals = (healsQuery.data ?? []).filter((c) => !projectId || c.project_id === projectId);
+  const healsCount = projectHeals.length;
+
+  // ── Overview grid: derived live data ──────────────────────────────────────
+  const ov = stats7d.data ?? s;
+  const cats = categoriesQuery.data?.categories ?? [];
+  const kgTotal = cats.reduce((acc, c) => acc + c.trace_count, 0);
+
+  // Potential improvement — heuristic projection: if every pending heal resolved,
+  // its traces become healthy. Clearly labeled "if all heals done".
+  // NOTE: heal n_traces is an ALL-TIME cluster size while total_traces is the 7d
+  // window. To keep units honest we cap the addressable lift at the window's
+  // room-for-improvement (non-healthy traces) and distribute that cap across the
+  // ranked cards. This guarantees projected ≤ 100% and that the per-contributor
+  // gains sum to ≤ the headline delta (no self-contradiction when the cap bites).
+  const PENDING_STATUSES = new Set(['open', 'in_progress', 'pr_raised', 'failed']);
+  const pendingHeals = [...projectHeals]
+    .filter((c) => PENDING_STATUSES.has(c.status))
+    .sort((a, b) => b.n_traces - a.n_traces);
+  const ovTotal = ov?.total_traces ?? 0;
+  const curHealthy = ov?.healthy_rate ?? 0;
+  const healthyCount = Math.round(curHealthy * ovTotal);
+  let roomLeft = Math.max(0, ovTotal - healthyCount);
+  const healWithEff = pendingHeals.map((c) => {
+    const eff = Math.max(0, Math.min(c.n_traces, roomLeft));
+    roomLeft -= eff;
+    return { card: c, eff };
+  });
+  const addressable = healWithEff.reduce((acc, x) => acc + x.eff, 0);
+  const projHealthy = ovTotal > 0 ? (healthyCount + addressable) / ovTotal : curHealthy;
+  const piContributors = healWithEff
+    .slice(0, 3)
+    .map((x) => ({ name: x.card.title, traces: x.card.n_traces, gain: ovTotal > 0 ? (x.eff / ovTotal) * 100 : 0 }));
 
   const healthyPct = (s?.healthy_rate ?? 0) * 100;
   const deltaPP = s?.deltas?.healthy_rate_pp_24h ?? 0;
@@ -656,7 +797,12 @@ function TodayContent() {
     },
     { l: 'Failures', v: failures.toLocaleString('en-US'), d: 'flat', ds: 'ungrounded · window', warn: failures > 0 },
     { l: 'Heals', v: healsCount.toLocaleString('en-US'), d: 'flat', ds: 'this project' },
-    { l: 'p95 latency', v: '—', d: 'flat', ds: 'not captured yet' },
+    {
+      l: 'p95 latency',
+      v: s?.rag_latency_ms?.p95 != null ? (s.rag_latency_ms.p95 / 1000).toFixed(2) + 's' : '—',
+      d: 'flat',
+      ds: s?.rag_latency_ms?.p95 != null ? `p95 · ${s.rag_latency_ms.sample_size} traces` : 'no latency yet',
+    },
   ];
 
   const asOfDate = period === 'today' ? asOf : period === 'yesterday' ? 'yesterday' : 'last 7 days';
@@ -780,13 +926,13 @@ function TodayContent() {
 
         <div className="ovc-cols">
           <div className="ovc-col ovc-col-l">
-            <div className="ovc-card ovc-flush"><RagHealthCard play={ovInView} /></div>
-            <OvCell title="Latency over time" sub="p50 · p95 · 24h / 7d"><LatencyDetailCell /></OvCell>
-            <OvCell title="Ver-advice" sub="what we'd do next"><VerAdviceCell /></OvCell>
+            <div className="ovc-card ovc-flush"><RagHealthCard s={stats7d.data} play={ovInView} /></div>
+            <OvCell title="Latency over time" sub="p50 · p95 · 24h / 7d"><LatencyDetailCell s24={stats24h.data} s7d={stats7d.data} /></OvCell>
+            <OvCell title="Ver-advice" sub="what we'd do next"><VerAdviceCell summary={summaryQuery.data?.summary ?? ''} highlights={summaryQuery.data?.highlights ?? []} loading={summaryQuery.isLoading} /></OvCell>
           </div>
           <div className="ovc-col ovc-col-r">
-            <OvCell title="Knowledge-gap topics" sub="failing-query clusters"><KnowledgeGapCell play={ovInView} onTopic={(cell) => navigate(tracesPath(slug, cell))} onExplore={() => navigate(cellsPath(slug))} /></OvCell>
-            <OvCell title="Potential improvement" sub="if all heals done" grow><PotentialImprovementCell play={ovInView} onHeals={() => navigate(healsPath(slug))} /></OvCell>
+            <OvCell title="Knowledge-gap topics" sub="failing-query clusters"><KnowledgeGapCell categories={cats} total={kgTotal} play={ovInView} onTopic={(cell) => navigate(cell ? tracesPath(slug, cell) : tracesPath(slug))} onExplore={() => navigate(cellsPath(slug))} /></OvCell>
+            <OvCell title="Potential improvement" sub="if all heals done" grow><PotentialImprovementCell current={curHealthy} projected={projHealthy} pending={pendingHeals.length} contributors={piContributors} play={ovInView} onHeals={() => navigate(healsPath(slug))} /></OvCell>
           </div>
         </div>
       </section>

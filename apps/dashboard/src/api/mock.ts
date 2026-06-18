@@ -2,6 +2,7 @@ import type {
   ApiKey,
   ApiKeyWithSecret,
   CalibrationResponse,
+  CategoriesResponse,
   CellTimeseriesResponse,
   FailureCell,
   HealActionResponse,
@@ -9,6 +10,7 @@ import type {
   HealCardSummary,
   HealsListQuery,
   HealStatus,
+  InsightSummaryResponse,
   Me,
   Project,
   StatsResponse,
@@ -451,8 +453,25 @@ export const mockApi = {
   ): Promise<StatsResponse> {
     await delay(180);
     // Mock ignores window params — every panel sees the same seed series.
-    // Real backend filters via ?since/?until/?bucket.
-    return SEED_STATS;
+    // Real backend filters via ?since/?until/?bucket. We enrich the seed with
+    // latency + completeness so the Overview grid renders in mock mode.
+    const n = SEED_STATS.timeseries.length;
+    const timeseries = SEED_STATS.timeseries.map((b, i) => {
+      const bump = Math.sin((i / Math.max(1, n - 1)) * Math.PI); // afternoon peak
+      return {
+        ...b,
+        rag_latency_p50_ms: Math.round((0.8 + 0.7 * bump) * 1000),
+        rag_latency_p95_ms: Math.round((1.4 + 1.8 * bump) * 1000),
+        completeness_rate: Math.round((0.92 - 0.08 * bump) * 1000) / 1000,
+      };
+    });
+    return {
+      ...SEED_STATS,
+      completeness_rate: 0.89,
+      rag_latency_ms: { p50: 1100, p90: 2400, p95: 2900, p99: 3300, sample_size: SEED_STATS.total_traces },
+      timeseries,
+      deltas: { ...SEED_STATS.deltas, completeness_rate_pp_24h: -0.03 },
+    };
   },
 
   async listTraces(projectIdOrSlug: string, q: TracesQuery = {}): Promise<TracesResponse> {
@@ -624,6 +643,58 @@ export const mockApi = {
     }
     if (action === 'accept') card.pr_accepted_at = card.updated_at;
     return { id: card.id, status: card.status, pr_url: card.pr_url };
+  },
+
+  // -------------------------------------------------------------------------
+  // Insights — knowledge-gap clusters + LLM "state of your RAG" digest.
+  // -------------------------------------------------------------------------
+  async getCategoryInsights(
+    _projectIdOrSlug: string,
+    _q: { since?: string; until?: string; limit?: number } = {},
+  ): Promise<CategoriesResponse> {
+    await delay(160);
+    const seed: { desc: string; n: number; prev: number; cell: FailureCell }[] = [
+      { desc: 'Billing & refunds', n: 42, prev: 36, cell: 'complete_ungrounded' },
+      { desc: 'SSO / SAML setup', n: 34, prev: 31, cell: 'incomplete_grounded' },
+      { desc: 'API rate limits', n: 30, prev: 25, cell: 'incomplete_ungrounded' },
+      { desc: 'Data residency', n: 24, prev: 24, cell: 'complete_ungrounded' },
+      { desc: 'Webhook retries', n: 20, prev: 22, cell: 'incomplete_grounded' },
+      { desc: 'Export formats', n: 18, prev: 17, cell: 'extra_grounded' },
+    ];
+    const now = new Date();
+    return {
+      since: new Date(now.getTime() - 7 * 86_400_000).toISOString(),
+      until: now.toISOString(),
+      total_categories: seed.length,
+      categories: seed.map((c, i) => ({
+        suggestion_key_id: `mock-key-${i}`,
+        slug: slugify(c.desc),
+        description: c.desc,
+        trace_count: c.n,
+        trace_count_prev: c.prev,
+        trend_pct: c.prev ? Math.round(((c.n - c.prev) / c.prev) * 1000) / 10 : null,
+        avg_sufficiency: 0.5,
+        avg_faithfulness: 0.6,
+        dominant_cell: c.cell,
+        is_new: false,
+        heal: null,
+      })),
+    };
+  },
+
+  async getInsightSummary(_projectIdOrSlug: string): Promise<InsightSummaryResponse> {
+    await delay(160);
+    return {
+      summary:
+        'Faithfulness is healthy — the model grounds well when it has the context. Your losses are completeness and retrieval gaps on a handful of topics (billing refunds, SSO/SAML setup). Fixing what gets retrieved will move the healthy rate more than any prompt change.',
+      highlights: [
+        'Close the billing-refund retrieval gap — largest single lift (42 failing queries).',
+        'Audit completeness on long, multi-part questions.',
+        'Watch rate-limit hallucinations — ungrounded answers rose this week.',
+      ],
+      based_on: { window_days: 7, total_traces: SEED_STATS.total_traces },
+      generated_at: new Date().toISOString(),
+    };
   },
 };
 

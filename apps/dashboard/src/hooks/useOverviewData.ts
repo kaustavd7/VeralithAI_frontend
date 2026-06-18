@@ -46,6 +46,29 @@ export function useTraces(projectId: string, query: TracesQuery = {}) {
   });
 }
 
+/** Failure-category leaderboard ("Knowledge-gap topics"). */
+export function useCategoryInsights(
+  projectId: string,
+  params: { since?: string; until?: string; limit?: number } = {},
+) {
+  return useQuery({
+    queryKey: ['category-insights', projectId, params],
+    queryFn: () => api.getCategoryInsights(projectId, params),
+    enabled: !!projectId,
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** Cached LLM "state of your RAG" digest ("Ver-advice"). */
+export function useInsightSummary(projectId: string) {
+  return useQuery({
+    queryKey: ['insight-summary', projectId],
+    queryFn: () => api.getInsightSummary(projectId),
+    enabled: !!projectId,
+    placeholderData: keepPreviousData,
+  });
+}
+
 export function useCalibration(projectId: string) {
   return useQuery({
     queryKey: ['calibration', projectId],

@@ -38,8 +38,14 @@ export interface StatsTimeseriesPoint {
   count: number;
   ok: number;
   failed: number;
-  avg_sufficiency: number;
-  avg_faithfulness: number;
+  // Nullable: a bucket whose traces have no evaluation yet (outer join) emits null.
+  avg_sufficiency: number | null;
+  avg_faithfulness: number | null;
+  // Added for the Overview grid (sparklines + latency chart). Optional/nullable:
+  // a bucket has no latency if no trace in it carried latency_ms_total.
+  rag_latency_p50_ms?: number | null;
+  rag_latency_p95_ms?: number | null;
+  completeness_rate?: number | null;
 }
 
 export interface StatsDeltas {
@@ -47,6 +53,15 @@ export interface StatsDeltas {
   healthy_rate_pp_24h: number;
   avg_sufficiency_delta_24h: number;
   avg_faithfulness_delta_24h: number;
+  completeness_rate_pp_24h?: number | null;
+}
+
+export interface LatencyPercentiles {
+  p50: number | null;
+  p90: number | null;
+  p95: number | null;
+  p99: number | null;
+  sample_size: number;
 }
 
 export interface StatsResponse {
@@ -55,7 +70,11 @@ export interface StatsResponse {
   healthy_rate: number;
   avg_sufficiency: number;
   avg_faithfulness: number;
+  // Share of evaluated traces whose completeness verdict is "complete" (0..1).
+  completeness_rate?: number | null;
   total_cost_usd: number;
+  // Customer RAG latency percentiles over the window (ms); null if none carried it.
+  rag_latency_ms?: LatencyPercentiles | null;
   timeseries: StatsTimeseriesPoint[];
   deltas: StatsDeltas;
 }
@@ -73,6 +92,45 @@ export interface CellTimeseriesResponse {
   buckets: CellTimeseriesPoint[];
   totals: Record<FailureCell, number>;
   total: number;
+}
+
+// ---------------------------------------------------------------------------
+// Insights — GET /v1/projects/{id}/insights/categories + /insights/summary
+// Powers the Overview "Knowledge-gap topics" + "Ver-advice" cards.
+// ---------------------------------------------------------------------------
+export interface CategoryHealRef {
+  card_id: string;
+  status: string;
+  is_recurrence: boolean;
+  pr_url: string | null;
+}
+
+export interface CategoryInsight {
+  suggestion_key_id: string;
+  slug: string;
+  description: string;
+  trace_count: number;
+  trace_count_prev: number;
+  trend_pct: number | null;
+  avg_sufficiency: number | null;
+  avg_faithfulness: number | null;
+  dominant_cell: FailureCell | null;
+  is_new: boolean;
+  heal: CategoryHealRef | null;
+}
+
+export interface CategoriesResponse {
+  since: string;
+  until: string;
+  total_categories: number;
+  categories: CategoryInsight[];
+}
+
+export interface InsightSummaryResponse {
+  summary: string;
+  highlights: string[];
+  based_on: Record<string, unknown>;
+  generated_at: string | null;
 }
 
 export interface TraceListItem {
