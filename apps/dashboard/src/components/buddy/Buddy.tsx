@@ -22,6 +22,19 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]!;
 
+type Expr = 'smile' | 'happy' | 'grin' | 'surprised' | 'sleep';
+
+/* Lith's mouth changes with his mood so he isn't perma-smiling. */
+function Mouth({ expr }: { expr: Expr }) {
+  if (expr === 'surprised') return <ellipse cx="32" cy="41.6" rx="2.1" ry="2.6" fill="#3c4b3f" />;
+  if (expr === 'grin') return <path d="M26.8 39.6 Q32 46.6 37.2 39.6 Q32 41.9 26.8 39.6 Z" fill="#3c4b3f" />;
+  if (expr === 'sleep')
+    return <path d="M30 41.3 q2 1.5 4 0" stroke="#3c4b3f" strokeWidth="1.5" fill="none" strokeLinecap="round" />;
+  if (expr === 'happy')
+    return <path d="M27.3 40 q4.7 4.4 9.4 0" stroke="#3c4b3f" strokeWidth="1.7" fill="none" strokeLinecap="round" />;
+  return <path d="M28 40.5 q4 3.4 8 0" stroke="#3c4b3f" strokeWidth="1.7" fill="none" strokeLinecap="round" />;
+}
+
 function prefersReducedMotion(): boolean {
   try {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -268,6 +281,16 @@ export function Buddy() {
   const bubbleSide = pos.x + 29 > vw / 2 ? 'left' : 'right';
   const bubbleV = pos.y + 29 < vh / 2 ? 'top' : 'bottom';
   const blurPx = Math.min(1.3, Math.abs(lean) / 9);
+  const expression: Expr =
+    action === 'sleep'
+      ? 'sleep'
+      : Math.abs(lean) > 6
+        ? 'surprised'
+        : action === 'jump' || action === 'spin'
+          ? 'grin'
+          : sparkle
+            ? 'happy'
+            : 'smile';
 
   return (
     <div
@@ -337,14 +360,7 @@ export function Buddy() {
             </g>
           </g>
 
-          <path
-            className="buddy-mouth"
-            d="M28 40.5 q4 3.4 8 0"
-            stroke="#3c4b3f"
-            strokeWidth="1.7"
-            fill="none"
-            strokeLinecap="round"
-          />
+          <Mouth expr={expression} />
 
           {sparkle && (
             <path
