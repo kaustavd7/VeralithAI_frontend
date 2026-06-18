@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './detail.module.css';
 import { CELL_META } from '../../utils/cellMeta';
@@ -34,6 +34,19 @@ const CELL_SEVERITY: Record<string, string> = {
   extra_grounded:        'EXTRA',
   extra_ungrounded:      'EXTRA · ungrounded',
 };
+
+// Traffic-light severity hue per cell: green = healthy, amber/yellow =
+// grounded-but-imperfect, red/dark-red = ungrounded (hallucination). `ink` is
+// the readable pill text colour on that hue.
+const CELL_TINT: Record<string, { hue: string; ink: string }> = {
+  complete_grounded:     { hue: 'var(--cell-cg)', ink: '#06150e' }, // green
+  incomplete_grounded:   { hue: 'var(--cell-ig)', ink: '#1d1503' }, // amber
+  extra_grounded:        { hue: 'var(--cell-eg)', ink: '#181504' }, // yellow
+  complete_ungrounded:   { hue: 'var(--cell-cu)', ink: '#ffffff' }, // red
+  extra_ungrounded:      { hue: 'var(--cell-eu)', ink: '#ffffff' }, // red
+  incomplete_ungrounded: { hue: 'var(--cell-iu)', ink: '#ffffff' }, // dark red
+};
+const CELL_TINT_FALLBACK = { hue: 'var(--po-line-strong)', ink: '#ffffff' } as const;
 
 function buildMarkdown(traceId: string, cell: string, s: Suggestion): string {
   const items = s.actions.map((a) => `- ${a}`).join('\n');
@@ -72,6 +85,7 @@ export function DiagnosisHero({ diagnosis, suggestion, traceId }: Props) {
   const meta = CELL_META[diagnosis.failure_cell] ?? CELL_META_FALLBACK;
   const meaning = CELL_MEANINGS[diagnosis.failure_cell] ?? '';
   const severity = CELL_SEVERITY[diagnosis.failure_cell] ?? '';
+  const tint = CELL_TINT[diagnosis.failure_cell] ?? CELL_TINT_FALLBACK;
 
   function goToCellTraces() {
     navigate(tracesPath(slug, diagnosis.failure_cell));
@@ -100,11 +114,11 @@ export function DiagnosisHero({ diagnosis, suggestion, traceId }: Props) {
 
   return (
     <>
-      <div className={styles.diag}>
+      <div className={styles.diag} style={{ '--diag-tint': tint.hue } as CSSProperties}>
         <div className={styles.diagLeft}>
           <span
             className={styles.cellPill}
-            style={{ background: meta.color, cursor: 'pointer' }}
+            style={{ background: tint.hue, color: tint.ink, cursor: 'pointer' }}
             role="button"
             tabIndex={0}
             title={`View ${meta.label} traces`}

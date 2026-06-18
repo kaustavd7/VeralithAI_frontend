@@ -79,8 +79,9 @@
 }
 .diagLeft {
   padding: var(--space-6);
+  /* --diag-tint is set per failure cell (green/amber/red) by DiagnosisHero. */
   background:
-    linear-gradient(180deg, color-mix(in oklab, var(--po-bad) 13%, transparent), color-mix(in oklab, var(--po-bad) 4%, transparent)),
+    linear-gradient(180deg, color-mix(in oklab, var(--diag-tint, var(--po-bad)) 14%, transparent), color-mix(in oklab, var(--diag-tint, var(--po-bad)) 4%, transparent)),
     var(--po-panel);
   border-right: 1px solid var(--po-line);
   display: flex;
