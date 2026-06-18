@@ -10,7 +10,10 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      staleTime: 30_000,
+      // Data stays "fresh" for 60s so quick navigation never refetches; combined
+      // with placeholderData:keepPreviousData on the data hooks, the UI shows
+      // cached data instantly and updates in place rather than flashing a loader.
+      staleTime: 60_000,
       // Keep inactive query data cached for 10 min so navigating between pages
       // (Traces ↔ Heals ↔ Overview) serves cached data instantly instead of a
       // fresh "Loading…" on every visit.

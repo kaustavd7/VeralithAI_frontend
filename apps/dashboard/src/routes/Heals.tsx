@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation, keepPreviousData } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
@@ -714,6 +714,7 @@ export default function Heals() {
     queryKey: ['heals', projectId, 'all'],
     queryFn: () => api.listHeals({ limit: 100 }),
     refetchInterval: 12_000,
+    placeholderData: keepPreviousData,
   });
 
   // 5s for detail while status is non-terminal.

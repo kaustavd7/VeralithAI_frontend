@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { api } from '../api/client';
 import type { TracesQuery } from '../api/types';
 
@@ -18,6 +18,7 @@ export function useStats(projectId: string, params: StatsQueryParams = {}) {
     queryKey: ['stats', projectId, params],
     queryFn: () => api.getStats(projectId, params),
     enabled: !!projectId,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -32,6 +33,7 @@ export function useCellTimeseries(projectId: string, params: StatsQueryParams = 
     queryKey: ['cell-timeseries', projectId, params],
     queryFn: () => api.getCellTimeseries(projectId, params),
     enabled: !!projectId,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -40,6 +42,7 @@ export function useTraces(projectId: string, query: TracesQuery = {}) {
     queryKey: ['traces', projectId, query],
     queryFn: () => api.listTraces(projectId, query),
     enabled: !!projectId,
+    placeholderData: keepPreviousData,
   });
 }
 

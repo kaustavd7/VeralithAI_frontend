@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { ProjectSidebar } from './ProjectSidebar';
 import { ProjectTopbar } from './ProjectTopbar';
 import { useSidebarMode } from '../../lib/sidebarMode';
+import { usePrefetchProjectData } from '../../lib/prefetch';
 import '../../styles/project-shell.css';
 import '../../styles/project-page.css';
 
@@ -33,6 +34,8 @@ export function ProjectShell({
   children,
 }: Props) {
   const [mode] = useSidebarMode();
+  // Warm every project page's data on entry so navigating between tabs is instant.
+  usePrefetchProjectData(variant === 'project' ? slug ?? '' : '');
 
   return (
     <div className="shell" data-sb={mode}>
