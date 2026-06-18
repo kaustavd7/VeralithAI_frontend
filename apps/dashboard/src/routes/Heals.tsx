@@ -42,26 +42,64 @@ const STATUS_META: Record<HealStatus, StatusMeta> = {
 const TERMINAL: HealStatus[] = ['resolved', 'manually_fixed', 'wont_fix', 'superseded'];
 
 /* ─────────────────────────────────────────────────────────────
-   Kanban columns — the heal lifecycle, left → right. Each column owns one or
-   more statuses; "Done" archives every terminal outcome.
+   Status buckets — used only to seed the canvas auto-layout (one cluster
+   column per lifecycle phase, left → right). Cards stay free-movable after.
    ─────────────────────────────────────────────────────────── */
 
-type ColumnDef = {
-  id: string;
-  label: string;
-  hint: string;
-  empty: string;
-  color: string;
-  statuses: HealStatus[];
-};
+type BucketDef = { id: string; statuses: HealStatus[] };
 
-const COLUMNS: ColumnDef[] = [
-  { id: 'open',        label: 'Open',        hint: 'Awaiting decision',   empty: 'Nothing awaiting decision', color: 'var(--accent)',  statuses: ['open'] },
-  { id: 'in_progress', label: 'In progress', hint: 'Claude Code working', empty: 'Nothing in progress',       color: 'var(--cell-ig)', statuses: ['in_progress'] },
-  { id: 'pr_raised',   label: 'PR raised',   hint: 'Review needed',       empty: 'No PRs to review',          color: 'var(--cell-cg)', statuses: ['pr_raised'] },
-  { id: 'failed',      label: 'Failed',      hint: 'Needs retry',         empty: 'No failures',               color: 'var(--cell-cu)', statuses: ['failed'] },
-  { id: 'done',        label: 'Done',        hint: 'Archived outcomes',   empty: 'No archived outcomes yet',  color: 'var(--po-grey)', statuses: ['resolved', 'manually_fixed', 'wont_fix', 'superseded'] },
+const BUCKETS: BucketDef[] = [
+  { id: 'open',        statuses: ['open'] },
+  { id: 'in_progress', statuses: ['in_progress'] },
+  { id: 'pr_raised',   statuses: ['pr_raised'] },
+  { id: 'failed',      statuses: ['failed'] },
+  { id: 'done',        statuses: ['resolved', 'manually_fixed', 'wont_fix', 'superseded'] },
 ];
+
+/* ─────────────────────────────────────────────────────────────
+   Canvas geometry + per-project layout persistence
+   ─────────────────────────────────────────────────────────── */
+
+type Pos = { x: number; y: number };
+
+const NODE_W = 232;
+const ROW_H = 132;
+const COL_GAP = 40;
+const PAD = 14;
+
+/* Cluster cards by status into left→right columns (newest first within each). */
+function autoLayout(cards: HealCardSummary[]): Record<string, Pos> {
+  const res: Record<string, Pos> = {};
+  BUCKETS.forEach((bucket, ci) => {
+    const x = PAD + ci * (NODE_W + COL_GAP);
+    cards
+      .filter((c) => bucket.statuses.includes(c.status))
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+      .forEach((c, ri) => {
+        res[c.id] = { x, y: PAD + ri * ROW_H };
+      });
+  });
+  return res;
+}
+
+const LS_KEY = (pid: string) => `veralith.heals.layout.${pid}`;
+function loadLayout(pid: string): Record<string, Pos> {
+  try {
+    const raw = localStorage.getItem(LS_KEY(pid));
+    if (!raw) return {};
+    const o = JSON.parse(raw);
+    return o && typeof o === 'object' ? (o as Record<string, Pos>) : {};
+  } catch {
+    return {};
+  }
+}
+function saveLayout(pid: string, p: Record<string, Pos>) {
+  try {
+    localStorage.setItem(LS_KEY(pid), JSON.stringify(p));
+  } catch {
+    /* storage full / unavailable — layout just won't persist */
+  }
+}
 
 /* ─────────────────────────────────────────────────────────────
    Tiny SVGs
@@ -85,6 +123,21 @@ function TracesIcon() {
   return (
     <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
       <path d="M1.5 9.5h9M1.5 6h6M1.5 2.5h9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+/* heal mark — a "+" cross inside the node's tinted icon tile */
+function HealGlyph() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+      <path d="M8 3.4v9.2M3.4 8h9.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+function ResetIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 14 14" fill="none" style={{ marginRight: 5, verticalAlign: '-1px' }}>
+      <path d="M11.5 7a4.5 4.5 0 1 1-1.3-3.1M11.5 1.5V4H9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -126,128 +179,58 @@ function shortId(id: string): string {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   KPI strip + achievement badges (computed client-side from the list)
+   Heal node — a Railway-style draggable card on the canvas
    ─────────────────────────────────────────────────────────── */
 
-function KpiStrip({ cards }: { cards: HealCardSummary[] }) {
-  const count = (s: HealStatus) => cards.filter((c) => c.status === s).length;
-  const open = count('open');
-  const prog = count('in_progress');
-  const pr = count('pr_raised');
-  const resolved = count('resolved');
-  const failed = count('failed');
-  const denom = resolved + failed;
-  const success = denom > 0 ? `${Math.round((resolved / denom) * 100)}%` : '—';
-
-  const items: { label: string; value: string | number; tone?: 'accent' | 'good' | 'bad'; hint?: string }[] = [
-    { label: 'Open', value: open, tone: open > 0 ? 'accent' : undefined, hint: 'Cards awaiting a decision' },
-    { label: 'In progress', value: prog, hint: 'Claude Code is working on these' },
-    { label: 'PR raised', value: pr, tone: pr > 0 ? 'good' : undefined, hint: 'PRs waiting for your review' },
-    { label: 'Resolved', value: resolved, tone: 'good', hint: 'PRs accepted and merged' },
-    { label: 'Success rate', value: success, hint: 'Resolved ÷ (Resolved + Failed) heal attempts' },
-  ];
-
-  return (
-    <div className="he-kpis">
-      {items.map((it) => (
-        <div className="he-kpi" key={it.label} title={it.hint}>
-          <span className="he-kpi-label">{it.label}</span>
-          <span className={'he-kpi-val' + (it.tone ? ` is-${it.tone}` : '')}>{it.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function HealBadges({ cards }: { cards: HealCardSummary[] }) {
-  const healed = cards.filter((c) => c.status === 'resolved' || c.status === 'manually_fixed').length;
-  const anyPr = cards.some((c) => c.pr_url);
-  const open = cards.filter((c) => c.status === 'open').length;
-
-  const badges: { icon: string; label: string; got: boolean }[] = [
-    { icon: '🩹', label: 'First heal', got: healed >= 1 },
-    { icon: '🔀', label: 'First PR', got: anyPr },
-    { icon: '🏅', label: '10 healed', got: healed >= 10 },
-    { icon: '🥇', label: '50 healed', got: healed >= 50 },
-    { icon: '✨', label: 'Inbox zero', got: cards.length > 0 && open === 0 },
-  ];
-
-  return (
-    <div className="he-badges" title={`${healed} healed all-time`}>
-      {badges.map((b) => (
-        <span className={'he-bchip' + (b.got ? ' is-got' : '')} key={b.label}>
-          <span className="he-bchip-ic">{b.icon}</span>
-          {b.label}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Kanban card + column
-   ─────────────────────────────────────────────────────────── */
-
-function KanbanCard({
-  card, selected, flash, onClick,
+function HealNode({
+  card, pos, selected, flash, dragging, onPointerDown, onPointerMove, onPointerUp, onOpen,
 }: {
   card: HealCardSummary;
+  pos: Pos;
   selected: boolean;
   flash: boolean;
-  onClick: () => void;
+  dragging: boolean;
+  onPointerDown: (e: React.PointerEvent, card: HealCardSummary) => void;
+  onPointerMove: (e: React.PointerEvent) => void;
+  onPointerUp: (e: React.PointerEvent, card: HealCardSummary) => void;
+  onOpen: (id: string) => void;
 }) {
   const m = STATUS_META[card.status] ?? { label: card.status, phrase: null, color: 'var(--po-grey)' };
   return (
-    <button
-      className={'he-kc' + (selected ? ' is-selected' : '') + (flash ? ' is-flash' : '')}
-      style={{ '--c': m.color } as React.CSSProperties}
-      onClick={onClick}
+    <div
+      className={'he-node' + (selected ? ' is-selected' : '') + (flash ? ' is-flash' : '') + (dragging ? ' is-dragging' : '')}
+      style={{ transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`, '--c': m.color } as React.CSSProperties}
+      role="button"
+      tabIndex={0}
+      aria-label={`${card.title} — ${m.label}`}
+      title={card.title}
+      onPointerDown={(e) => onPointerDown(e, card)}
+      onPointerMove={onPointerMove}
+      onPointerUp={(e) => onPointerUp(e, card)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen(card.id);
+        }
+      }}
     >
-      <div className="he-kc-top">
-        <span className={'he-kc-dot' + (m.pulse ? ' is-pulse' : '')} />
-        <span className="he-kc-title">{card.title}</span>
+      <div className="he-node-top">
+        <span className="he-node-ic"><HealGlyph /></span>
+        <div className="he-node-headings">
+          <div className="he-node-title">{card.title}</div>
+          <div className="he-node-sub">{card.suggestion_slug}</div>
+        </div>
       </div>
-      <div className="he-kc-meta">
-        <span className="he-kc-traces"><TracesIcon />{card.n_traces}</span>
-        {card.pr_url && <span className="he-kc-pr">PR<ExtLink /></span>}
-        <span className="he-kc-time">{relativeTime(card.last_trace_at)}</span>
-      </div>
-    </button>
-  );
-}
-
-function KanbanColumn({
-  col, cards, selectedId, flashId, searching, onSelect,
-}: {
-  col: ColumnDef;
-  cards: HealCardSummary[];
-  selectedId: string | undefined;
-  flashId: string | null;
-  searching: boolean;
-  onSelect: (id: string) => void;
-}) {
-  return (
-    <div className={'he-col he-col-' + col.id} style={{ '--c': col.color } as React.CSSProperties}>
-      <div className="he-col-head">
-        <span className="he-col-dot" />
-        <span className="he-col-label">{col.label}</span>
-        <span className="he-col-count">{cards.length}</span>
-      </div>
-      <div className="he-col-hint">{col.hint}</div>
-      <div className="he-col-body">
-        {cards.length === 0 ? (
-          <div className="he-col-empty">{searching ? 'No matches' : col.empty}</div>
-        ) : (
-          cards.map((c) => (
-            <KanbanCard
-              key={c.id}
-              card={c}
-              selected={c.id === selectedId}
-              flash={c.id === flashId}
-              onClick={() => onSelect(c.id)}
-            />
-          ))
-        )}
+      <div className="he-node-foot">
+        <span className="he-node-status">
+          <span className={'he-node-dot' + (m.pulse ? ' is-pulse' : '')} />
+          {m.label}
+        </span>
+        <span className="he-node-meta">
+          {card.pr_url && <span className="he-node-pr">PR</span>}
+          <span className="he-node-traces"><TracesIcon />{card.n_traces}</span>
+          <span className="he-node-time">{relativeTime(card.last_trace_at)}</span>
+        </span>
       </div>
     </div>
   );
@@ -546,7 +529,7 @@ function ActionBar({
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Detail pane — rendered inside the slide-over
+   Detail pane — rendered inside the floating panel
    ─────────────────────────────────────────────────────────── */
 
 function DetailPane({
@@ -689,69 +672,49 @@ function DetailPane({
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Skeleton — mirrors the loaded board (KPI strip + Kanban columns) so the
-   loading → loaded transition is shift-free. Reuses the SAME wrapper / grid /
-   card classNames as the real UI; only the text/number content becomes shimmer.
+   Skeleton — ghost nodes scattered on the canvas, so the loading → loaded
+   swap is shift-free (same canvas, same absolutely-placed cards).
    ─────────────────────────────────────────────────────────── */
 
+const SKELETON_GHOSTS: Pos[] = [
+  { x: PAD, y: PAD },
+  { x: PAD, y: PAD + ROW_H },
+  { x: PAD + (NODE_W + COL_GAP), y: PAD },
+  { x: PAD + (NODE_W + COL_GAP) * 2, y: PAD },
+  { x: PAD + (NODE_W + COL_GAP) * 2, y: PAD + ROW_H },
+  { x: PAD + (NODE_W + COL_GAP) * 3, y: PAD },
+  { x: PAD + (NODE_W + COL_GAP) * 4, y: PAD },
+];
+
 function HealsSkeleton() {
-  // Plausible card counts per column so the board reads as populated while
-  // loading. Same .he-board grid → identical column widths/positions.
-  const perColumn = [3, 2, 2, 1, 3];
   return (
     <>
       <SkelStatus label="Loading heals…" />
-      <div className="he-kpis">
-        {Array.from({ length: 5 }, (_, i) => (
-          <div className="he-kpi" key={i}>
-            <span className="he-kpi-label"><Skel w={64} h={10} /></span>
-            <span className="he-kpi-val"><Skel w={34} h={22} /></span>
-          </div>
-        ))}
-      </div>
-
-      {/* Achievement badges row — mirrors HealBadges so the board doesn't jump down. */}
-      <div className="he-badges">
-        {Array.from({ length: 5 }, (_, i) => (
-          <Skel key={i} w={90} h={26} r={999} />
-        ))}
-      </div>
-
-      <div className="he-board">
-        {COLUMNS.map((col, ci) => (
-          <div className={'he-col he-col-' + col.id} key={col.id} style={{ '--c': col.color } as React.CSSProperties}>
-            <div className="he-col-head">
-              <span className="he-col-dot" />
-              <span className="he-col-label"><Skel w={72} h={11} /></span>
-              <span className="he-col-count"><Skel w={12} h={11} /></span>
-            </div>
-            <div className="he-col-hint"><Skel w={96} h={9} /></div>
-            <div className="he-col-body">
-              {Array.from({ length: perColumn[ci] ?? 2 }, (_, ki) => (
-                <div className="he-kc" key={ki} style={{ '--c': col.color } as React.CSSProperties}>
-                  <div className="he-kc-top">
-                    <span className="he-kc-dot" />
-                    <span className="he-kc-title" style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-                      <Skel w="100%" h={11} />
-                      <Skel w="65%" h={11} />
-                    </span>
-                  </div>
-                  <div className="he-kc-meta">
-                    <Skel w={36} h={11} />
-                    <Skel w={44} h={11} style={{ marginLeft: 'auto' }} />
-                  </div>
+      <div className="he-canvas">
+        <div className="he-canvas-inner">
+          {SKELETON_GHOSTS.map((g, i) => (
+            <div className="he-node he-node-ghost" key={i} style={{ transform: `translate3d(${g.x}px, ${g.y}px, 0)` }}>
+              <div className="he-node-top">
+                <Skel w={28} h={28} r={8} />
+                <div className="he-node-headings" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <Skel w="90%" h={11} />
+                  <Skel w="60%" h={9} />
                 </div>
-              ))}
+              </div>
+              <div className="he-node-foot">
+                <Skel w={72} h={10} />
+                <Skel w={44} h={10} style={{ marginLeft: 'auto' }} />
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </>
   );
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Page — Kanban triage board + slide-over detail, inside the project shell
+   Page — dotted canvas of draggable heal cards + floating detail panel
    ─────────────────────────────────────────────────────────── */
 
 export default function Heals() {
@@ -767,12 +730,17 @@ export default function Heals() {
   const [confirm, setConfirm] = useState<ConfirmKind | null>(null);
   const [flashId, setFlashId] = useState<string | null>(null);
   const lastStatusRef = useRef<Record<string, HealStatus>>({});
-  const slideoverRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
 
+  // Canvas layout: user-moved positions (overrides) persisted per project;
+  // anything without an override falls back to the status auto-layout.
+  const [positions, setPositions] = useState<Record<string, Pos>>({});
+  const [dragId, setDragId] = useState<string | null>(null);
+  const dragRef = useRef<{ id: string; sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
+
   // GET /v1/heals is global across the user's projects; we fetch everything and
-  // scope to the active project client-side. Columns own the status grouping,
-  // so we no longer pass a server-side status_filter. Polling: 12s.
+  // scope to the active project client-side. Polling: 12s.
   const listQuery = useQuery({
     queryKey: ['heals', projectId, 'all'],
     queryFn: () => api.listHeals({ limit: 100 }),
@@ -794,12 +762,22 @@ export default function Heals() {
 
   // Scope the global list to the current project. Until the project resolves we
   // return nothing rather than the unscoped global list, so no cross-project
-  // cards ever paint into the board / KPIs.
+  // cards ever paint into the canvas.
   const cards: HealCardSummary[] = useMemo(() => {
     if (!projectId) return [];
     const all = listQuery.data ?? [];
     return all.filter((c) => c.project_id === projectId);
   }, [listQuery.data, projectId]);
+
+  // Load the saved layout when the project changes.
+  useEffect(() => {
+    if (projectId) setPositions(loadLayout(projectId));
+  }, [projectId]);
+
+  // Auto-layout (clustered by status) — the fallback position for any card the
+  // user hasn't explicitly moved.
+  const fallback = useMemo(() => autoLayout(cards), [cards]);
+  const posOf = (id: string): Pos => positions[id] ?? fallback[id] ?? { x: PAD, y: PAD };
 
   // Flash a card when its status changes during a poll.
   useEffect(() => {
@@ -818,24 +796,27 @@ export default function Heals() {
     };
   }, [cards, listQuery.data]);
 
-  // Group cards into columns (newest-updated first), applying the search over
-  // both title and suggestion slug.
-  const byColumn = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const matches = (c: HealCardSummary) =>
-      !q || c.title.toLowerCase().includes(q) || c.suggestion_slug.toLowerCase().includes(q);
-    const map: Record<string, HealCardSummary[]> = {};
-    for (const col of COLUMNS) {
-      map[col.id] = cards
-        .filter((c) => col.statuses.includes(c.status) && matches(c))
-        .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-    }
-    return map;
-  }, [cards, search]);
+  const q = search.trim().toLowerCase();
+  const visibleCards = useMemo(() => {
+    if (!q) return cards;
+    return cards.filter(
+      (c) => c.title.toLowerCase().includes(q) || c.suggestion_slug.toLowerCase().includes(q),
+    );
+  }, [cards, q]);
 
-  const searching = search.trim() !== '';
-  const filteredTotal = COLUMNS.reduce((n, col) => n + (byColumn[col.id]?.length ?? 0), 0);
-  const noMatches = searching && filteredTotal === 0 && cards.length > 0;
+  const searching = q !== '';
+  const noMatches = searching && visibleCards.length === 0 && cards.length > 0;
+
+  // Canvas inner size — large enough to contain every card (so it scrolls).
+  const bounds = useMemo(() => {
+    let mx = 0, my = 0;
+    for (const c of cards) {
+      const p = positions[c.id] ?? fallback[c.id] ?? { x: PAD, y: PAD };
+      if (p.x > mx) mx = p.x;
+      if (p.y > my) my = p.y;
+    }
+    return { w: mx + NODE_W + 220, h: my + ROW_H + 140 };
+  }, [cards, positions, fallback]);
 
   const openCount = cards.filter((c) => c.status === 'open').length;
   const selectedCard = detailQuery.data;
@@ -880,7 +861,7 @@ export default function Heals() {
     : null;
 
   function selectCard(id: string) {
-    // Remember the trigger so focus can return there when the slide-over closes.
+    // Remember the trigger so focus can return there when the panel closes.
     lastFocusedRef.current = document.activeElement as HTMLElement | null;
     navigate(`/projects/${slug}/heals/${id}`);
   }
@@ -889,13 +870,50 @@ export default function Heals() {
     navigate(`/projects/${slug}/heals`);
   }
 
-  // Move focus into the slide-over when it opens (backs up the aria-modal).
+  /* ── drag handlers (pointer-capture; <4px movement counts as a click) ── */
+  function onNodeDown(e: React.PointerEvent, card: HealCardSummary) {
+    if (e.button !== 0) return;
+    const p = posOf(card.id);
+    dragRef.current = { id: card.id, sx: e.clientX, sy: e.clientY, ox: p.x, oy: p.y, moved: false };
+    setDragId(card.id);
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* unsupported */ }
+  }
+  function onNodeMove(e: React.PointerEvent) {
+    const d = dragRef.current;
+    if (!d) return;
+    const dx = e.clientX - d.sx;
+    const dy = e.clientY - d.sy;
+    if (!d.moved && Math.hypot(dx, dy) > 4) d.moved = true;
+    if (d.moved) {
+      const nx = Math.max(0, d.ox + dx);
+      const ny = Math.max(0, d.oy + dy);
+      setPositions((prev) => ({ ...prev, [d.id]: { x: nx, y: ny } }));
+    }
+  }
+  function onNodeUp(e: React.PointerEvent, card: HealCardSummary) {
+    const d = dragRef.current;
+    if (!d) return;
+    try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* unsupported */ }
+    dragRef.current = null;
+    setDragId(null);
+    if (!d.moved) {
+      selectCard(card.id);
+    } else if (projectId) {
+      setPositions((prev) => { saveLayout(projectId, prev); return prev; });
+    }
+  }
+  function resetLayout() {
+    setPositions({});
+    if (projectId) saveLayout(projectId, {});
+  }
+
+  // Move focus into the panel when it opens (backs up the aria-modal).
   useEffect(() => {
-    if (cardId) slideoverRef.current?.focus();
+    if (cardId) panelRef.current?.focus();
   }, [cardId]);
 
-  // While the slide-over is open: Esc closes it (unless a confirm dialog is up),
-  // and Tab is trapped within the panel.
+  // While the panel is open: Esc closes it (unless a confirm dialog is up), and
+  // Tab is trapped within the panel.
   useEffect(() => {
     if (!cardId) return;
     function onKey(e: KeyboardEvent) {
@@ -904,7 +922,7 @@ export default function Heals() {
         return;
       }
       if (e.key === 'Tab' && !confirm) {
-        const panel = slideoverRef.current;
+        const panel = panelRef.current;
         if (!panel) return;
         const f = panel.querySelectorAll<HTMLElement>(
           'a[href],button:not([disabled]),input:not([disabled]),textarea,select,[tabindex]:not([tabindex="-1"])',
@@ -933,107 +951,123 @@ export default function Heals() {
 
   const loading = listQuery.isLoading || projects.isLoading;
   const isEmpty = !loading && cards.length === 0;
+  const countsText = isEmpty ? '0 cards' : `${cards.length} cards · ${openCount} awaiting decision`;
 
   return (
     <ProjectShell slug={slug} active="heals" project={projectName}>
-      <div className="he-page he-board-page" style={{ display: 'flex', flexDirection: 'column' }}>
-        <div className="he-board-header">
-          <div className="he-board-titles">
-            <h1 className="page-title">Heals</h1>
-            <div className="page-sub">
+      <div className={'he-canvas-page' + (dragId ? ' is-dragging' : '')}>
+        <div className="he-toolbar">
+          <div className="he-toolbar-titles">
+            <h1 className="he-toolbar-title">Heals</h1>
+            <div className="he-toolbar-sub">
               <span className="he-live" title="Updated every 12 seconds">
                 <span className="he-live-dot" />Live
               </span>
-              {isEmpty ? '0 cards' : `${cards.length} cards · ${openCount} awaiting decision`}
+              <span>{loading ? 'Loading…' : countsText}</span>
             </div>
           </div>
-          {!isEmpty && (
-            <div className="he-board-search">
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.3" />
-                <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search by title or slug…"
-                aria-label="Search heals by title or slug"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+          {!loading && !isEmpty && (
+            <div className="he-toolbar-actions">
+              <button type="button" className="he-btn he-btn-ghost" onClick={resetLayout} title="Re-arrange cards by status">
+                <ResetIcon />Reset layout
+              </button>
+              <div className="he-board-search">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                  <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.3" />
+                  <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search by title or slug…"
+                  aria-label="Search heals by title or slug"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
             </div>
           )}
         </div>
 
-        {!loading && !listQuery.isError && !isEmpty && (
-          <>
-            <KpiStrip cards={cards} />
-            <HealBadges cards={cards} />
-          </>
-        )}
-
         {loading ? (
           <HealsSkeleton />
         ) : listQuery.isError ? (
-          <ErrorState
-            message={listQuery.error instanceof Error ? listQuery.error.message : undefined}
-            onRetry={() => listQuery.refetch()}
-          />
-        ) : isEmpty ? (
-          <div className="he-queue-empty">
-            <svg width="30" height="30" viewBox="0 0 34 34" fill="none">
-              <g transform="rotate(45 17 17)">
-                <rect x="4" y="12" width="26" height="10" rx="5" stroke="var(--po-fg-4)" strokeWidth="1.6" />
-                <circle cx="17" cy="17" r="3" stroke="var(--po-fg-4)" strokeWidth="1.4" />
-              </g>
-            </svg>
-            <div className="he-queue-empty-t">No heals yet. Failing traces will cluster here.</div>
-            <div className="he-queue-empty-s">Heals appear automatically as the eval worker finds patterns.</div>
-          </div>
-        ) : noMatches ? (
-          <div className="he-queue-empty">
-            <div className="he-queue-empty-t">No heals match “{search.trim()}”.</div>
-            <button type="button" className="he-btn he-btn-ghost" onClick={() => setSearch('')}>
-              Clear search
-            </button>
+          <div className="he-canvas">
+            <div className="he-canvas-inner he-canvas-inner-center">
+              <ErrorState
+                message={listQuery.error instanceof Error ? listQuery.error.message : undefined}
+                onRetry={() => listQuery.refetch()}
+              />
+            </div>
           </div>
         ) : (
-          <div className="he-board">
-            {COLUMNS.map((col) => (
-              <KanbanColumn
-                key={col.id}
-                col={col}
-                cards={byColumn[col.id] ?? []}
-                selectedId={cardId}
-                flashId={flashId}
-                searching={searching}
-                onSelect={selectCard}
-              />
-            ))}
+          <div className="he-canvas">
+            <div
+              className={'he-canvas-inner' + (isEmpty || noMatches ? ' he-canvas-inner-center' : '')}
+              style={isEmpty || noMatches ? undefined : { minWidth: bounds.w, minHeight: bounds.h }}
+            >
+              {isEmpty ? (
+                <div className="he-queue-empty">
+                  <svg width="30" height="30" viewBox="0 0 34 34" fill="none">
+                    <g transform="rotate(45 17 17)">
+                      <rect x="4" y="12" width="26" height="10" rx="5" stroke="var(--po-fg-4)" strokeWidth="1.6" />
+                      <circle cx="17" cy="17" r="3" stroke="var(--po-fg-4)" strokeWidth="1.4" />
+                    </g>
+                  </svg>
+                  <div className="he-queue-empty-t">No heals yet. Failing traces will cluster here.</div>
+                  <div className="he-queue-empty-s">Heals appear automatically as the eval worker finds patterns.</div>
+                </div>
+              ) : noMatches ? (
+                <div className="he-queue-empty">
+                  <div className="he-queue-empty-t">No heals match “{search.trim()}”.</div>
+                  <button type="button" className="he-btn he-btn-ghost" onClick={() => setSearch('')}>
+                    Clear search
+                  </button>
+                </div>
+              ) : (
+                visibleCards.map((card) => (
+                  <HealNode
+                    key={card.id}
+                    card={card}
+                    pos={posOf(card.id)}
+                    selected={card.id === cardId}
+                    flash={card.id === flashId}
+                    dragging={card.id === dragId}
+                    onPointerDown={onNodeDown}
+                    onPointerMove={onNodeMove}
+                    onPointerUp={onNodeUp}
+                    onOpen={selectCard}
+                  />
+                ))
+              )}
+            </div>
           </div>
         )}
 
         {cardId && (
-          <div className="he-slideover-scrim" onClick={closeDetail}>
-            <div
-              className="he-slideover"
-              ref={slideoverRef}
-              tabIndex={-1}
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Heal card detail"
-            >
-              <DetailPane
-                card={selectedCard}
-                isLoading={detailQuery.isLoading}
-                isError={detailQuery.isError}
-                loadError={detailQuery.error instanceof Error ? detailQuery.error.message : undefined}
-                onRetry={() => detailQuery.refetch()}
-                onAction={doAction}
-                onClose={closeDetail}
-                pendingAction={pendingAction}
-                actionError={actionError}
-              />
+          <div className="he-panel-scrim" onClick={closeDetail}>
+            <div className="he-panel-wrap" onClick={(e) => e.stopPropagation()}>
+              <div className="he-panel-ghost he-panel-ghost-b" aria-hidden="true" />
+              <div className="he-panel-ghost he-panel-ghost-a" aria-hidden="true" />
+              <div
+                className="he-panel"
+                ref={panelRef}
+                tabIndex={-1}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Heal card detail"
+              >
+                <DetailPane
+                  card={selectedCard}
+                  isLoading={detailQuery.isLoading}
+                  isError={detailQuery.isError}
+                  loadError={detailQuery.error instanceof Error ? detailQuery.error.message : undefined}
+                  onRetry={() => detailQuery.refetch()}
+                  onAction={doAction}
+                  onClose={closeDetail}
+                  pendingAction={pendingAction}
+                  actionError={actionError}
+                />
+              </div>
             </div>
           </div>
         )}

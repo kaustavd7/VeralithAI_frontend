@@ -1122,133 +1122,128 @@
   opacity: 1;
 }
 
-/* Board + columns */
-.he-board {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(208px, 1fr));
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-.he-col {
+/* ── Heals canvas (Railway-style) ─────────────────────────────────────────
+   Free-move heal cards on a dotted canvas; positions persist per project
+   (localStorage). Status is shown by each card's accent + dot. */
+.he-canvas-page {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  background: color-mix(in oklab, var(--po-panel) 55%, var(--po-bg));
-  border: 1px solid var(--po-line);
-  border-radius: var(--po-radius);
-  overflow: hidden;
+  gap: 12px;
+  padding: var(--page-pad-top) var(--page-pad-x) var(--page-pad-bottom);
 }
-.he-col-head {
+.he-canvas-page.is-dragging,
+.he-canvas-page.is-dragging * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+/* slim toolbar */
+.he-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.he-toolbar-titles { display: flex; flex-direction: column; gap: 4px; }
+.he-toolbar-title { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.he-toolbar-sub {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 14px 4px;
-}
-.he-col-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--c);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--c) 20%, transparent);
-  flex: 0 0 auto;
-}
-.he-col-label {
+  gap: 10px;
   font-size: 12.5px;
-  font-weight: 600;
-  color: var(--po-fg);
+  color: var(--po-fg-3);
 }
-.he-col-count {
-  margin-left: auto;
-  font-size: 11px;
-  font-weight: 600;
-  min-width: 20px;
-  height: 18px;
-  padding: 0 6px;
+.he-toolbar-actions { display: flex; align-items: center; gap: 10px; }
+
+/* canvas + dotted backdrop */
+.he-canvas {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: auto;
+  border: 1px solid var(--po-line);
+  border-radius: var(--po-radius);
+  background: color-mix(in oklab, var(--po-panel) 30%, var(--po-bg));
+}
+.he-canvas-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--po-fg) 15%, transparent) 1.1px,
+    transparent 1.2px
+  );
+  background-size: 22px 22px;
+}
+.he-canvas-inner-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* heal node (draggable card) */
+.he-node {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 232px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 13px 11px;
+  border: 1px solid var(--po-line);
+  border-radius: 12px;
+  background: var(--po-panel);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 8px 20px -16px rgba(0, 0, 0, 0.6);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition: border-color 0.12s, box-shadow 0.12s, background 0.12s;
+}
+.he-node:hover {
+  border-color: var(--po-line-strong);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 14px 30px -16px rgba(0, 0, 0, 0.7);
+}
+.he-node:focus-visible {
+  outline: none;
+  border-color: color-mix(in oklab, var(--c) 60%, var(--po-line));
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--c) 45%, transparent);
+}
+.he-node.is-selected {
+  border-color: color-mix(in oklab, var(--c) 60%, var(--po-line));
+  box-shadow: 0 0 0 1.5px color-mix(in oklab, var(--c) 50%, transparent),
+    0 14px 30px -16px rgba(0, 0, 0, 0.7);
+}
+.he-node.is-dragging {
+  cursor: grabbing;
+  z-index: 50;
+  border-color: var(--po-line-strong);
+  box-shadow: 0 22px 46px -18px rgba(0, 0, 0, 0.75);
+}
+.he-node.is-flash { animation: he-flash 1s ease; }
+.he-node-ghost { cursor: default; box-shadow: none; }
+
+.he-node-top { display: flex; align-items: flex-start; gap: 10px; }
+.he-node-ic {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  background: var(--po-panel-2);
-  color: var(--po-fg-3);
-  font-variant-numeric: tabular-nums;
+  border-radius: 8px;
+  color: var(--c);
+  background: color-mix(in oklab, var(--c) 16%, transparent);
+  border: 1px solid color-mix(in oklab, var(--c) 30%, transparent);
 }
-.he-col-hint {
-  padding: 0 14px 10px;
-  font-size: 10.5px;
-  color: var(--po-fg-4);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.he-col-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  padding: 4px 10px 12px;
-}
-.he-col-empty {
-  padding: 14px 8px;
-  text-align: center;
-  font-size: 11.5px;
-  color: color-mix(in oklab, var(--po-fg-4) 70%, transparent);
-}
-
-/* Kanban card */
-.he-kc {
-  position: relative;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  padding: 11px 12px 10px;
-  border: 1px solid var(--po-line);
-  border-left: 3px solid var(--c);
-  border-radius: var(--po-radius-sm);
-  background: var(--po-panel);
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-  transition: border-color 0.1s, background 0.1s, transform 0.06s, box-shadow 0.1s;
-}
-.he-kc:hover {
-  border-color: var(--po-line-strong);
-  border-left-color: var(--c);
-  background: var(--po-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.5);
-}
-.he-kc.is-selected {
-  border-color: color-mix(in oklab, var(--c) 55%, var(--po-line));
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--c) 45%, transparent);
-}
-.he-kc.is-flash {
-  animation: he-flash 1s ease;
-}
-.he-kc-top {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-.he-kc-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--c);
-  margin-top: 4px;
-  flex: 0 0 auto;
-}
-.he-kc-dot.is-pulse {
-  animation: he-breathe 1.4s ease-in-out infinite;
-}
-.he-kc-title {
+.he-node-headings { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.he-node-title {
   font-size: 13px;
-  font-weight: 500;
-  line-height: 1.35;
+  font-weight: 600;
+  line-height: 1.3;
   color: var(--po-fg);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1256,74 +1251,106 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.he-kc-meta {
+.he-node-sub {
+  font-size: 11px;
+  color: var(--po-fg-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.he-node-foot {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 11px;
   color: var(--po-fg-4);
 }
-.he-kc-traces {
+.he-node-status {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  color: var(--po-fg-3);
+  font-weight: 500;
 }
-.he-kc-pr {
-  display: inline-flex;
-  align-items: center;
-  color: var(--accent);
-  font-weight: 600;
+.he-node-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--c) 20%, transparent);
+  flex: 0 0 auto;
 }
-.he-kc-time {
-  margin-left: auto;
-  font-variant-numeric: tabular-nums;
-}
+.he-node-dot.is-pulse { animation: he-breathe 1.4s ease-in-out infinite; }
+.he-node-meta { display: inline-flex; align-items: center; gap: 9px; }
+.he-node-traces { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
+.he-node-pr { color: var(--accent); font-weight: 600; }
+.he-node-time { font-variant-numeric: tabular-nums; }
 
-/* Slide-over detail */
-.he-slideover-scrim {
+/* Floating, stacked detail panel (Railway-style) — docked right with a gap from
+   the top/bottom/right, rounded, with faux layers peeking behind it. The scrim
+   covers only the content area (below the topbar, right of the sidebar). */
+.he-panel-scrim {
   position: fixed;
-  inset: 0;
+  inset: 52px 0 0 var(--sb-collapsed);
   z-index: 200;
   display: flex;
   justify-content: flex-end;
-  background: color-mix(in oklab, #000 52%, transparent);
-  backdrop-filter: blur(2px);
+  padding: 14px 16px 16px;
+  background: color-mix(in oklab, #000 32%, transparent);
+  backdrop-filter: blur(1.5px);
   animation: he-scrim-in 0.16s ease;
 }
-.he-slideover {
-  width: min(720px, 94vw);
+.he-panel-wrap {
+  position: relative;
+  width: min(680px, 94vw);
   height: 100%;
-  background: var(--po-bg);
-  border-left: 1px solid var(--po-line);
-  box-shadow: -24px 0 60px -20px rgba(0, 0, 0, 0.6);
-  overflow-y: auto;
-  animation: he-slide-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: he-slide-in 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes he-scrim-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 @keyframes he-slide-in {
-  from { transform: translateX(28px); opacity: 0.3; }
+  from { transform: translateX(34px); opacity: 0.3; }
   to { transform: translateX(0); opacity: 1; }
 }
-.he-slideover .he-detail {
-  flex: none;
-  height: auto;
-  min-height: 100%;
-  overflow: visible;
-  padding: 0 26px 40px;
+/* the front card */
+.he-panel {
+  position: relative;
+  z-index: 3;
+  height: 100%;
+  display: flex;
+  background: var(--po-bg);
+  border: 1px solid var(--po-line-strong);
+  border-radius: 16px;
+  box-shadow: 0 34px 80px -28px rgba(0, 0, 0, 0.75);
+  overflow: hidden;
 }
-.he-slideover .he-detail-empty {
+/* faux stacked layers behind the front card */
+.he-panel-ghost {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: color-mix(in oklab, var(--po-panel) 82%, var(--po-bg));
+  border: 1px solid var(--po-line);
+}
+.he-panel-ghost-a { z-index: 2; opacity: 0.8; transform: translate(-11px, 9px) scale(0.985); }
+.he-panel-ghost-b { z-index: 1; opacity: 0.5; transform: translate(-22px, 18px) scale(0.97); }
+
+.he-panel .he-detail { padding: 0 26px 40px; }
+.he-panel .he-detail-empty {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 100%;
   min-height: 100%;
   padding: 26px;
 }
-.he-slideover .he-detail-head {
+.he-panel .he-detail-head {
   position: sticky;
   top: 0;
   z-index: 3;
@@ -1376,10 +1403,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .he-slideover-scrim,
-  .he-slideover,
-  .he-kc.is-flash,
-  .he-kc-dot.is-pulse,
+  .he-panel-scrim,
+  .he-panel-wrap,
+  .he-node.is-flash,
+  .he-node-dot.is-pulse,
   .he-live-dot,
   .he-spinner {
     animation: none !important;
