@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
-import { useProjects } from '../../hooks/useProjects';
-import { api } from '../../api/client';
-import { buildLithContext } from '../../lib/lithContext';
-import type { Project } from '../../api/types';
 import '../../styles/buddy.css';
 
 /* Lith — a cute cartoon pebble that lives at the edge of the screen. He patrols
@@ -22,18 +16,14 @@ const LINES: ((name: string) => string)[] = [
   () => `Soon you'll be able to ask me things like "what failed today?" or "what healed this week?"`,
   () => `Drag me anywhere you like. Until then… I'll just be a rock. 🪨`,
 ];
-const QUIPS = ['hmm…', 'ooh ✨', 'rock solid', 'just vibing', '👀', 'all healthy', '🪨'];
-
-// Ambient remark pacing — Lith speaks "sometimes", not constantly.
-const AMBIENT_DWELL_MS = 3500; // settle on a page before reacting
-const AMBIENT_COOLDOWN_MS = 50_000; // min gap between spontaneous remarks
-const AMBIENT_PROB = 0.65; // ...and only this often when eligible
+// Pure vibes only — no data claims (Lith doesn't know the page; that's Phase 2).
+const QUIPS = ['hmm…', 'ooh ✨', 'just vibing', '👀', '🪨', '♪', 'zzz'];
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]!;
 
-type Expr = 'smile' | 'happy' | 'grin' | 'surprised' | 'sleep' | 'concerned';
+type Expr = 'smile' | 'happy' | 'grin' | 'surprised' | 'sleep';
 
 /* Lith's mouth changes with his mood so he isn't perma-smiling. */
 function Mouth({ expr }: { expr: Expr }) {
@@ -43,23 +33,7 @@ function Mouth({ expr }: { expr: Expr }) {
     return <path d="M30 41.3 q2 1.5 4 0" stroke="#3c4b3f" strokeWidth="1.5" fill="none" strokeLinecap="round" />;
   if (expr === 'happy')
     return <path d="M27.3 40 q4.7 4.4 9.4 0" stroke="#3c4b3f" strokeWidth="1.7" fill="none" strokeLinecap="round" />;
-  if (expr === 'concerned')
-    return <path d="M27.6 42.4 q4.4 -4 8.8 0" stroke="#3c4b3f" strokeWidth="1.7" fill="none" strokeLinecap="round" />;
   return <path d="M28 40.5 q4 3.4 8 0" stroke="#3c4b3f" strokeWidth="1.7" fill="none" strokeLinecap="round" />;
-}
-
-/* Lith's spoken mood (from the LLM remark) → his face. */
-function moodToExpr(mood: string): Expr {
-  switch (mood) {
-    case 'happy':
-      return 'happy';
-    case 'excited':
-      return 'grin';
-    case 'worried':
-      return 'concerned';
-    default:
-      return 'smile'; // thinking / neutral
-  }
 }
 
 function prefersReducedMotion(): boolean {
@@ -92,10 +66,6 @@ export function Buddy() {
     return { x: b.maxX, y: 120 };
   }, []);
 
-  const { pathname } = useLocation();
-  const qc = useQueryClient();
-  const projects = useProjects();
-
   const [pos, setPos] = useState(initial);
   const [walkMs, setWalkMs] = useState(1600);
   const [dir, setDir] = useState<1 | -1>(-1);
@@ -104,7 +74,7 @@ export function Buddy() {
   const [sparkle, setSparkle] = useState(false);
   const [pop, setPop] = useState(false);
   const [open, setOpen] = useState(false);
-  const [remark, setRemark] = useState<{ text: string; mood: string } | null>(null);
+  const [line, setLine] = useState(0);
   const [frozen, setFrozen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [lean, setLean] = useState(0);
@@ -117,15 +87,6 @@ export function Buddy() {
   const laneXRef = useRef(initial.x);
   const pausedRef = useRef(false);
   const dragRef = useRef<{ ox: number; oy: number; sx: number; sy: number; moved: boolean } | null>(null);
-  const pathRef = useRef(pathname);
-  pathRef.current = pathname;
-  const projectsRef = useRef<Project[]>([]);
-  projectsRef.current = projects.data?.projects ?? [];
-  const lastRemarkAtRef = useRef(0);
-  const reqIdRef = useRef(0);
-  const aliveRef = useRef(true);
-  const dismissRef = useRef<number | undefined>(undefined);
-  const lastSigRef = useRef(''); // last context Lith spoke about (ambient dedupe)
 
   function moveTo(x: number, y: number) {
     posRef.current = { x, y };
@@ -134,64 +95,14 @@ export function Buddy() {
   useEffect(() => { dirRef.current = dir; }, [dir]);
   useEffect(() => { pausedRef.current = open; }, [open]);
 
-  // Liveness guard for the async remark fetch + auto-dismiss timer. Set true on
-  // (re)mount so React StrictMode's mount→unmount→mount doesn't leave it false.
-  useEffect(() => {
-    aliveRef.current = true;
-    return () => { aliveRef.current = false; window.clearTimeout(dismissRef.current); };
-  }, []);
-
-  // Lith reacts to the page: build his "view" from the React Query cache (what
-  // the page already loaded) and ask gpt-4o-mini for one grounded line.
-  const speak = async (trigger: 'ambient' | 'click') => {
-    const ctx = buildLithContext(qc, pathRef.current, projectsRef.current);
-    if (trigger === 'ambient') {
-      if (!ctx.hasData) return; // nothing worth saying yet
-      if (ctx.signature === lastSigRef.current) return; // don't repeat the same context
-    }
-    const issuedPath = pathRef.current;
-    const reqId = ++reqIdRef.current;
-    lastRemarkAtRef.current = Date.now();
-    window.clearTimeout(dismissRef.current);
-    if (trigger === 'click') { setRemark({ text: '…', mood: 'thinking' }); setOpen(true); }
-    // A response is stale if it was superseded, the page changed, or we unmounted.
-    const stale = () => reqId !== reqIdRef.current || !aliveRef.current || pathRef.current !== issuedPath;
-    try {
-      const res = ctx.projectId
-        ? await api.getLithRemark(ctx.projectId, { page: ctx.page, trigger, facts: ctx.facts })
-        : { text: LINES[0](firstName), mood: 'happy' };
-      if (stale()) return;
-      lastSigRef.current = ctx.signature;
-      setRemark(res);
-      setOpen(true);
-      if (trigger === 'ambient') dismissRef.current = window.setTimeout(() => setOpen(false), 9000);
-    } catch {
-      if (stale()) return;
-      if (trigger === 'click') setRemark({ text: pick(QUIPS), mood: 'neutral' });
-    }
-  };
-
-  // Spontaneous remark after settling on a page — sometimes, with a cooldown.
-  useEffect(() => {
-    const dwell = window.setTimeout(() => {
-      if (pausedRef.current) return; // don't interrupt a drag or an open bubble
-      if (Date.now() - lastRemarkAtRef.current < AMBIENT_COOLDOWN_MS) return;
-      if (Math.random() > AMBIENT_PROB) return;
-      void speak('ambient');
-    }, AMBIENT_DWELL_MS);
-    return () => window.clearTimeout(dwell);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
   // Click-outside / Esc closes the bubble.
   useEffect(() => {
     if (!open) return;
     function onDown(e: MouseEvent) {
-      // Bump reqId so an in-flight remark can't re-open the bubble we just closed.
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) { reqIdRef.current++; setOpen(false); }
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { reqIdRef.current++; setOpen(false); }
+      if (e.key === 'Escape') setOpen(false);
     }
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
@@ -309,11 +220,19 @@ export function Buddy() {
 
   function handleClick() {
     setPop(true);
-    window.setTimeout(() => { if (aliveRef.current) setPop(false); }, 400);
+    window.setTimeout(() => setPop(false), 400);
     setAction('idle');
     setThought(null);
-    if (open) { reqIdRef.current++; setOpen(false); return; }
-    void speak('click'); // ask Lith about THIS page
+    if (!open) {
+      setLine(0);
+      setOpen(true);
+      return;
+    }
+    setLine((l) => {
+      const n = l + 1;
+      if (n >= LINES.length) { setOpen(false); return 0; }
+      return n;
+    });
   }
 
   // ── drag to reposition ────────────────────────────────────────────────
@@ -364,17 +283,15 @@ export function Buddy() {
   const bubbleV = pos.y + 29 < vh / 2 ? 'top' : 'bottom';
   const blurPx = Math.min(1.3, Math.abs(lean) / 9);
   const expression: Expr =
-    open && remark
-      ? moodToExpr(remark.mood)
-      : action === 'sleep'
-        ? 'sleep'
-        : Math.abs(lean) > 6
-          ? 'surprised'
-          : action === 'jump' || action === 'spin'
-            ? 'grin'
-            : sparkle
-              ? 'happy'
-              : 'smile';
+    action === 'sleep'
+      ? 'sleep'
+      : Math.abs(lean) > 6
+        ? 'surprised'
+        : action === 'jump' || action === 'spin'
+          ? 'grin'
+          : sparkle
+            ? 'happy'
+            : 'smile';
 
   return (
     <div
@@ -460,7 +377,7 @@ export function Buddy() {
       {open && (
         <div className={'buddy-bubble to-' + bubbleSide + ' v-' + bubbleV} role="status">
           <span className="buddy-bubble-tail" />
-          <p className="buddy-bubble-text">{remark ? remark.text : LINES[0](firstName)}</p>
+          <p className="buddy-bubble-text">{LINES[line](firstName)}</p>
           <div className="buddy-bubble-foot">
             <span className="buddy-bubble-hint">💬 Full chat coming soon</span>
           </div>
