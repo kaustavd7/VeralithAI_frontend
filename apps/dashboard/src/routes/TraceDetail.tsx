@@ -8,7 +8,6 @@ import { QueryPane } from '../components/detail/QueryPane';
 import { ResponsePane } from '../components/detail/ResponsePane';
 import { RetrievedChunks } from '../components/detail/RetrievedChunks';
 import { PerClaimTable } from '../components/detail/PerClaimTable';
-import { LatencyFooter } from '../components/detail/LatencyFooter';
 import { HealButton } from '../components/detail/HealButton';
 import { HealHistory } from '../components/detail/HealHistory';
 import { useTrace } from '../hooks/useTrace';
@@ -153,7 +152,6 @@ export default function TraceDetail() {
         </div>
       )}
 
-      <LatencyFooter latencyMs={trace.latency_ms} costUsd={trace.cost_usd} />
     </>,
   );
 }
