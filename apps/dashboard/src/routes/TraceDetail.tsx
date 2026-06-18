@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
@@ -50,11 +50,7 @@ export default function TraceDetail() {
   );
 
   if (query.isLoading) {
-    return (
-      <ProjectShell slug={slug} active="traces" project={projectName}>
-        <div className="po-page-loading">Loading trace…</div>
-      </ProjectShell>
-    );
+    return shell(<TraceDetailSkeleton />);
   }
   if (query.isError || !query.data) {
     return (
@@ -159,6 +155,81 @@ export default function TraceDetail() {
 
       <LatencyFooter latencyMs={trace.latency_ms} costUsd={trace.cost_usd} />
     </>,
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Loading skeleton — mirrors the hero + query/response layout so the page
+   settles in place instead of flashing blank / "Loading…".
+   ─────────────────────────────────────────────────────────── */
+function Sk({ w, h, style }: { w?: number | string; h?: number; style?: CSSProperties }) {
+  return <span className={detailStyles.skBlock} style={{ width: w, height: h, ...style }} />;
+}
+
+function TraceDetailSkeleton() {
+  const col: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 8 };
+  const card: CSSProperties = {
+    background: 'var(--po-panel)',
+    border: '1px solid var(--po-line)',
+    borderRadius: 'var(--po-radius)',
+    padding: 18,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+  };
+  return (
+    <>
+      <div
+        className={detailStyles.diag}
+        style={{ '--diag-tint': 'var(--po-fg)' } as CSSProperties}
+        aria-hidden="true"
+      >
+        <div className={detailStyles.diagLeft}>
+          <Sk w={96} h={24} style={{ borderRadius: 8 }} />
+          <Sk w={'64%'} h={26} />
+          <div style={col}>
+            <Sk w={'100%'} h={11} />
+            <Sk w={'84%'} h={11} />
+          </div>
+          <div className={detailStyles.sfPair}>
+            <div className={detailStyles.sfBox} style={col}>
+              <Sk w={58} h={10} />
+              <Sk w={62} h={22} />
+              <Sk w={'86%'} h={9} />
+            </div>
+            <div className={detailStyles.sfBox} style={col}>
+              <Sk w={66} h={10} />
+              <Sk w={62} h={22} />
+              <Sk w={'86%'} h={9} />
+            </div>
+          </div>
+        </div>
+        <div className={detailStyles.diagRight}>
+          <Sk w={'40%'} h={18} />
+          <div style={col}>
+            <Sk w={'100%'} h={12} />
+            <Sk w={'92%'} h={12} />
+          </div>
+          <Sk w={'100%'} h={66} style={{ borderRadius: 10, marginTop: 4 }} />
+        </div>
+      </div>
+
+      <div className={detailStyles.section}>
+        <div className={detailStyles.sectionHead}>
+          <Sk w={170} h={16} />
+        </div>
+        <div className={detailStyles.qr}>
+          {[0, 1].map((i) => (
+            <div key={i} style={card}>
+              <Sk w={84} h={12} />
+              <Sk w={'90%'} h={15} />
+              <Sk w={'100%'} h={56} style={{ borderRadius: 8 }} />
+              <Sk w={'70%'} h={12} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 

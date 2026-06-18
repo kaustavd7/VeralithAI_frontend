@@ -5,6 +5,27 @@
 
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
+/* ---------- loading skeleton blocks ---------- */
+.skBlock {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--po-fg) 6%, var(--po-panel)) 0%,
+    color-mix(in oklab, var(--po-fg) 13%, var(--po-panel)) 50%,
+    color-mix(in oklab, var(--po-fg) 6%, var(--po-panel)) 100%
+  );
+  background-size: 200% 100%;
+  animation: skShimmer 1.4s ease-in-out infinite;
+}
+@keyframes skShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skBlock { animation: none; }
+}
+
 /* ---------- centered page column ---------- */
 .page {
   max-width: var(--page-max);
