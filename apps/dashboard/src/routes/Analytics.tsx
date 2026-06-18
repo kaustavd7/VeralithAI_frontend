@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type Keyboard
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
-import { Skel } from '../components/Skeleton';
+import { Skel, SkelStatus } from '../components/Skeleton';
 import { tracesPath } from '../lib/nav';
 import { useProjects } from '../hooks/useProjects';
 import { useStats, useTraces } from '../hooks/useOverviewData';
@@ -342,53 +342,69 @@ function AnSkelPanel({
 
 function AnalyticsSkeleton() {
   return (
-    <div className="an-grid" aria-hidden="true">
-      {/* Trace volume — span 12 chart panel */}
-      <AnSkelPanel span={12}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div style={{ display: 'flex', gap: 18 }}>
-            <Skel w={150} h={16} />
-            <Skel w={150} h={16} />
+    <>
+      <SkelStatus label="Loading analytics…" />
+      <div className="an-grid" aria-hidden="true">
+        {/* Trace volume — span 12 chart panel (4 rows: stats, seg toggle, chart, x-axis) */}
+        <AnSkelPanel span={12}>
+          <div style={{ display: 'flex', gap: 28, marginBottom: 8 }}>
+            {Array.from({ length: 2 }, (_, i) => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                <Skel w={110} h={11} />
+                <Skel w={64} h={40} />
+              </div>
+            ))}
           </div>
-          <Skel w={120} h={28} />
-        </div>
-        <Skel w="100%" h={190} r={8} />
-      </AnSkelPanel>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+            <Skel w={120} h={31} r={8} />
+          </div>
+          <Skel w="100%" h={190} r={8} />
+          <Skel w="100%" h={22} r={6} style={{ marginTop: 6 }} />
+        </AnSkelPanel>
 
-      {/* Failure-cell distribution — span 5 bubble panel */}
-      <AnSkelPanel span={5} kpi>
-        <Skel w="100%" h={230} r={8} />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-          {Array.from({ length: 6 }, (_, i) => (
-            <Skel key={i} w={120} h={14} />
-          ))}
-        </div>
-      </AnSkelPanel>
+        {/* Failure-cell distribution — span 5 bubble panel */}
+        <AnSkelPanel span={5} kpi>
+          <Skel w="100%" h={230} r={8} />
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+            {Array.from({ length: 6 }, (_, i) => (
+              <Skel key={i} w={120} h={14} />
+            ))}
+          </div>
+        </AnSkelPanel>
 
-      {/* Hallucination trend — span 7 chart panel */}
-      <AnSkelPanel span={7}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-          <Skel w={180} h={16} />
-          <Skel w={90} h={28} />
-        </div>
-        <Skel w="100%" h={190} r={8} />
-      </AnSkelPanel>
+        {/* Hallucination trend — span 7 chart panel (matches the 4-row body) */}
+        <AnSkelPanel span={7}>
+          <div style={{ display: 'flex', gap: 28, marginBottom: 8 }}>
+            {Array.from({ length: 2 }, (_, i) => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                <Skel w={100} h={11} />
+                <Skel w={60} h={40} />
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+            <Skel w={90} h={31} r={8} />
+          </div>
+          <Skel w="100%" h={190} r={8} />
+          <Skel w="100%" h={22} r={6} style={{ marginTop: 6 }} />
+        </AnSkelPanel>
 
-      {/* Top failing queries — span 12 leaderboard */}
-      <AnSkelPanel span={12}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {Array.from({ length: 7 }, (_, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <Skel w={28} h={13} />
-              <Skel w="40%" h={13} />
-              <Skel w={150} h={20} />
-              <Skel w={56} h={13} />
-              <Skel w={120} h={8} style={{ flex: 1 }} />
-            </div>
-          ))}
-        </div>
-      </AnSkelPanel>
-    </div>
+        {/* Top failing queries — span 12 leaderboard */}
+        <AnSkelPanel span={12}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {Array.from({ length: 7 }, (_, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <Skel w={28} h={13} />
+                <Skel w="40%" h={13} />
+                <Skel w={150} h={20} />
+                <Skel w={56} h={13} />
+                <Skel w={120} h={8} style={{ flex: 1 }} />
+              </div>
+            ))}
+          </div>
+        </AnSkelPanel>
+      </div>
+    </>
   );
 }
 

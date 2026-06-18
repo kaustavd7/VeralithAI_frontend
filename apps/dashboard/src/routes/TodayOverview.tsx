@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
@@ -297,26 +297,33 @@ function ScrambleNumber({ value, duration = 850, play = true }: { value: string;
   return <>{display}</>;
 }
 
-/* Fires once, when the element first scrolls into view. */
+/* Fires once, when the element first scrolls into view. Uses a CALLBACK ref (not
+   useRef + useEffect) so the observer (re)attaches whenever the node mounts. The
+   Overview section is gated behind `{s && …}` and mounts only after stats load —
+   a plain effect's deps [inView, threshold] never change on that late mount, so
+   the observer would never attach and the section would stay hidden forever. */
 function useInView(threshold = 0.12) {
-  const ref = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || inView) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setInView(true);
-          obs.disconnect();
-        }
-      },
-      { threshold },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [inView, threshold]);
-  return [ref, inView] as const;
+  const obsRef = useRef<IntersectionObserver | null>(null);
+  const setRef = useCallback(
+    (el: HTMLElement | null) => {
+      obsRef.current?.disconnect();
+      if (!el || inView) return;
+      const obs = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting) {
+            setInView(true);
+            obs.disconnect();
+          }
+        },
+        { threshold },
+      );
+      obs.observe(el);
+      obsRef.current = obs;
+    },
+    [inView, threshold],
+  );
+  return [setRef, inView] as const;
 }
 
 /* ════════════════════════════════════════════════════════════════════

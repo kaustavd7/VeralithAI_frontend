@@ -27,6 +27,18 @@ export function Skel({
   );
 }
 
+/* Screen-reader-only loading announcement. The shimmer leaves are all
+   aria-hidden, so without this a skeleton would replace the old <LoadingState>'s
+   polite "Loading…" announcement with silence. Render ONE of these per page
+   skeleton, as a sibling of (not inside) any aria-hidden shimmer wrapper. */
+export function SkelStatus({ label = 'Loading…' }: { label?: string }) {
+  return (
+    <span role="status" aria-live="polite" className="sr-only">
+      {label}
+    </span>
+  );
+}
+
 /* A stack of text-line shimmers (last line shorter, like a paragraph). */
 export function SkelLines({
   count = 3,

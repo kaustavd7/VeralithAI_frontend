@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
-import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
-import { Skel } from '../components/Skeleton';
+import { EmptyState, ErrorState } from '../components/StateViews';
+import { Skel, SkelStatus } from '../components/Skeleton';
 import { useProjects } from '../hooks/useProjects';
 import { useCellTimeseries } from '../hooks/useOverviewData';
 import type { CellTimeseriesResponse, FailureCell } from '../api/types';
@@ -366,6 +366,7 @@ function FcChart({ state, model }: { state: FcState; model: FcModel }) {
 function FailureCellsSkeleton() {
   return (
     <div className="fc-page">
+      <SkelStatus />
       <div className="fc-head">
         <div>
           <Skel w={150} h={10} r={5} />
@@ -677,7 +678,7 @@ export default function FailureCells() {
   return (
     <ProjectShell slug={slug} active="cells" project={projectName}>
       {projects.isPending ? (
-        <LoadingState />
+        <FailureCellsSkeleton />
       ) : projects.isError ? (
         <ErrorState
           message={projects.error instanceof Error ? projects.error.message : undefined}

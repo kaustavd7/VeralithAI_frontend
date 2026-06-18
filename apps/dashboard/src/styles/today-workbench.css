@@ -94,6 +94,19 @@
 .wf-overview.is-revealed .wf-chart-svg { animation: wfReveal 1.1s cubic-bezier(.16,1,.3,1) both; }
 .wf-overview.is-revealed .wf-spark { animation: wfReveal 1s cubic-bezier(.16,1,.3,1) both; }
 .wf-overview.is-revealed .lat-svg { animation: wfReveal 1.1s cubic-bezier(.16,1,.3,1) both; }
+/* Reduced-motion: skip the clip-in / scale-in reveal and snap Overview + Today
+   content straight to its final visible state, so motion-sensitive users still
+   see every chart, sparkline, latency graph and meter bar (these would otherwise
+   stay clipped/collapsed until the — now disabled — reveal). */
+@media (prefers-reduced-motion: reduce) {
+  .wf-today .wf-chart-svg,
+  .wf-overview .wf-chart-svg,
+  .wf-overview .wf-spark,
+  .wf-overview .lat-svg { clip-path: none; animation: none; }
+  .wf-overview .kg-bar i,
+  .wf-overview .pi-meter-now,
+  .wf-overview .pi-meter-gain { transform: none; transition: none; }
+}
 .wf-chart { position: relative; border: 1px dashed var(--po-line-strong); border-radius: var(--po-radius-sm); padding: 22px 12px 8px; background: color-mix(in oklab, var(--po-panel-2) 50%, transparent); }
 .wf-chart-cap { position: absolute; top: 8px; left: 12px; font-size: 10px; color: var(--po-fg-4); letter-spacing: .04em; }
 .wf-chart-ylab { position: absolute; left: 0; transform: translateY(-50%); font-size: 9px; color: var(--po-fg-4); letter-spacing: .02em; pointer-events: none; white-space: nowrap; }

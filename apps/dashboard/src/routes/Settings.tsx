@@ -6,7 +6,7 @@ import { api } from '../api/client';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { ErrorState } from '../components/StateViews';
 import { ApiKeysSettings } from '../components/settings/ApiKeysSettings';
-import { Skel } from '../components/Skeleton';
+import { Skel, SkelStatus } from '../components/Skeleton';
 import type { Me } from '../api/types';
 
 /* ─────────────────────────────────────────────────────────────
@@ -235,6 +235,7 @@ function AccountPanel() {
 function ProfileSectionSkeleton() {
   return (
     <>
+      <SkelStatus label="Loading profile…" />
       {/* Identity panel */}
       <section className="se-panel">
         <div className="se-panel-h"><Skel w={70} h={13} /></div>

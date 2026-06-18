@@ -5,7 +5,7 @@ import { api } from '../api/client';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
 import { LoadingState, ErrorState } from '../components/StateViews';
-import { Skel } from '../components/Skeleton';
+import { Skel, SkelStatus } from '../components/Skeleton';
 import { traceDetailPath, healsPath } from '../lib/nav';
 import '../styles/project-shell.css';
 import '../styles/project-page.css';
@@ -700,12 +700,20 @@ function HealsSkeleton() {
   const perColumn = [3, 2, 2, 1, 3];
   return (
     <>
+      <SkelStatus label="Loading heals…" />
       <div className="he-kpis">
         {Array.from({ length: 5 }, (_, i) => (
           <div className="he-kpi" key={i}>
             <span className="he-kpi-label"><Skel w={64} h={10} /></span>
             <span className="he-kpi-val"><Skel w={34} h={22} /></span>
           </div>
+        ))}
+      </div>
+
+      {/* Achievement badges row — mirrors HealBadges so the board doesn't jump down. */}
+      <div className="he-badges">
+        {Array.from({ length: 5 }, (_, i) => (
+          <Skel key={i} w={90} h={26} r={999} />
         ))}
       </div>
 

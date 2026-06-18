@@ -4,7 +4,7 @@ import { useProjects } from '../../hooks/useProjects';
 import { useApiKeys } from '../../hooks/useOverviewData';
 import { api } from '../../api/client';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
-import { Skel } from '../Skeleton';
+import { Skel, SkelStatus } from '../Skeleton';
 import type { ApiKey, ApiKeyWithSecret, Project } from '../../api/types';
 
 function KeyIcon() {
@@ -232,6 +232,7 @@ function ProjectKeysGroup({ project }: { project: Project }) {
 function ApiKeysSettingsSkeleton() {
   return (
     <>
+      <SkelStatus label="Loading API keys…" />
       <p className="se-keys-intro">
         <Skel h={11} w="80%" style={{ display: 'block', marginBottom: 6 }} />
         <Skel h={11} w="55%" style={{ display: 'block' }} />

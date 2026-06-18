@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProjects } from '../hooks/useProjects';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { ErrorState, EmptyState } from '../components/StateViews';
-import { Skel } from '../components/Skeleton';
+import { Skel, SkelStatus } from '../components/Skeleton';
 import { api } from '../api/client';
 import type { Project } from '../api/types';
 
@@ -234,9 +234,10 @@ export default function ProjectsHome() {
 function ProjectsHomeSkeleton() {
   return (
     <>
+      <SkelStatus label="Loading projects…" />
       <div className="ph-toolbar">
         <div className="ph-field">
-          <Skel w={210} h={16} r={8} />
+          <Skel w={210} h={34} r={8} />
         </div>
       </div>
 
