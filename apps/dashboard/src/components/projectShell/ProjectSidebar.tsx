@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSidebarMode, type SidebarMode } from '../../lib/sidebarMode';
 
@@ -59,8 +59,8 @@ function workspaceGroups(): Group[] {
     {
       label: 'workspace',
       items: [
-        { id: 'projects', label: 'Projects', icon: 'projects', route: '/projects' },
-        { id: 'wsSettings', label: 'Workspace settings', icon: 'settings', route: '/settings' },
+        { id: 'projects', label: 'Projects', kbd: 'g p', icon: 'projects', route: '/projects' },
+        { id: 'wsSettings', label: 'Workspace settings', kbd: 'g s', icon: 'settings', route: '/settings' },
       ],
     },
   ];
@@ -234,6 +234,66 @@ export function ProjectSidebar({ active, slug = '', variant = 'project' }: Props
   // collapsed → never expands; expanded → always; hover → on cursor rest.
   const expanded = mode === 'expanded' || (mode === 'hover' && hover);
   const grps = variant === 'workspace' ? workspaceGroups() : projectGroups(slug);
+
+  // Leader-key chord map built from each item's `kbd` hint (e.g. "g t" → route),
+  // so the live shortcuts can never drift from the tooltips that advertise them.
+  const chords = useMemo(() => {
+    const map: Record<string, Record<string, string>> = {};
+    for (const g of grps) {
+      for (const it of g.items) {
+        if (!it.kbd || !it.route) continue;
+        const parts = it.kbd.trim().toLowerCase().split(/\s+/);
+        if (parts.length !== 2) continue;
+        const [leader, key] = parts;
+        (map[leader] ||= {})[key] = it.route;
+      }
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, variant]);
+
+  // Sequential nav shortcuts (Linear/Railway-style): press the leader (g), then a
+  // key, to jump to a section. Ignored while typing or when a modal is open.
+  const pendingRef = useRef<{ leader: string; timer: number } | null>(null);
+  useEffect(() => {
+    function clearPending() {
+      if (pendingRef.current) {
+        window.clearTimeout(pendingRef.current.timer);
+        pendingRef.current = null;
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const key = e.key.toLowerCase();
+      // a bare modifier press mid-chord shouldn't cancel the pending leader
+      if (key === 'shift' || key === 'control' || key === 'alt' || key === 'meta') return;
+      // never hijack typing or a key handled by an open modal dialog
+      const el = document.activeElement as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return;
+      if (document.querySelector('[aria-modal="true"]')) return;
+
+      const pending = pendingRef.current;
+      if (pending) {
+        const route = chords[pending.leader]?.[key];
+        clearPending();
+        if (route) {
+          e.preventDefault();
+          navigate(route);
+        }
+        return;
+      }
+      if (chords[key]) {
+        // arm the chord; auto-disarm if the next key doesn't come quickly
+        pendingRef.current = { leader: key, timer: window.setTimeout(clearPending, 1400) };
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      clearPending();
+    };
+  }, [chords, navigate]);
 
   return (
     <aside
