@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import '../../styles/buddy.css';
 
-/* Lith — a cute cartoon pebble that lives at the edge of the screen. He patrols
+/* Lithémon — a cute cartoon pebble that lives at the edge of the screen. He patrols
    his column vertically (so he never drifts across your content), with idle
    antics: hop, spin, nap, sparkle, little thoughts, and cursor-tracking eyes.
    You can grab and drag him anywhere; clicking opens a speech bubble. Phase 2
@@ -11,12 +11,12 @@ import '../../styles/buddy.css';
 type Action = 'idle' | 'walk' | 'jump' | 'spin' | 'sleep';
 
 const LINES: ((name: string) => string)[] = [
-  (n) => `Hey ${n}! 👋 I'm Lith — your pet rock for debugging.`,
+  (n) => `Hey ${n}! 👋 I'm Lithémon — your pet rock for debugging.`,
   () => `I hang out on the edge, keeping an eye on your traces.`,
   () => `Soon you'll be able to ask me things like "what failed today?" or "what healed this week?"`,
   () => `Drag me anywhere you like. Until then… I'll just be a rock. 🪨`,
 ];
-// Pure vibes only — no data claims (Lith doesn't know the page; that's Phase 2).
+// Pure vibes only — no data claims (Lithémon doesn't know the page; that's Phase 2).
 const QUIPS = ['hmm…', 'ooh ✨', 'just vibing', '👀', '🪨', '♪', 'zzz'];
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -25,7 +25,7 @@ const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]!;
 
 type Expr = 'smile' | 'happy' | 'grin' | 'surprised' | 'sleep';
 
-/* Lith's mouth changes with his mood so he isn't perma-smiling. */
+/* Lithémon's mouth changes with his mood so he isn't perma-smiling. */
 function Mouth({ expr }: { expr: Expr }) {
   if (expr === 'surprised') return <ellipse cx="32" cy="41.6" rx="2.1" ry="2.6" fill="#3c4b3f" />;
   if (expr === 'grin') return <path d="M26.8 39.6 Q32 46.6 37.2 39.6 Q32 41.9 26.8 39.6 Z" fill="#3c4b3f" />;
@@ -313,8 +313,8 @@ export function Buddy() {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        aria-label="Lith — your coding buddy (drag to move)"
-        title="Lith — drag me!"
+        aria-label="Lithémon — your coding buddy (drag to move)"
+        title="Lithémon — drag me!"
       >
         <span
           className="buddy-stage"

@@ -24,7 +24,7 @@ export default function App() {
       {/* Persistent Workbench — fixed to the bottom of every authenticated page,
           mounted once here so its open/tab state survives navigation. */}
       <GlobalWorkbench />
-      {/* Lith — the persistent stone buddy, mounted once so it survives navigation. */}
+      {/* Lithémon — the persistent stone buddy, mounted once so it survives navigation. */}
       <GlobalBuddy />
       {/* Live SSE subscription for the current project (trace/heal events). */}
       <GlobalProjectEvents />

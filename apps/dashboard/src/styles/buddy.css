@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   Lith — the roaming stone "coding buddy". Mounted once (survives nav).
+   Lithémon — the roaming stone "coding buddy". Mounted once (survives nav).
    Position is driven by translate3d on .buddy-root (smooth glide between
    wander targets); per-action animations live on .buddy-svg.
    ════════════════════════════════════════════════════════════════ */
