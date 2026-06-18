@@ -114,21 +114,7 @@ export const api = {
     projectId: string,
     q: { since?: string; until?: string; bucket?: 'hour' | 'day' } = {},
   ): Promise<CellTimeseriesResponse> {
-    // mock.ts is not owned here; return an inline empty shape so mock mode renders
-    // the page's EmptyState (total === 0) without crashing.
-    if (USE_MOCK)
-      return {
-        buckets: [],
-        totals: {
-          complete_grounded: 0,
-          complete_ungrounded: 0,
-          incomplete_grounded: 0,
-          incomplete_ungrounded: 0,
-          extra_grounded: 0,
-          extra_ungrounded: 0,
-        },
-        total: 0,
-      };
+    if (USE_MOCK) return mockApi.getCellTimeseries(projectId, q);
     const params = new URLSearchParams();
     if (q.since) params.set('since', q.since);
     if (q.until) params.set('until', q.until);

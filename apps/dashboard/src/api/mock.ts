@@ -2,6 +2,8 @@ import type {
   ApiKey,
   ApiKeyWithSecret,
   CalibrationResponse,
+  CellTimeseriesResponse,
+  FailureCell,
   HealActionResponse,
   HealCardDetail,
   HealCardSummary,
@@ -473,6 +475,51 @@ export const mockApi = {
   async getCalibration(_projectIdOrSlug: string): Promise<CalibrationResponse> {
     await delay(120);
     return SEED_CALIBRATION;
+  },
+
+  // Failure-cell timeseries — demo series (healthy-dominated, failures sprinkled)
+  // so the Failure Cells tab has something to show in mock mode.
+  async getCellTimeseries(
+    _projectIdOrSlug: string,
+    q: { since?: string; until?: string; bucket?: 'hour' | 'day' } = {},
+  ): Promise<CellTimeseriesResponse> {
+    await delay(150);
+    const byDay = q.bucket === 'day';
+    const stepMs = byDay ? 86_400_000 : 3_600_000;
+    const n = byDay ? 14 : 24;
+    const now = Date.now();
+    const CELLS: FailureCell[] = [
+      'complete_grounded',
+      'incomplete_grounded',
+      'extra_grounded',
+      'complete_ungrounded',
+      'extra_ungrounded',
+      'incomplete_ungrounded',
+    ];
+    const totals: Record<FailureCell, number> = {
+      complete_grounded: 0,
+      incomplete_grounded: 0,
+      extra_grounded: 0,
+      complete_ungrounded: 0,
+      extra_ungrounded: 0,
+      incomplete_ungrounded: 0,
+    };
+    const buckets = [];
+    const scale = byDay ? 12 : 1;
+    for (let i = n - 1; i >= 0; i--) {
+      const cells: Record<FailureCell, number> = {
+        complete_grounded: (30 + Math.round(Math.random() * 40)) * scale,
+        incomplete_grounded: (2 + Math.round(Math.random() * 5)) * scale,
+        extra_grounded: (1 + Math.round(Math.random() * 3)) * scale,
+        complete_ungrounded: Math.round(Math.random() * 3) * scale,
+        extra_ungrounded: Math.round(Math.random() * 2) * scale,
+        incomplete_ungrounded: Math.round(Math.random() * 2) * scale,
+      };
+      for (const c of CELLS) totals[c] += cells[c];
+      buckets.push({ bucket: new Date(now - i * stepMs).toISOString(), cells });
+    }
+    const total = CELLS.reduce((s, c) => s + totals[c], 0);
+    return { buckets, totals, total };
   },
 
   async getTrace(
