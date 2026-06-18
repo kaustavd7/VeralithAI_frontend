@@ -556,6 +556,14 @@ export default function TraceExplorer() {
         ) : (
           <>
             <div className="te-table">
+              <div className="te-thead">
+                <span className="te-th te-col-sev" />
+                <span className="te-th">Trace</span>
+                <span className="te-th">Failure cell</span>
+                <span className="te-th">Sufficiency</span>
+                <span className="te-th">Faithfulness</span>
+                <span className="te-th" style={{ textAlign: 'right' }}>Last seen</span>
+              </div>
               <div className="te-tbody">
                 {rows.map((r) => {
                   const cell = r.failure_cell ? CELL_BY_ID[r.failure_cell] : null;

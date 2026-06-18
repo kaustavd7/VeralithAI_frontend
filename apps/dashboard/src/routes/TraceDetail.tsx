@@ -247,12 +247,7 @@ function DetailActionBar({
 }) {
   return (
     <div className={detailStyles.topbar}>
-      <div className={detailStyles.crumbs}>
-        <a onClick={onBack}>traces</a>
-        <span className={detailStyles.crumbsSep}>/</span>
-        <span className={detailStyles.crumbsHere} title={traceId}>#{traceId.slice(0, 8)}</span>
-      </div>
-      <div className={detailStyles.topActions}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         <button
           type="button"
           className={`${detailStyles.btn} ${detailStyles.btnGhost}`}
@@ -269,6 +264,13 @@ function DetailActionBar({
           </svg>
           Back
         </button>
+        <div className={detailStyles.crumbs}>
+          <a onClick={onBack}>traces</a>
+          <span className={detailStyles.crumbsSep}>/</span>
+          <span className={detailStyles.crumbsHere} title={traceId}>#{traceId.slice(0, 8)}</span>
+        </div>
+      </div>
+      <div className={detailStyles.topActions}>
         {/* Dead actions — no handler/endpoint yet. Gated as disabled "soon"
             stubs (mirrors HealButton) so they aren't interactive no-ops. */}
         <button
