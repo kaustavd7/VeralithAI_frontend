@@ -4,6 +4,7 @@ import { useProjects } from '../../hooks/useProjects';
 import { useApiKeys } from '../../hooks/useOverviewData';
 import { api } from '../../api/client';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
+import { Skel } from '../Skeleton';
 import type { ApiKey, ApiKeyWithSecret, Project } from '../../api/types';
 
 function KeyIcon() {
@@ -226,11 +227,51 @@ function ProjectKeysGroup({ project }: { project: Project }) {
   );
 }
 
+/* Layout-matched skeleton — mirrors the intro + per-project key groups so the
+   swap to real content is shift-free (same wrappers, grids and row sizes). */
+function ApiKeysSettingsSkeleton() {
+  return (
+    <>
+      <p className="se-keys-intro">
+        <Skel h={11} w="80%" style={{ display: 'block', marginBottom: 6 }} />
+        <Skel h={11} w="55%" style={{ display: 'block' }} />
+      </p>
+      <div className="se-keys">
+        {Array.from({ length: 2 }, (_, gi) => (
+          <section className="se-keys-group" key={gi}>
+            <div className="se-keys-grouphead">
+              <Skel h={14} w={140} />
+              <Skel h={11} w={90} />
+              <Skel h={26} w={88} r={8} style={{ marginLeft: 'auto' }} />
+            </div>
+            <div className="ak-card">
+              <div className="ak-list">
+                {Array.from({ length: gi === 0 ? 2 : 1 }, (_, ri) => (
+                  <div className="ak-row" key={ri}>
+                    <div className="ak-key-ic"><Skel h={16} w={16} r={4} /></div>
+                    <div className="ak-main">
+                      <div className="ak-titlerow"><Skel h={14} w={120} /></div>
+                      <div className="ak-meta" style={{ marginTop: 6 }}>
+                        <Skel h={11} w={220} />
+                      </div>
+                    </div>
+                    <div className="ak-action"><Skel h={14} w={56} /></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        ))}
+      </div>
+    </>
+  );
+}
+
 /* Cross-project API keys — a group per project. */
 export function ApiKeysSettings() {
   const projects = useProjects();
 
-  if (projects.isLoading) return <LoadingState label="Loading projects…" />;
+  if (projects.isLoading) return <ApiKeysSettingsSkeleton />;
   if (projects.isError) {
     return (
       <ErrorState

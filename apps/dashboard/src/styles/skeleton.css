@@ -1,0 +1,22 @@
+/* Shared skeleton shimmer — used by every page's layout-matched loading state.
+   The skeleton reuses each page's real container/grid classes and only swaps
+   data leaves for <Skel> blocks, so there's no layout shift when data arrives. */
+.skel {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--po-fg) 7%, transparent) 25%,
+    color-mix(in oklab, var(--po-fg) 15%, transparent) 37%,
+    color-mix(in oklab, var(--po-fg) 7%, transparent) 63%
+  );
+  background-size: 400% 100%;
+  border-radius: 6px;
+  animation: skel-shimmer 1.4s ease infinite;
+}
+@keyframes skel-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel { animation: none; }
+}

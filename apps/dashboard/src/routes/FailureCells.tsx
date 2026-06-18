@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
+import { Skel } from '../components/Skeleton';
 import { useProjects } from '../hooks/useProjects';
 import { useCellTimeseries } from '../hooks/useOverviewData';
 import type { CellTimeseriesResponse, FailureCell } from '../api/types';
@@ -358,6 +359,76 @@ function FcChart({ state, model }: { state: FcState; model: FcModel }) {
   );
 }
 
+/* ── skeleton ───────────────────────────────────────────────────────────── */
+
+// Layout-matched loading state: reuses the page's real wrapper / grid / card
+// classes so swapping <Skel> blocks for data leaves causes no layout shift.
+function FailureCellsSkeleton() {
+  return (
+    <div className="fc-page">
+      <div className="fc-head">
+        <div>
+          <Skel w={150} h={10} r={5} />
+          <Skel w={210} h={30} r={7} style={{ marginTop: 7 }} />
+        </div>
+        <div className="fc-hero" style={{ alignItems: 'flex-end' }}>
+          <Skel w={96} h={38} r={8} />
+          <div className="fc-hero-lab">
+            <Skel w={56} h={11} r={5} />
+            <Skel w={84} h={18} r={6} />
+          </div>
+        </div>
+      </div>
+
+      <div className="fc-controls">
+        {Array.from({ length: 5 }, (_, i) => (
+          <div className="fc-cgrp" key={i}>
+            <Skel w={48} h={10} r={5} />
+            <Skel w={i === 3 ? 220 : 150} h={32} r={8} />
+          </div>
+        ))}
+      </div>
+
+      <div className="fc-chartcard">
+        <div className="fc-chead">
+          <Skel w="46%" h={12} r={5} />
+          <div className="fc-legend">
+            {Array.from({ length: 6 }, (_, i) => (
+              <Skel key={i} w={138} h={24} r={7} />
+            ))}
+          </div>
+        </div>
+        <div className="fc-chart">
+          <Skel w="100%" h="100%" r={8} style={{ position: 'absolute', inset: '6px 14px 16px 46px', width: 'auto', height: 'auto' }} />
+        </div>
+      </div>
+
+      <div className="fc-breakout">
+        <div className="fc-breakhead">
+          <Skel w={220} h={15} r={6} />
+        </div>
+        <div className="fc-smgrid">
+          {FC_CELLS.map((c) => (
+            <div className="fc-sm" key={c.key}>
+              <div className="fc-sm-h">
+                <Skel w={10} h={10} r={3} />
+                <Skel w="58%" h={12} r={5} />
+                <Skel w={50} h={14} r={5} style={{ marginLeft: 'auto' }} />
+              </div>
+              <div className="fc-sm-row">
+                <Skel w={64} h={22} r={6} />
+                <Skel w={40} h={12} r={5} />
+              </div>
+              <Skel w="100%" h={38} r={6} style={{ marginTop: 8 }} />
+              <Skel w={92} h={11} r={5} style={{ marginTop: 6 }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── page body ──────────────────────────────────────────────────────────── */
 
 function FailureCellsPage({ projectId, slug }: { projectId: string; slug: string }) {
@@ -402,7 +473,7 @@ function FailureCellsPage({ projectId, slug }: { projectId: string; slug: string
   const query = useCellTimeseries(projectId, params);
   const model = useMemo(() => buildModel(query.data), [query.data]);
 
-  if (query.isPending) return <LoadingState />;
+  if (query.isPending) return <FailureCellsSkeleton />;
   if (query.isError) {
     return (
       <ErrorState

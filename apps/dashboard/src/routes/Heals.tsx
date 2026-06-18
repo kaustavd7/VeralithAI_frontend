@@ -5,6 +5,7 @@ import { api } from '../api/client';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
 import { LoadingState, ErrorState } from '../components/StateViews';
+import { Skel } from '../components/Skeleton';
 import { traceDetailPath, healsPath } from '../lib/nav';
 import '../styles/project-shell.css';
 import '../styles/project-page.css';
@@ -688,6 +689,60 @@ function DetailPane({
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Skeleton — mirrors the loaded board (KPI strip + Kanban columns) so the
+   loading → loaded transition is shift-free. Reuses the SAME wrapper / grid /
+   card classNames as the real UI; only the text/number content becomes shimmer.
+   ─────────────────────────────────────────────────────────── */
+
+function HealsSkeleton() {
+  // Plausible card counts per column so the board reads as populated while
+  // loading. Same .he-board grid → identical column widths/positions.
+  const perColumn = [3, 2, 2, 1, 3];
+  return (
+    <>
+      <div className="he-kpis">
+        {Array.from({ length: 5 }, (_, i) => (
+          <div className="he-kpi" key={i}>
+            <span className="he-kpi-label"><Skel w={64} h={10} /></span>
+            <span className="he-kpi-val"><Skel w={34} h={22} /></span>
+          </div>
+        ))}
+      </div>
+
+      <div className="he-board">
+        {COLUMNS.map((col, ci) => (
+          <div className={'he-col he-col-' + col.id} key={col.id} style={{ '--c': col.color } as React.CSSProperties}>
+            <div className="he-col-head">
+              <span className="he-col-dot" />
+              <span className="he-col-label"><Skel w={72} h={11} /></span>
+              <span className="he-col-count"><Skel w={12} h={11} /></span>
+            </div>
+            <div className="he-col-hint"><Skel w={96} h={9} /></div>
+            <div className="he-col-body">
+              {Array.from({ length: perColumn[ci] ?? 2 }, (_, ki) => (
+                <div className="he-kc" key={ki} style={{ '--c': col.color } as React.CSSProperties}>
+                  <div className="he-kc-top">
+                    <span className="he-kc-dot" />
+                    <span className="he-kc-title" style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+                      <Skel w="100%" h={11} />
+                      <Skel w="65%" h={11} />
+                    </span>
+                  </div>
+                  <div className="he-kc-meta">
+                    <Skel w={36} h={11} />
+                    <Skel w={44} h={11} style={{ marginLeft: 'auto' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
    Page — Kanban triage board + slide-over detail, inside the project shell
    ─────────────────────────────────────────────────────────── */
 
@@ -909,7 +964,7 @@ export default function Heals() {
         )}
 
         {loading ? (
-          <LoadingState label="Loading heals…" />
+          <HealsSkeleton />
         ) : listQuery.isError ? (
           <ErrorState
             message={listQuery.error instanceof Error ? listQuery.error.message : undefined}

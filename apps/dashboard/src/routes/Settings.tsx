@@ -4,8 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../api/client';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
-import { LoadingState, ErrorState } from '../components/StateViews';
+import { ErrorState } from '../components/StateViews';
 import { ApiKeysSettings } from '../components/settings/ApiKeysSettings';
+import { Skel } from '../components/Skeleton';
 import type { Me } from '../api/types';
 
 /* ─────────────────────────────────────────────────────────────
@@ -231,6 +232,61 @@ function AccountPanel() {
    Page
    ─────────────────────────────────────────────────────────── */
 
+function ProfileSectionSkeleton() {
+  return (
+    <>
+      {/* Identity panel */}
+      <section className="se-panel">
+        <div className="se-panel-h"><Skel w={70} h={13} /></div>
+        <div className="se-rows">
+          <div className="se-row">
+            <div className="se-row-label"><Skel w={48} h={11} /></div>
+            <div className="se-row-val"><Skel w={200} h={13} /></div>
+          </div>
+          <div className="se-row">
+            <div className="se-row-label"><Skel w={92} h={11} /></div>
+            <div className="se-row-val se-row-val-edit">
+              <Skel w={120} h={13} />
+              <Skel w={32} h={11} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Plan panel */}
+      <section className="se-panel">
+        <div className="se-panel-h"><Skel w={48} h={13} /></div>
+        <div className="se-plan-pillrow">
+          <Skel w={52} h={22} r={999} />
+          <Skel w={150} h={12} />
+        </div>
+        <div className="se-rows">
+          <div className="se-row">
+            <div className="se-row-label"><Skel w={86} h={11} /></div>
+            <div className="se-row-val"><Skel w={210} h={13} /></div>
+          </div>
+          <div className="se-row">
+            <div className="se-row-label"><Skel w={86} h={11} /></div>
+            <div className="se-row-val"><Skel w={230} h={13} /></div>
+          </div>
+        </div>
+      </section>
+
+      {/* Account panel */}
+      <section className="se-panel">
+        <div className="se-panel-h"><Skel w={66} h={13} /></div>
+        <div className="se-rows">
+          <div className="se-row">
+            <div className="se-row-label"><Skel w={56} h={11} /></div>
+            <Skel w={96} h={28} r={8} />
+          </div>
+        </div>
+        <p className="se-note"><Skel w="80%" h={11} /></p>
+      </section>
+    </>
+  );
+}
+
 function ProfileSection() {
   const meQuery = useQuery({ queryKey: ['me'], queryFn: () => api.getMe() });
   const me = meQuery.data;
@@ -242,7 +298,7 @@ function ProfileSection() {
       />
     );
   }
-  if (meQuery.isLoading || !me) return <LoadingState label="Loading profile…" />;
+  if (meQuery.isLoading || !me) return <ProfileSectionSkeleton />;
   return (
     <>
       <IdentityPanel me={me} />

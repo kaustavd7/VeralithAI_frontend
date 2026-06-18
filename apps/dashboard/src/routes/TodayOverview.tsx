@@ -10,6 +10,7 @@ import { useStats, useCategoryInsights, useInsightSummary } from '../hooks/useOv
 import { api } from '../api/client';
 import type { CategoryInsight, FailureCell, StatsResponse } from '../api/types';
 import { LoadingState, ErrorState } from '../components/StateViews';
+import { Skel } from '../components/Skeleton';
 import { analyticsPath, cellsPath, healsPath, tracesPath } from '../lib/nav';
 import '../styles/today-workbench.css';
 
@@ -688,6 +689,38 @@ function LatencyDetailCell({ s24, s7d }: { s24: StatsResponse | undefined; s7d: 
 /* KPI cards drill down in display order: traces · failures (cells) · heals · p95 (analytics). */
 const STAT_NAV = ['traces', 'cells', 'heals', 'analytics'] as const;
 
+/* Layout-matched skeleton for the `!s` loading branch of the "Today" hero grid.
+   Reuses the SAME wf-b-grid / wf-b-pulse / wf-b-right / wf-b-stats / wf-b-stat
+   wrappers as the loaded UI so the swap is shift-free (skeleton == real layout). */
+function TodayOverviewSkeleton() {
+  return (
+    <div className="wf-b-grid">
+      <div className="wf-b-pulse wf-card">
+        <Skel w={170} h={11} r={4} />
+        <Skel w={180} h={52} r={8} />
+        <Skel w={130} h={12} r={4} />
+        <Skel w="100%" h={150} r={10} style={{ marginTop: 6 }} />
+      </div>
+
+      <div className="wf-b-right">
+        <div className="wf-asof" style={{ gap: 4 }}>
+          <Skel w={44} h={10} r={3} />
+          <Skel w={120} h={18} r={4} />
+        </div>
+        <div className="wf-b-stats" style={{ marginTop: 'auto' }}>
+          {Array.from({ length: 4 }, (_, i) => (
+            <div className="wf-b-stat wf-card" key={i}>
+              <Skel w={84} h={12} r={4} />
+              <Skel w={96} h={40} r={8} />
+              <Skel w={110} h={12} r={4} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TodayContent() {
   const { user } = useAuth();
   const { slug = '' } = useParams<{ slug: string }>();
@@ -849,7 +882,7 @@ function TodayContent() {
             onRetry={() => stats.refetch()}
           />
         ) : !s ? (
-          <LoadingState label="Loading your overview…" />
+          <TodayOverviewSkeleton />
         ) : (
           <div className="wf-b-grid">
             <div className="wf-b-pulse wf-card">

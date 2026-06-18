@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProjects } from '../hooks/useProjects';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
-import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
+import { ErrorState, EmptyState } from '../components/StateViews';
+import { Skel } from '../components/Skeleton';
 import { api } from '../api/client';
 import type { Project } from '../api/types';
 
@@ -160,7 +161,7 @@ export default function ProjectsHome() {
         </div>
 
         {isLoading ? (
-          <LoadingState label="Loading projects…" />
+          <ProjectsHomeSkeleton />
         ) : isError ? (
           <ErrorState
             message={(projectsQuery.error as Error)?.message}
@@ -221,6 +222,40 @@ export default function ProjectsHome() {
 
       {creating && <CreateProjectModal onClose={() => setCreating(false)} />}
     </ProjectShell>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Loading skeleton — mirrors the toolbar + project-card grid so the
+   swap to real content is shift-free (same wrapper/grid/card classes,
+   shimmer blocks where text + stats land).
+   ─────────────────────────────────────────────────────────── */
+
+function ProjectsHomeSkeleton() {
+  return (
+    <>
+      <div className="ph-toolbar">
+        <div className="ph-field">
+          <Skel w={210} h={16} r={8} />
+        </div>
+      </div>
+
+      <div className="ph-grid">
+        {Array.from({ length: 6 }, (_, i) => (
+          <div className="ph-card" key={i} aria-hidden="true">
+            <div className="ph-card-top">
+              <Skel w={34} h={34} r={9} />
+              <Skel w={70} h={18} r={999} style={{ marginLeft: 'auto' }} />
+            </div>
+            <Skel w="55%" h={15} r={6} />
+            <Skel w="40%" h={11} r={6} style={{ marginTop: 4 }} />
+            <div className="ph-card-foot">
+              <Skel w={90} h={12} r={6} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 

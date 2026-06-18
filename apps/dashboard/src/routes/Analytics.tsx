@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type Keyboard
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
+import { Skel } from '../components/Skeleton';
 import { tracesPath } from '../lib/nav';
 import { useProjects } from '../hooks/useProjects';
 import { useStats, useTraces } from '../hooks/useOverviewData';
@@ -299,6 +300,94 @@ function AnalyticsEmpty({ slug }: { slug: string }) {
           Connect your SDK
         </Link>
       </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Page-level skeleton — mirrors the loaded `an-grid` (4 panels at
+   spans [12, 5, 7, 12]) using the SAME panel chrome so the swap to
+   real content is shift-free. Each panel reuses `an-panel` /
+   `an-panel-head` / `an-panel-body` and drops <Skel/> where the
+   title, KPI, and chart/rows render.
+   ─────────────────────────────────────────────────────────── */
+
+function AnSkelPanel({
+  span,
+  kpi = false,
+  children,
+}: {
+  span: number;
+  kpi?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="an-panel" style={{ gridColumn: `span ${span}` }} aria-hidden="true">
+      <div className="an-panel-head">
+        <GripDots />
+        <div className="an-panel-tg">
+          <Skel w={130} h={13} />
+          <Skel w={84} h={9} style={{ marginTop: 7 }} />
+        </div>
+        {kpi && (
+          <div className="an-panel-kpi">
+            <Skel w={64} h={20} />
+          </div>
+        )}
+      </div>
+      <div className="an-panel-body">{children}</div>
+    </div>
+  );
+}
+
+function AnalyticsSkeleton() {
+  return (
+    <div className="an-grid" aria-hidden="true">
+      {/* Trace volume — span 12 chart panel */}
+      <AnSkelPanel span={12}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div style={{ display: 'flex', gap: 18 }}>
+            <Skel w={150} h={16} />
+            <Skel w={150} h={16} />
+          </div>
+          <Skel w={120} h={28} />
+        </div>
+        <Skel w="100%" h={190} r={8} />
+      </AnSkelPanel>
+
+      {/* Failure-cell distribution — span 5 bubble panel */}
+      <AnSkelPanel span={5} kpi>
+        <Skel w="100%" h={230} r={8} />
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skel key={i} w={120} h={14} />
+          ))}
+        </div>
+      </AnSkelPanel>
+
+      {/* Hallucination trend — span 7 chart panel */}
+      <AnSkelPanel span={7}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+          <Skel w={180} h={16} />
+          <Skel w={90} h={28} />
+        </div>
+        <Skel w="100%" h={190} r={8} />
+      </AnSkelPanel>
+
+      {/* Top failing queries — span 12 leaderboard */}
+      <AnSkelPanel span={12}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {Array.from({ length: 7 }, (_, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <Skel w={28} h={13} />
+              <Skel w="40%" h={13} />
+              <Skel w={150} h={20} />
+              <Skel w={56} h={13} />
+              <Skel w={120} h={8} style={{ flex: 1 }} />
+            </div>
+          ))}
+        </div>
+      </AnSkelPanel>
     </div>
   );
 }
@@ -1587,7 +1676,7 @@ export default function Analytics() {
             }}
           />
         ) : statsQuery.isPending ? (
-          <LoadingState label="Loading analytics…" />
+          <AnalyticsSkeleton />
         ) : (statsQuery.data?.total_traces ?? 0) === 0 ? (
           <AnalyticsEmpty slug={slug} />
         ) : (
