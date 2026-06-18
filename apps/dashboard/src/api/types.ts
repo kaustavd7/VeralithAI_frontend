@@ -156,6 +156,12 @@ export interface SystemHealthResponse {
   checked_at: string;
 }
 
+// Lith mascot remark — POST /v1/projects/{id}/lith/remark
+export interface LithRemarkResponse {
+  text: string;
+  mood: string; // happy | excited | worried | thinking | neutral
+}
+
 export interface TraceListItem {
   // UUID per backend (per DEV2_HANDOFF.md §0). Display leading 8 chars.
   id: string;

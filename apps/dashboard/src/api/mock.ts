@@ -11,6 +11,7 @@ import type {
   HealsListQuery,
   HealStatus,
   InsightSummaryResponse,
+  LithRemarkResponse,
   Me,
   Project,
   StatsResponse,
@@ -714,6 +715,39 @@ export const mockApi = {
       ],
       checked_at: new Date().toISOString(),
     };
+  },
+
+  async getLithRemark(
+    _projectIdOrSlug: string,
+    body: { page: string; trigger: string; facts: Record<string, unknown> },
+  ): Promise<LithRemarkResponse> {
+    await delay(300);
+    const f = body.facts as Record<string, number | string | undefined>;
+    const hr = typeof f.healthy_rate === 'number' ? f.healthy_rate : undefined;
+    const cell = typeof f.failure_cell === 'string' ? f.failure_cell : undefined;
+    let text = 'Just vibing on the edge of your screen. 🪨';
+    let mood = 'happy';
+    if (body.page === 'overview' && hr != null) {
+      const pct = Math.round(hr * 100);
+      text = hr >= 0.85 ? `Healthy rate's a cosy ${pct}% — rock solid! 🪨` : `Healthy rate's ${pct}%. Worth poking at the failures.`;
+      mood = hr >= 0.85 ? 'happy' : 'worried';
+    } else if (body.page === 'trace' && cell) {
+      const human = cell.replace(/_/g, ' ');
+      text = cell.includes('ungrounded')
+        ? `This one's ${human} — smells like a hallucination. 👀`
+        : `This trace is ${human}. Probably a retrieval gap.`;
+      mood = cell.includes('ungrounded') ? 'worried' : 'thinking';
+    } else if (body.page === 'heals' || body.page === 'heal') {
+      text = 'The heal board — this is where the magic happens. ✨';
+      mood = 'excited';
+    } else if (body.page === 'traces') {
+      text = 'So many traces… I counted them all. Twice. 🪨';
+      mood = 'thinking';
+    } else if (body.page === 'analytics' || body.page === 'cells') {
+      text = 'Numbers, charts, vibes. I approve. 📈';
+      mood = 'happy';
+    }
+    return { text, mood };
   },
 };
 

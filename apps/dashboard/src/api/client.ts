@@ -13,6 +13,7 @@ import type {
   HealCardSummary,
   HealsListQuery,
   InsightSummaryResponse,
+  LithRemarkResponse,
   Me,
   Project,
   StatsResponse,
@@ -147,6 +148,17 @@ export const api = {
   async getSystemHealth(projectId: string): Promise<SystemHealthResponse> {
     if (USE_MOCK) return mockApi.getSystemHealth(projectId);
     return request(`/v1/projects/${projectId}/system/health`);
+  },
+
+  async getLithRemark(
+    projectId: string,
+    body: { page: string; trigger: string; facts: Record<string, unknown> },
+  ): Promise<LithRemarkResponse> {
+    if (USE_MOCK) return mockApi.getLithRemark(projectId, body);
+    return request(`/v1/projects/${projectId}/lith/remark`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
   },
 
   async listTraces(projectId: string, q: TracesQuery = {}): Promise<TracesResponse> {
