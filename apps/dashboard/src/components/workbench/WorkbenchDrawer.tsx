@@ -6,7 +6,7 @@ import { SHELL_CATALOG, methodById, type ShellMethod, type ShellParam } from './
 import '../../styles/today-workbench.css';
 import { supabase } from '../../lib/supabase';
 import { useProjects } from '../../hooks/useProjects';
-import { useStats, useSystemHealth } from '../../hooks/useOverviewData';
+import { useApiKeys, useStats, useSystemHealth } from '../../hooks/useOverviewData';
 import { useEventLog } from '../../lib/eventLog';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_API === 'true';
@@ -128,11 +128,13 @@ const RESOURCES: [string, string][] = [
   ['Code samples', 'RAG, agents, batch eval'],
 ];
 
-function WbIntegration({ slug, onTab, onManageKeys }: { slug: string; onTab: (t: WbTab) => void; onManageKeys: () => void }) {
+function WbIntegration({ slug, projectId, onTab, onManageKeys }: { slug: string; projectId: string; onTab: (t: WbTab) => void; onManageKeys: () => void }) {
   const [lang, setLang] = useState<'python' | 'node' | 'curl'>('python');
   const stats = useStats(slug, {}, { refetchInterval: 30_000 });
   const conn = stats.data?.connection_state;
   const sdkV = stats.data?.sdk_version;
+  const apiKeys = useApiKeys(projectId);
+  const activeKeys = (apiKeys.data?.api_keys ?? []).filter((k) => !k.revoked_at);
   const statusEl =
     conn === 'live' ? (
       <span className="wf-mlabel"><span className="po-dot po-dot-live" /> receiving traces · live</span>
@@ -157,8 +159,13 @@ function WbIntegration({ slug, onTab, onManageKeys }: { slug: string; onTab: (t:
             <button type="button" className="wf-rec-link" style={LINK_RESET} onClick={onManageKeys}>Manage API keys →</button>
           </div>
           <div className="wb-int-keynote">
-            Your API key is shown <b>once</b>, when you create it (Onboarding).
-            For your security it can never be displayed again — manage and rotate keys in Settings.
+            {apiKeys.isLoading ? (
+              'Checking your API keys…'
+            ) : activeKeys.length > 0 ? (
+              <>This project has <b>{activeKeys.length}</b> active API key{activeKeys.length === 1 ? '' : 's'}. Keys are shown only once at creation — rotate or revoke them in Settings.</>
+            ) : (
+              <>No API key on this project yet — create one in onboarding or Settings. It's shown <b>once</b> at creation and can't be displayed again.</>
+            )}
           </div>
         </div>
 
@@ -944,7 +951,7 @@ function WbBody({ tab, slug, projectId, onTab, onManageKeys }: {
     case 'Shell': return <WbShell key={projectId} projectId={projectId} />;
     case 'Logs': return <WbLogs slug={slug} />;
     case 'Health': return <WbHealth slug={slug} />;
-    default: return <WbIntegration slug={slug} onTab={onTab} onManageKeys={onManageKeys} />;
+    default: return <WbIntegration slug={slug} projectId={projectId} onTab={onTab} onManageKeys={onManageKeys} />;
   }
 }
 
