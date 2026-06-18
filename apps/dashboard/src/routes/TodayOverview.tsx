@@ -3,8 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
 import { useAuth } from '../hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
 import { HealthDonut } from '../components/charts/HealthDonut';
 import { ProfileBadges } from '../components/charts/ProfileBadges';
+import { useStats } from '../hooks/useOverviewData';
+import { api } from '../api/client';
+import { LoadingState, ErrorState } from '../components/StateViews';
 import { analyticsPath, cellsPath, healsPath, tracesPath } from '../lib/nav';
 import '../styles/today-workbench.css';
 
@@ -96,16 +100,22 @@ function Spark({ seed = 7, w = 132, h = 38, n = 13, trend = 0.012, color = 'var(
 }
 
 /* wide timeline · gradient fill · hover-to-read tooltip */
-function BigChart({ h = 170, seed = 3, n = 42, trend = 0.004, color = 'var(--accent)', cap = '// hourly · 00:00 → now', l = '12:00 AM', r = 'now', bare = false, fmt, xfmt, yticks }: {
+function BigChart({ h = 170, seed = 3, n = 42, trend = 0.004, color = 'var(--accent)', cap = '// hourly · 00:00 → now', l = '12:00 AM', r = 'now', bare = false, fmt, xfmt, yticks, values }: {
   h?: number; seed?: number; n?: number; trend?: number; color?: string; cap?: string; l?: string; r?: string; bare?: boolean;
   fmt?: (v: number) => string; xfmt?: (i: number) => string; yticks?: { v: number; label: string }[];
+  /** Real series (0..1) — overrides the demo seed generator when provided. */
+  values?: number[];
 }) {
   const W = 720;
   const innerH = h - 26;
   const GUT = 34; // fixed-px Y-axis label gutter (kept out of the SVG so the line never reaches it)
   // morph the line: tween the points from the current shape to the new one on data change
-  const target = useMemo(() => wfVals(seed, n, trend), [seed, n, trend]);
+  const target = useMemo(
+    () => (values && values.length ? values : wfVals(seed, n, trend)),
+    [values, seed, n, trend],
+  );
   const [vals, setVals] = useState(target);
+  const N = vals.length;
   const fromRef = useRef(target);
   useEffect(() => {
     const from = fromRef.current;
@@ -127,17 +137,17 @@ function BigChart({ h = 170, seed = 3, n = 42, trend = 0.004, color = 'var(--acc
   const gid = useGradId(seed);
   const [hi, setHi] = useState<number | null>(null);
   const format = fmt || ((v: number) => (v * 100).toFixed(0) + '%');
-  const xLabel = xfmt || ((i: number) => String(Math.round((i / (n - 1)) * 23)).padStart(2, '0') + ':00');
+  const xLabel = xfmt || ((i: number) => String(Math.round((i / (N - 1)) * 23)).padStart(2, '0') + ':00');
 
   function onMove(e: React.MouseEvent<HTMLDivElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
     const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    setHi(Math.round(frac * (n - 1)));
+    setHi(Math.round(frac * (N - 1)));
   }
-  const px = hi == null ? 0 : (hi / (n - 1)) * W;
+  const px = hi == null ? 0 : (hi / (N - 1)) * W;
   // match wfPath's plotted y (pad + (1-v)*(h - 2*pad)) so the dot sits ON the line
   const py = hi == null ? 0 : 3 + (1 - vals[hi]) * (innerH - 6);
-  const tipLeft = hi == null ? 0 : Math.max(7, Math.min(93, (hi / (n - 1)) * 100));
+  const tipLeft = hi == null ? 0 : Math.max(7, Math.min(93, (hi / (N - 1)) * 100));
   const ty = (v: number) => 3 + (1 - v) * (innerH - 6); // matches the plotted line's y
 
   return (
@@ -188,7 +198,7 @@ function BigChart({ h = 170, seed = 3, n = 42, trend = 0.004, color = 'var(--acc
 function Delta({ dir = 'up', children }: { dir?: 'up' | 'down' | 'flat'; children: ReactNode }) {
   return <span className={'wf-delta wf-delta-' + dir}>{dir === 'up' ? '↑' : dir === 'down' ? '↓' : '→'} {children}</span>;
 }
-/* ── period toggle (Today / Yesterday / Last week) with per-period demo data ── */
+/* ── period toggle (Today / Yesterday / Last week) ── */
 type StatRow = { l: string; v: string; d: 'up' | 'down' | 'flat'; ds: string; warn?: boolean };
 type PeriodId = 'today' | 'yesterday' | 'week';
 const PERIOD_TABS: { id: PeriodId; label: string }[] = [
@@ -196,52 +206,19 @@ const PERIOD_TABS: { id: PeriodId; label: string }[] = [
   { id: 'yesterday', label: 'Yesterday' },
   { id: 'week', label: 'Last week' },
 ];
-const WEEK_DAYS = ['May 26', 'May 27', 'May 28', 'May 29', 'May 30', 'May 31', 'Jun 1'];
-type PeriodData = {
-  healthy: number;
-  deltaDir: 'up' | 'down' | 'flat';
-  deltaText: string;
-  chartSeed: number;
-  chartTrend: number;
-  chartCap: string;
-  chartL: string;
-  chartR: string;
-  xfmt?: (i: number) => string;
-  stats: StatRow[];
-};
-const PERIOD_DATA: Record<PeriodId, PeriodData> = {
-  today: {
-    healthy: 86.9, deltaDir: 'up', deltaText: '2.7pp vs 84.2% yesterday',
-    chartSeed: 4, chartTrend: 0.003, chartCap: '// healthy rate · hourly', chartL: '12:00 AM', chartR: 'now',
-    stats: [
-      { l: 'New traces', v: '1,284', d: 'up', ds: '+16.5%' },
-      { l: 'New failures', v: '3', d: 'down', ds: '+3 today', warn: true },
-      { l: 'New heals', v: '7', d: 'up', ds: '+4 today' },
-      { l: 'p95 latency', v: '1.8s', d: 'flat', ds: '±0.0s' },
-    ],
-  },
-  yesterday: {
-    healthy: 84.2, deltaDir: 'down', deltaText: '1.1pp vs 85.3% prior day',
-    chartSeed: 11, chartTrend: -0.001, chartCap: '// healthy rate · hourly', chartL: '12:00 AM', chartR: '11:59 PM',
-    stats: [
-      { l: 'Traces', v: '1,102', d: 'down', ds: '-4.2%' },
-      { l: 'Failures', v: '6', d: 'down', ds: '+3', warn: true },
-      { l: 'Heals', v: '4', d: 'flat', ds: '±0' },
-      { l: 'p95 latency', v: '2.1s', d: 'down', ds: '+0.3s' },
-    ],
-  },
-  week: {
-    healthy: 85.4, deltaDir: 'up', deltaText: '1.9pp vs 83.5% prior week',
-    chartSeed: 23, chartTrend: 0.004, chartCap: '// healthy rate · daily', chartL: 'May 26', chartR: 'Jun 1',
-    xfmt: (i) => WEEK_DAYS[Math.round((i / 41) * 6)],
-    stats: [
-      { l: 'Traces', v: '8,940', d: 'up', ds: '+12.1%' },
-      { l: 'Failures', v: '38', d: 'down', ds: '+5 vs wk', warn: true },
-      { l: 'Heals', v: '41', d: 'up', ds: '+15 vs wk' },
-      { l: 'p95 latency', v: '1.9s', d: 'flat', ds: '-0.1s' },
-    ],
-  },
-};
+
+// Resolve a period to a stats window. Day-aligned anchors keep the query key
+// stable across renders (no refetch loop).
+function periodWindow(period: PeriodId): { since: string; until?: string; bucket: 'hour' | 'day' } {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const t = start.getTime();
+  const DAY = 86_400_000;
+  if (period === 'today') return { since: new Date(t).toISOString(), bucket: 'hour' };
+  if (period === 'yesterday')
+    return { since: new Date(t - DAY).toISOString(), until: new Date(t).toISOString(), bucket: 'hour' };
+  return { since: new Date(t - 7 * DAY).toISOString(), bucket: 'day' };
+}
 /* health bands: good ≥85%, warn 70–85%, bad <70%. Colours (incl. a
    light-mode-legible healthy green) live in CSS, keyed off the state class. */
 function healthState(pct: number): 'good' | 'warn' | 'bad' {
@@ -639,8 +616,50 @@ function TodayContent() {
   const greet = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
   const asOf = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   const [period, setPeriod] = useState<PeriodId>('today');
-  const pd = PERIOD_DATA[period];
-  const asOfDate = period === 'today' ? asOf : period === 'yesterday' ? 'Jun 1' : 'May 26 – Jun 1';
+
+  // ── live data ─────────────────────────────────────────────────────────────
+  const projects = useProjects();
+  const project = projects.data?.projects.find((p) => p.slug === slug || p.id === slug);
+  const projectId = project?.id ?? null;
+
+  const win = useMemo(() => periodWindow(period), [period]);
+  const stats = useStats(slug, win);
+  const healsQuery = useQuery({
+    queryKey: ['heals', projectId, 'overview'],
+    queryFn: () => api.listHeals({ limit: 100 }),
+    enabled: !!slug,
+  });
+
+  const s = stats.data;
+  const healsCount = (healsQuery.data ?? []).filter((c) => !projectId || c.project_id === projectId).length;
+
+  const healthyPct = (s?.healthy_rate ?? 0) * 100;
+  const deltaPP = s?.deltas?.healthy_rate_pp_24h ?? 0;
+  const deltaDir: 'up' | 'down' | 'flat' = deltaPP > 0.05 ? 'up' : deltaPP < -0.05 ? 'down' : 'flat';
+  const tracesPct = s?.deltas?.total_traces_pct_24h ?? 0;
+  const cells = s?.by_cell;
+  const failures = cells
+    ? (cells.complete_ungrounded ?? 0) + (cells.incomplete_ungrounded ?? 0) + (cells.extra_ungrounded ?? 0)
+    : 0;
+  const total = s?.total_traces ?? 0;
+  const chartValues = (s?.timeseries ?? []).map((b) => {
+    const t = b.ok + b.failed;
+    return t > 0 ? b.ok / t : s?.healthy_rate ?? 0;
+  });
+
+  const kpis: StatRow[] = [
+    {
+      l: 'New traces',
+      v: total.toLocaleString('en-US'),
+      d: tracesPct > 0 ? 'up' : tracesPct < 0 ? 'down' : 'flat',
+      ds: `${tracesPct >= 0 ? '+' : ''}${tracesPct.toFixed(1)}% · 24h`,
+    },
+    { l: 'Failures', v: failures.toLocaleString('en-US'), d: 'flat', ds: 'ungrounded · window', warn: failures > 0 },
+    { l: 'Heals', v: healsCount.toLocaleString('en-US'), d: 'flat', ds: 'this project' },
+    { l: 'p95 latency', v: '—', d: 'flat', ds: 'not captured yet' },
+  ];
+
+  const asOfDate = period === 'today' ? asOf : period === 'yesterday' ? 'yesterday' : 'last 7 days';
   const asOfSub = period === 'today' ? 'live' : period === 'yesterday' ? 'all day' : '7 days';
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -678,39 +697,60 @@ function TodayContent() {
           </div>
         </div>
 
-        <div className="wf-b-grid">
-          <div className="wf-b-pulse wf-card">
-            <div className="wf-mlabel">Healthy rate · <HealthBadge pct={pd.healthy} /></div>
-            <div className="wf-num" style={{ fontSize: 52 }}><ScrambleNumber value={`${pd.healthy.toFixed(1)}%`} /></div>
-            <div className="wf-metric-sub"><Delta dir={pd.deltaDir}>{pd.deltaText}</Delta></div>
-            <BigChart h={150} seed={pd.chartSeed} cap={pd.chartCap} trend={pd.chartTrend} l={pd.chartL} r={pd.chartR} xfmt={pd.xfmt} fmt={(v) => (80 + v * 14).toFixed(1) + '%'} yticks={[90, 86, 82].map((p) => ({ v: (p - 80) / 14, label: p + '%' }))} />
-          </div>
+        {stats.isError ? (
+          <ErrorState
+            message={stats.error instanceof Error ? stats.error.message : 'Failed to load your overview.'}
+            onRetry={() => stats.refetch()}
+          />
+        ) : !s ? (
+          <LoadingState label="Loading your overview…" />
+        ) : (
+          <div className="wf-b-grid">
+            <div className="wf-b-pulse wf-card">
+              <div className="wf-mlabel">Healthy rate · <HealthBadge pct={healthyPct} /></div>
+              <div className="wf-num" style={{ fontSize: 52 }}>
+                {total > 0 ? <ScrambleNumber value={`${healthyPct.toFixed(1)}%`} /> : '—'}
+              </div>
+              <div className="wf-metric-sub">
+                <Delta dir={deltaDir}>{`${Math.abs(deltaPP).toFixed(1)}pp vs 24h ago`}</Delta>
+              </div>
+              <BigChart
+                h={150}
+                cap={`// healthy rate · ${win.bucket === 'day' ? 'daily' : 'hourly'}`}
+                l={period === 'week' ? '7d ago' : '12:00 AM'}
+                r="now"
+                values={chartValues.length ? chartValues : [s.healthy_rate, s.healthy_rate]}
+                fmt={(v) => (v * 100).toFixed(0) + '%'}
+                yticks={[100, 75, 50].map((p) => ({ v: p / 100, label: p + '%' }))}
+              />
+            </div>
 
-          <div className="wf-b-right">
-            <div className="wf-asof">
-              <span className="wf-asof-pre">as of</span>
-              <span className="wf-asof-main"><b>{asOfDate}</b> · {asOfSub}</span>
-            </div>
-            <div className="wf-b-stats">
-              {pd.stats.map((s, i) => (
-                <div
-                  className="wf-b-stat wf-card"
-                  key={i}
-                  role="link"
-                  tabIndex={0}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => navigate(statHref(i))}
-                  onKeyDown={onActivateKey(() => navigate(statHref(i)))}
-                  aria-label={`View ${s.l}`}
-                >
-                  <span className="wf-mlabel">{s.l}</span>
-                  <span className={'wf-num' + (s.warn ? ' wf-warn' : '')}><ScrambleNumber value={s.v} /></span>
-                  <Delta dir={s.d}>{s.ds}</Delta>
-                </div>
-              ))}
+            <div className="wf-b-right">
+              <div className="wf-asof">
+                <span className="wf-asof-pre">as of</span>
+                <span className="wf-asof-main"><b>{asOfDate}</b> · {asOfSub}</span>
+              </div>
+              <div className="wf-b-stats">
+                {kpis.map((k, i) => (
+                  <div
+                    className="wf-b-stat wf-card"
+                    key={i}
+                    role="link"
+                    tabIndex={0}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(statHref(i))}
+                    onKeyDown={onActivateKey(() => navigate(statHref(i)))}
+                    aria-label={`View ${k.l}`}
+                  >
+                    <span className="wf-mlabel">{k.l}</span>
+                    <span className={'wf-num' + (k.warn ? ' wf-warn' : '')}><ScrambleNumber value={k.v} /></span>
+                    <Delta dir={k.d}>{k.ds}</Delta>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       <section className="wf-profile-sec">
@@ -720,7 +760,13 @@ function TodayContent() {
             <span className="ovc-tag po-mono">failure-cell mix · achievements</span>
           </div>
           <div className="wf-profile-body">
-            <div className="wf-profile-donut"><HealthDonut onCellClick={(cell) => navigate(tracesPath(slug, cell))} /></div>
+            <div className="wf-profile-donut">
+              {cells ? (
+                <HealthDonut counts={cells} onCellClick={(cell) => navigate(tracesPath(slug, cell))} />
+              ) : (
+                <LoadingState label="Loading…" />
+              )}
+            </div>
             <div className="wf-profile-side"><ProfileBadges /></div>
           </div>
         </div>

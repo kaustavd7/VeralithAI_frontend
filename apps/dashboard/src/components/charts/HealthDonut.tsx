@@ -34,22 +34,35 @@ const C = SIZE / 2;
 const CIRC = 2 * Math.PI * R;
 const GAP = 0.014; // fraction of the circumference left blank between slices
 
-export function HealthDonut({ onCellClick }: { onCellClick?: (cell: string) => void } = {}) {
+/* Build the same ordered slices from a live { cell: count } map (falls back to
+   the demo distribution when no counts are passed). */
+function slicesFromCounts(counts: Record<string, number>): Slice[] {
+  return SLICES.map((s) => ({ ...s, count: counts[s.id] ?? 0 }));
+}
+
+export function HealthDonut({
+  onCellClick,
+  counts,
+}: {
+  onCellClick?: (cell: string) => void;
+  counts?: Record<string, number>;
+} = {}) {
   const { total, healthyPct, arcs } = useMemo(() => {
-    const total = SLICES.reduce((a, s) => a + s.count, 0);
-    const healthy = SLICES.find((s) => s.id === HEALTHY_ID)?.count ?? 0;
+    const slices = counts ? slicesFromCounts(counts) : SLICES;
+    const total = slices.reduce((a, s) => a + s.count, 0);
+    const healthy = slices.find((s) => s.id === HEALTHY_ID)?.count ?? 0;
     const healthyPct = total ? (healthy / total) * 100 : 0;
     // cumulative start fraction for each slice (prefix sum of preceding fracs;
     // no post-render mutation of an outer variable)
-    const arcs = SLICES.map((s, i) => {
+    const arcs = slices.map((s, i) => {
       const frac = total ? s.count / total : 0;
-      const startFrac = total ? SLICES.slice(0, i).reduce((a, p) => a + p.count, 0) / total : 0;
+      const startFrac = total ? slices.slice(0, i).reduce((a, p) => a + p.count, 0) / total : 0;
       const dash = Math.max(0, frac - GAP) * CIRC;
       const offset = -startFrac * CIRC;
       return { ...s, dash, offset };
     });
     return { total, healthyPct, arcs };
-  }, []);
+  }, [counts]);
 
   return (
     <div className="hd-wrap">
