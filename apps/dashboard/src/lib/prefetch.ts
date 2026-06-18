@@ -22,8 +22,9 @@ function tracesSince24h() {
   const now = Math.floor(Date.now() / QUANTUM) * QUANTUM;
   return new Date(now - DAY).toISOString();
 }
-// Failure Cells default range '24h' — sinceForRange('24h'), 1-minute quantum
-function cellsSince24h() {
+// 24h window with a 1-minute quantum — used by BOTH Failure Cells
+// (sinceForRange('24h')) and Analytics (sinceForWindow('24h')).
+function since24hMinute() {
   const QUANTUM = 60_000;
   const now = Math.floor(Date.now() / QUANTUM) * QUANTUM;
   return new Date(now - DAY).toISOString();
@@ -50,12 +51,19 @@ export function usePrefetchProjectData(slug: string) {
     qc.prefetchQuery({ queryKey: ['traces', slug, tq], queryFn: () => api.listTraces(slug, tq), staleTime });
 
     // Failure Cells (24h)
-    const cp = { since: cellsSince24h(), bucket: 'hour' as const };
+    const cp = { since: since24hMinute(), bucket: 'hour' as const };
     qc.prefetchQuery({
       queryKey: ['cell-timeseries', slug, cp],
       queryFn: () => api.getCellTimeseries(slug, cp),
       staleTime,
     });
+
+    // Analytics page-level grid (24h · stats + recent traces)
+    const anSince = since24hMinute();
+    const anStats = { since: anSince, bucket: 'hour' as const };
+    qc.prefetchQuery({ queryKey: ['stats', slug, anStats], queryFn: () => api.getStats(slug, anStats), staleTime });
+    const anTraces = { limit: 200, sort: 'newest' as const, since: anSince };
+    qc.prefetchQuery({ queryKey: ['traces', slug, anTraces], queryFn: () => api.listTraces(slug, anTraces), staleTime });
 
     // Heals list (key uses the resolved project id)
     if (projectId) {
