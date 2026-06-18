@@ -672,6 +672,107 @@ function DetailPane({
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Heal panel — one floating, self-contained detail panel in the stack. Each
+   runs its own detail query + actions; only the top panel is interactive.
+   ─────────────────────────────────────────────────────────── */
+
+function HealPanel({
+  cardId, depth, isTop, zIndex, onClose,
+}: {
+  cardId: string;
+  depth: number;
+  isTop: boolean;
+  zIndex: number;
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [confirm, setConfirm] = useState<ConfirmKind | null>(null);
+
+  const detailQuery = useQuery({
+    queryKey: ['heal', cardId],
+    queryFn: () => api.getHeal(cardId),
+    refetchInterval: (qq) => {
+      const data = qq.state.data as HealCardDetail | undefined;
+      if (!data) return false;
+      return TERMINAL.includes(data.status) ? false : 5_000;
+    },
+  });
+
+  const actionMutation = useMutation({
+    mutationFn: ({ action }: { action: ActionKind }) => api.healAction(cardId, action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['heals'] });
+      queryClient.invalidateQueries({ queryKey: ['heal', cardId] });
+    },
+  });
+
+  function doAction(action: ActionKind) {
+    if (actionMutation.isPending) return;
+    actionMutation.reset();
+    if (action === 'decline' || action === 'dismiss-fixed' || action === 'dismiss-ignore') {
+      setConfirm(action);
+      return;
+    }
+    actionMutation.mutate({ action });
+  }
+  function confirmAndExecute() {
+    if (!confirm) return;
+    actionMutation.mutate({ action: confirm });
+    setConfirm(null);
+  }
+
+  const pendingAction: ActionKind | null = actionMutation.isPending
+    ? actionMutation.variables?.action ?? null
+    : null;
+  const actionError: string | null = actionMutation.isError
+    ? actionMutation.error instanceof Error
+      ? actionMutation.error.message
+      : 'Something went wrong.'
+    : null;
+
+  // Focus the panel when it becomes the top of the stack.
+  useEffect(() => {
+    if (isTop) panelRef.current?.focus();
+  }, [isTop]);
+
+  // Esc closes the top panel — unless its own confirm dialog is open (the modal
+  // handles Esc itself in that case).
+  useEffect(() => {
+    if (!isTop) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !confirm) onClose();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isTop, confirm, onClose]);
+
+  return (
+    <div
+      className={'he-panel-wrap' + (isTop ? ' is-top' : '')}
+      style={{ '--d': depth, zIndex } as React.CSSProperties}
+    >
+      <div className="he-panel" ref={panelRef} tabIndex={-1} role="dialog" aria-label="Heal card detail">
+        <DetailPane
+          card={detailQuery.data}
+          isLoading={detailQuery.isLoading}
+          isError={detailQuery.isError}
+          loadError={detailQuery.error instanceof Error ? detailQuery.error.message : undefined}
+          onRetry={() => detailQuery.refetch()}
+          onAction={doAction}
+          onClose={onClose}
+          pendingAction={pendingAction}
+          actionError={actionError}
+        />
+      </div>
+      {confirm && (
+        <ConfirmModal kind={confirm} onConfirm={confirmAndExecute} onCancel={() => setConfirm(null)} />
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
    Skeleton — ghost nodes scattered on the canvas, so the loading → loaded
    swap is shift-free (same canvas, same absolutely-placed cards).
    ─────────────────────────────────────────────────────────── */
@@ -720,17 +821,17 @@ function HealsSkeleton() {
 export default function Heals() {
   const { slug = '', cardId } = useParams<{ slug: string; cardId?: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const projects = useProjects();
   const activeProject = projects.data?.projects.find((p) => p.slug === slug || p.id === slug);
   const projectName = activeProject?.name ?? slug;
   const projectId = activeProject?.id ?? null;
 
   const [search, setSearch] = useState('');
-  const [confirm, setConfirm] = useState<ConfirmKind | null>(null);
   const [flashId, setFlashId] = useState<string | null>(null);
+  // Panel stack: the route param is the TOP card; `belowStack` holds the cards
+  // beneath it, so opening another card stacks a new panel on top.
+  const [belowStack, setBelowStack] = useState<string[]>([]);
   const lastStatusRef = useRef<Record<string, HealStatus>>({});
-  const panelRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
 
   // Canvas layout: user-moved positions (overrides) persisted per project;
@@ -746,18 +847,6 @@ export default function Heals() {
     queryFn: () => api.listHeals({ limit: 100 }),
     refetchInterval: 12_000,
     placeholderData: keepPreviousData,
-  });
-
-  // 5s for detail while status is non-terminal.
-  const detailQuery = useQuery({
-    queryKey: ['heal', cardId],
-    queryFn: () => api.getHeal(cardId!),
-    enabled: !!cardId,
-    refetchInterval: (q) => {
-      const data = q.state.data as HealCardDetail | undefined;
-      if (!data) return false;
-      return TERMINAL.includes(data.status) ? false : 5_000;
-    },
   });
 
   // Scope the global list to the current project. Until the project resolves we
@@ -819,55 +908,30 @@ export default function Heals() {
   }, [cards, positions, fallback]);
 
   const openCount = cards.filter((c) => c.status === 'open').length;
-  const selectedCard = detailQuery.data;
 
-  const actionMutation = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: ActionKind }) => api.healAction(id, action),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['heals'] });
-      if (cardId) queryClient.invalidateQueries({ queryKey: ['heal', cardId] });
-    },
-  });
+  // The open panel stack: cards beneath + the route card on top.
+  const fullStack = cardId ? [...belowStack, cardId] : [];
+  const selectedIds = new Set(fullStack);
 
-  // Clear any stale action error/pending affordance when switching cards.
-  const mutationReset = actionMutation.reset;
-  useEffect(() => {
-    mutationReset();
-  }, [cardId, mutationReset]);
-
-  function doAction(action: ActionKind) {
-    if (!cardId || actionMutation.isPending) return;
-    actionMutation.reset();
-    if (action === 'decline' || action === 'dismiss-fixed' || action === 'dismiss-ignore') {
-      setConfirm(action);
-      return;
-    }
-    actionMutation.mutate({ id: cardId, action });
-  }
-
-  function confirmAndExecute() {
-    if (!cardId || !confirm) return;
-    actionMutation.mutate({ id: cardId, action: confirm });
-    setConfirm(null);
-  }
-
-  const pendingAction: ActionKind | null = actionMutation.isPending
-    ? actionMutation.variables?.action ?? null
-    : null;
-  const actionError: string | null = actionMutation.isError
-    ? actionMutation.error instanceof Error
-      ? actionMutation.error.message
-      : 'Something went wrong.'
-    : null;
-
-  function selectCard(id: string) {
-    // Remember the trigger so focus can return there when the panel closes.
+  function openCard(id: string) {
+    if (id === cardId) return; // already the top panel
     lastFocusedRef.current = document.activeElement as HTMLElement | null;
+    // If reopening a buried card, pull it out; push the current top beneath it.
+    setBelowStack((b) => {
+      const without = b.filter((x) => x !== id);
+      return cardId ? [...without, cardId] : without;
+    });
     navigate(`/projects/${slug}/heals/${id}`);
   }
-  function closeDetail() {
-    lastFocusedRef.current?.focus?.();
-    navigate(`/projects/${slug}/heals`);
+  function closeTop() {
+    if (belowStack.length) {
+      const prev = belowStack[belowStack.length - 1]!;
+      setBelowStack((b) => b.slice(0, -1));
+      navigate(`/projects/${slug}/heals/${prev}`);
+    } else {
+      lastFocusedRef.current?.focus?.();
+      navigate(`/projects/${slug}/heals`);
+    }
   }
 
   /* ── drag handlers (pointer-capture; <4px movement counts as a click) ── */
@@ -897,7 +961,7 @@ export default function Heals() {
     dragRef.current = null;
     setDragId(null);
     if (!d.moved) {
-      selectCard(card.id);
+      openCard(card.id);
     } else if (projectId) {
       setPositions((prev) => { saveLayout(projectId, prev); return prev; });
     }
@@ -906,48 +970,6 @@ export default function Heals() {
     setPositions({});
     if (projectId) saveLayout(projectId, {});
   }
-
-  // Move focus into the panel when it opens (backs up the aria-modal).
-  useEffect(() => {
-    if (cardId) panelRef.current?.focus();
-  }, [cardId]);
-
-  // While the panel is open: Esc closes it (unless a confirm dialog is up), and
-  // Tab is trapped within the panel.
-  useEffect(() => {
-    if (!cardId) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        if (!confirm) closeDetail();
-        return;
-      }
-      if (e.key === 'Tab' && !confirm) {
-        const panel = panelRef.current;
-        if (!panel) return;
-        const f = panel.querySelectorAll<HTMLElement>(
-          'a[href],button:not([disabled]),input:not([disabled]),textarea,select,[tabindex]:not([tabindex="-1"])',
-        );
-        if (f.length === 0) {
-          e.preventDefault();
-          panel.focus();
-          return;
-        }
-        const first = f[0]!;
-        const last = f[f.length - 1]!;
-        const active = document.activeElement;
-        if (e.shiftKey && (active === first || active === panel)) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && active === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    }
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cardId, confirm]);
 
   const loading = listQuery.isLoading || projects.isLoading;
   const isEmpty = !loading && cards.length === 0;
@@ -1029,13 +1051,13 @@ export default function Heals() {
                     key={card.id}
                     card={card}
                     pos={posOf(card.id)}
-                    selected={card.id === cardId}
+                    selected={selectedIds.has(card.id)}
                     flash={card.id === flashId}
                     dragging={card.id === dragId}
                     onPointerDown={onNodeDown}
                     onPointerMove={onNodeMove}
                     onPointerUp={onNodeUp}
-                    onOpen={selectCard}
+                    onOpen={openCard}
                   />
                 ))
               )}
@@ -1043,41 +1065,19 @@ export default function Heals() {
           </div>
         )}
 
-        {cardId && (
-          <div className="he-panel-scrim" onClick={closeDetail}>
-            <div className="he-panel-wrap" onClick={(e) => e.stopPropagation()}>
-              <div className="he-panel-ghost he-panel-ghost-b" aria-hidden="true" />
-              <div className="he-panel-ghost he-panel-ghost-a" aria-hidden="true" />
-              <div
-                className="he-panel"
-                ref={panelRef}
-                tabIndex={-1}
-                role="dialog"
-                aria-modal="true"
-                aria-label="Heal card detail"
-              >
-                <DetailPane
-                  card={selectedCard}
-                  isLoading={detailQuery.isLoading}
-                  isError={detailQuery.isError}
-                  loadError={detailQuery.error instanceof Error ? detailQuery.error.message : undefined}
-                  onRetry={() => detailQuery.refetch()}
-                  onAction={doAction}
-                  onClose={closeDetail}
-                  pendingAction={pendingAction}
-                  actionError={actionError}
-                />
-              </div>
-            </div>
+        {fullStack.length > 0 && (
+          <div className="he-panels">
+            {fullStack.map((id, i) => (
+              <HealPanel
+                key={id}
+                cardId={id}
+                depth={fullStack.length - 1 - i}
+                isTop={i === fullStack.length - 1}
+                zIndex={200 + i}
+                onClose={closeTop}
+              />
+            ))}
           </div>
-        )}
-
-        {confirm && (
-          <ConfirmModal
-            kind={confirm}
-            onConfirm={confirmAndExecute}
-            onCancel={() => setConfirm(null)}
-          />
         )}
       </div>
     </ProjectShell>
