@@ -232,7 +232,9 @@ function healthState(pct: number): 'good' | 'warn' | 'bad' {
 function healthLabel(pct: number): string {
   return pct >= 85 ? 'Healthy' : pct >= 70 ? 'Degraded' : 'Critical';
 }
-function HealthBadge({ pct }: { pct: number }) {
+function HealthBadge({ pct, hasData = true }: { pct: number; hasData?: boolean }) {
+  // No traces in the window → there's nothing to judge; don't cry "Critical".
+  if (!hasData) return <span className="wf-health-badge is-none">No data</span>;
   return <span className={'wf-health-badge is-' + healthState(pct)}>{healthLabel(pct)}</span>;
 }
 
@@ -860,22 +862,32 @@ function TodayContent() {
         ) : (
           <div className="wf-b-grid">
             <div className="wf-b-pulse wf-card">
-              <div className="wf-mlabel">Healthy rate · <HealthBadge pct={healthyPct} /></div>
+              <div className="wf-mlabel">Healthy rate · <HealthBadge pct={healthyPct} hasData={total > 0} /></div>
               <div className="wf-num" style={{ fontSize: 52 }}>
                 {total > 0 ? <ScrambleNumber value={`${healthyPct.toFixed(1)}%`} /> : '—'}
               </div>
               <div className="wf-metric-sub">
-                <Delta dir={deltaDir}>{`${Math.abs(deltaPP).toFixed(1)}pp vs 24h ago`}</Delta>
+                {total > 0 ? (
+                  <Delta dir={deltaDir}>{`${Math.abs(deltaPP).toFixed(1)}pp vs 24h ago`}</Delta>
+                ) : (
+                  <span className="wf-metric-muted">No traces in this window yet</span>
+                )}
               </div>
-              <BigChart
-                h={150}
-                cap={`// healthy rate · ${win.bucket === 'day' ? 'daily' : 'hourly'}`}
-                l={period === 'week' ? '7d ago' : '12:00 AM'}
-                r="now"
-                values={chartValues.length ? chartValues : [s.healthy_rate, s.healthy_rate]}
-                fmt={(v) => (v * 100).toFixed(0) + '%'}
-                yticks={[100, 75, 50].map((p) => ({ v: p / 100, label: p + '%' }))}
-              />
+              {total > 0 ? (
+                <BigChart
+                  h={150}
+                  cap={`// healthy rate · ${win.bucket === 'day' ? 'daily' : 'hourly'}`}
+                  l={period === 'week' ? '7d ago' : '12:00 AM'}
+                  r="now"
+                  values={chartValues.length ? chartValues : [s.healthy_rate, s.healthy_rate]}
+                  fmt={(v) => (v * 100).toFixed(0) + '%'}
+                  yticks={[100, 75, 50].map((p) => ({ v: p / 100, label: p + '%' }))}
+                />
+              ) : (
+                <div className="wf-chart-empty" style={{ height: 150 }}>
+                  Healthy rate will chart here once traces arrive.
+                </div>
+              )}
             </div>
 
             <div className="wf-b-right">

@@ -66,6 +66,15 @@
 .wf-health-badge.is-bad { color: var(--po-bad);
   border: 1px solid color-mix(in oklab, var(--po-bad) 40%, transparent);
   background: color-mix(in oklab, var(--po-bad) 12%, transparent); }
+/* neutral pill when there's no data to judge (zero traces in the window) */
+.wf-health-badge.is-none { color: var(--po-fg-4);
+  border: 1px solid var(--po-line);
+  background: color-mix(in oklab, var(--po-fg) 7%, transparent); }
+.wf-metric-muted { font-size: 12px; color: var(--po-fg-4); }
+.wf-chart-empty { display: flex; align-items: center; justify-content: center;
+  margin-top: 8px; border: 1px dashed var(--po-line); border-radius: var(--po-radius-sm);
+  color: var(--po-fg-4); font-size: 12.5px; text-align: center; padding: 0 16px;
+  background: color-mix(in oklab, var(--po-panel-2) 40%, transparent); }
 .wf-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-variant-numeric: tabular-nums; }
 .wf-delta-up { color: var(--po-live); }
 .wf-delta-down { color: var(--po-bad); }
