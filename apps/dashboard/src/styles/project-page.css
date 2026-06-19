@@ -4047,6 +4047,12 @@ button.an-tv-leg:hover {
   }
   .he-panel { border-radius: 0; }
 }
+
+/* responsive QA safety — let toolbars wrap and the search field shrink */
+@media (max-width: 768px) {
+  .te-head { flex-wrap: wrap; }
+  .ph-field { max-width: 100%; }
+}
 .se-edit {
   flex: 1;
   display: flex;
