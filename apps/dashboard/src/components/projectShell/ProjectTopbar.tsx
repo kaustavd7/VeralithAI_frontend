@@ -11,12 +11,14 @@ type Props = {
   workspace?: string;
   /** when set, the topbar appends the `/ project ⌄` switcher; omit at the workspace level */
   project?: string;
+  /** opens the mobile nav drawer (hamburger is shown only on small screens) */
+  onMenu?: () => void;
 };
 
 // Backend only models trial/pro today; trial reads as the free tier.
 const TIER_LABEL: Record<string, string> = { trial: 'Free', pro: 'Pro', max: 'Max' };
 
-export function ProjectTopbar({ workspace = 'workspace', project }: Props) {
+export function ProjectTopbar({ workspace = 'workspace', project, onMenu }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -91,6 +93,11 @@ export function ProjectTopbar({ workspace = 'workspace', project }: Props) {
 
   return (
     <div className="tb">
+      <button type="button" className="tb-menu" aria-label="Open menu" onClick={onMenu}>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <path d="M2.5 5h13M2.5 9h13M2.5 13h13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      </button>
       <div className="tb-crumbs">
         <button type="button" className="tb-logo" aria-label="All projects" onClick={() => navigate('/projects')}>
           <BrandMark size={24} />

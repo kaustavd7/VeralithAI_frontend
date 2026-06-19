@@ -480,3 +480,88 @@
 
 /* (legacy .sb-brand / .sb-foot status blocks removed — the sidebar renders only
    .sb-scroll groups + the .sb-ctrl mode button; no brand header or live footer) */
+
+/* ============================================================
+   RESPONSIVE FOUNDATION + SHELL MOBILE NAV
+   Desktop is unchanged; everything below is max-width gated. On phones the
+   hover-expand rail becomes an off-canvas hamburger drawer and the page padding
+   tightens. (Page-level grid/table reflows live in each page's own stylesheet.)
+   ============================================================ */
+
+/* fluid page padding (every shell page reads these tokens) */
+@media (max-width: 1024px) {
+  :root { --page-pad-x: 22px; --page-pad-top: 22px; }
+}
+@media (max-width: 768px) {
+  :root { --page-pad-x: 16px; --page-pad-top: 18px; --page-pad-bottom: 24px; }
+}
+@media (max-width: 480px) {
+  :root { --page-pad-x: 12px; }
+}
+
+/* hamburger button — hidden on desktop, shown on mobile */
+.tb-menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-right: 2px;
+  border: none;
+  background: none;
+  color: var(--po-fg-2);
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.tb-menu:hover { background: var(--po-hover); }
+
+/* mobile drawer backdrop (rendered only while the drawer is open) */
+.sb-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: color-mix(in oklab, #000 48%, transparent);
+  animation: sb-backdrop-in 0.16s ease;
+}
+@keyframes sb-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+
+@media (max-width: 768px) {
+  .tb-menu { display: inline-flex; }
+
+  /* topbar sheds secondary controls on small screens */
+  .tb { padding: 0 12px; gap: 8px; }
+  .ph-search-pill,
+  .tb-right .tb-icon-btn,
+  .tb-tier,
+  .tb-crumb-link { display: none; }
+  /* drop the leading "workspace /" separator that preceded the hidden crumb */
+  .tb-crumbs > .tb-crumb-sep:first-of-type { display: none; }
+
+  /* sidebar → off-canvas drawer (full label width, slides in from the left) */
+  .sb {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--sb-expanded);
+    transform: translateX(-100%);
+    transition: transform 220ms var(--sb-ease);
+    transition-delay: 0s;
+    z-index: 120;
+    box-shadow: 8px 0 30px rgba(0, 0, 0, 0.4);
+  }
+  .sb.is-mobile-open { transform: translateX(0); }
+  /* labels are always visible inside the drawer; hover tooltips are pointless */
+  .sb .sb-group-label,
+  .sb .sb-item-label,
+  .sb .sb-item-badge { opacity: 1; transform: none; }
+  .sb .sb-tip { display: none; }
+  .sb .sb-group + .sb-group { border-top-color: var(--po-line); }
+  /* the expand/collapse mode control is meaningless on touch — hide it */
+  .sb-ctrl { display: none; }
+
+  /* content reclaims the rail's space — the drawer overlays instead of insetting */
+  .shell-main,
+  .shell[data-sb='expanded'] .shell-main { padding-left: 0; }
+}

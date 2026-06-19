@@ -20,6 +20,9 @@ type Props = {
   active: string;
   slug?: string;
   variant?: Variant;
+  /** mobile drawer: open state + a request to close (after navigation / backdrop tap) */
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 };
 
 type Item = {
@@ -226,7 +229,7 @@ function PanelIcon({ mode }: { mode: SidebarMode }) {
   );
 }
 
-export function ProjectSidebar({ active, slug = '', variant = 'project' }: Props) {
+export function ProjectSidebar({ active, slug = '', variant = 'project', mobileOpen = false, onMobileClose }: Props) {
   const [hover, setHover] = useState(false);
   const [mode] = useSidebarMode();
   const navigate = useNavigate();
@@ -296,8 +299,10 @@ export function ProjectSidebar({ active, slug = '', variant = 'project' }: Props
   }, [chords, navigate]);
 
   return (
+    <>
+      {mobileOpen && <div className="sb-backdrop" onClick={onMobileClose} aria-hidden="true" />}
     <aside
-      className={'sb sb-mode-' + mode + (expanded ? ' is-expanded' : '')}
+      className={'sb sb-mode-' + mode + (expanded ? ' is-expanded' : '') + (mobileOpen ? ' is-mobile-open' : '')}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -317,6 +322,7 @@ export function ProjectSidebar({ active, slug = '', variant = 'project' }: Props
                   onClick={() => {
                     if (disabled || !it.route) return;
                     navigate(it.route);
+                    onMobileClose?.();
                   }}
                   role={disabled ? undefined : 'link'}
                 >
@@ -335,5 +341,6 @@ export function ProjectSidebar({ active, slug = '', variant = 'project' }: Props
 
       <SidebarControl />
     </aside>
+    </>
   );
 }

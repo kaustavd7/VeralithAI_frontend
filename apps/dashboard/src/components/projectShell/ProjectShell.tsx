@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ProjectSidebar } from './ProjectSidebar';
 import { ProjectTopbar } from './ProjectTopbar';
 import { useSidebarMode } from '../../lib/sidebarMode';
@@ -34,14 +35,27 @@ export function ProjectShell({
   children,
 }: Props) {
   const [mode] = useSidebarMode();
+  const [navOpen, setNavOpen] = useState(false);
+  const location = useLocation();
   // Warm every project page's data on entry so navigating between tabs is instant.
   usePrefetchProjectData(variant === 'project' ? slug ?? '' : '');
 
+  // Close the mobile nav drawer whenever the route changes.
+  useEffect(() => {
+    setNavOpen(false);
+  }, [location.pathname]);
+
   return (
     <div className="shell" data-sb={mode}>
-      <ProjectTopbar project={project} workspace={workspace} />
+      <ProjectTopbar project={project} workspace={workspace} onMenu={() => setNavOpen(true)} />
       <div className="shell-body">
-        <ProjectSidebar active={active} slug={slug} variant={variant} />
+        <ProjectSidebar
+          active={active}
+          slug={slug}
+          variant={variant}
+          mobileOpen={navOpen}
+          onMobileClose={() => setNavOpen(false)}
+        />
         <main className={'shell-main' + (mainClass ? ' ' + mainClass : '')}>{children}</main>
         {drawer}
       </div>
