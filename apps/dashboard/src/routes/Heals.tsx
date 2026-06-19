@@ -178,24 +178,47 @@ function shortId(id: string): string {
   return id.split('-')[0]?.slice(0, 8) ?? id.slice(0, 8);
 }
 
+/* Touch screens get the canvas as a plain list (drag is pointless), so we swap
+   the pointer-drag handlers for a tap-to-open click. */
+function useIsMobile(query = '(max-width: 768px)') {
+  const [match, setMatch] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(query).matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setMatch(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, [query]);
+  return match;
+}
+
 /* ─────────────────────────────────────────────────────────────
    Heal node — a Railway-style draggable card on the canvas
    ─────────────────────────────────────────────────────────── */
 
 function HealNode({
-  card, pos, selected, flash, dragging, onPointerDown, onPointerMove, onPointerUp, onOpen,
+  card, pos, selected, flash, dragging, mobile, onPointerDown, onPointerMove, onPointerUp, onOpen,
 }: {
   card: HealCardSummary;
   pos: Pos;
   selected: boolean;
   flash: boolean;
   dragging: boolean;
+  mobile: boolean;
   onPointerDown: (e: React.PointerEvent, card: HealCardSummary) => void;
   onPointerMove: (e: React.PointerEvent) => void;
   onPointerUp: (e: React.PointerEvent, card: HealCardSummary) => void;
   onOpen: (id: string) => void;
 }) {
   const m = STATUS_META[card.status] ?? { label: card.status, phrase: null, color: 'var(--po-grey)' };
+  const interaction = mobile
+    ? { onClick: () => onOpen(card.id) }
+    : {
+        onPointerDown: (e: React.PointerEvent) => onPointerDown(e, card),
+        onPointerMove,
+        onPointerUp: (e: React.PointerEvent) => onPointerUp(e, card),
+      };
   return (
     <div
       className={'he-node' + (selected ? ' is-selected' : '') + (flash ? ' is-flash' : '') + (dragging ? ' is-dragging' : '')}
@@ -204,9 +227,7 @@ function HealNode({
       tabIndex={0}
       aria-label={`${card.title} — ${m.label}`}
       title={card.title}
-      onPointerDown={(e) => onPointerDown(e, card)}
-      onPointerMove={onPointerMove}
-      onPointerUp={(e) => onPointerUp(e, card)}
+      {...interaction}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -839,6 +860,7 @@ export default function Heals() {
   const [positions, setPositions] = useState<Record<string, Pos>>({});
   const [dragId, setDragId] = useState<string | null>(null);
   const dragRef = useRef<{ id: string; sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
+  const isMobile = useIsMobile();
 
   // GET /v1/heals is global across the user's projects; we fetch everything and
   // scope to the active project client-side. Polling: 12s.
@@ -1054,6 +1076,7 @@ export default function Heals() {
                     selected={selectedIds.has(card.id)}
                     flash={card.id === flashId}
                     dragging={card.id === dragId}
+                    mobile={isMobile}
                     onPointerDown={onNodeDown}
                     onPointerMove={onNodeMove}
                     onPointerUp={onNodeUp}

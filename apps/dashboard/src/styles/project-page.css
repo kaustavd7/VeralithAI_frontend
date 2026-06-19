@@ -3979,6 +3979,74 @@ button.an-tv-leg:hover {
   .se-row { flex-direction: column; align-items: flex-start; gap: 6px; }
   .se-row-label { width: auto; }
 }
+
+/* ── Responsive 3/4: dense tables → cards ────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Trace Explorer: each row becomes a card — query headline, then a meta line */
+  .te-thead { display: none; }
+  .te-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px 12px;
+    position: relative;
+    border: 1px solid var(--po-line);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    padding: 12px 14px 12px 18px;
+  }
+  .te-row:last-child { border-bottom: 1px solid var(--po-line); }
+  .te-td { padding: 0; }
+  .te-col-sev { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; }
+  .te-sev { width: 5px; height: 100%; min-height: 0; border-radius: 10px 0 0 10px; }
+  .te-col-q { flex: 1 1 100%; font-weight: 500; }
+  .te-col-cell { flex: 1 1 100%; }
+  .te-col-s,
+  .te-col-f,
+  .te-col-time { flex: 0 0 auto; font-size: 12px; color: var(--po-fg-3); }
+  .te-col-s::before { content: 'Suff '; color: var(--po-fg-4); }
+  .te-col-f::before { content: 'Faith '; color: var(--po-fg-4); }
+  .te-col-time { margin-left: auto; }
+
+  /* Analytics leaderboard: rank + query on the first line, meters stack below */
+  .an-lb-row { grid-template-columns: 26px 1fr; row-gap: 6px; }
+  .an-lb-row > * { min-width: 0; }
+  .an-lb-row > :nth-child(3),
+  .an-lb-row > :nth-child(4) { grid-column: 2 / -1; }
+}
+
+/* ── Responsive 3/4: Heals drag-canvas → scrollable list + full-screen panel */
+@media (max-width: 768px) {
+  .he-toolbar { flex-wrap: wrap; }
+  .he-canvas { overflow-x: hidden; }
+  /* nodes flow as a vertical list (override the JS absolute positions) */
+  .he-canvas-inner:not(.he-canvas-inner-center) {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    background-image: none;
+  }
+  .he-node {
+    position: static !important;
+    transform: none !important;
+    width: auto !important;
+    touch-action: auto !important;
+  }
+  /* detail panels go full-screen (no left rail inset, no stacking offset) */
+  .he-panels { inset: 52px 0 0 0; }
+  .he-panel-wrap {
+    top: 0;
+    right: 0;
+    left: 0;
+    width: auto;
+    transform: none !important;
+  }
+  .he-panel { border-radius: 0; }
+}
 .se-edit {
   flex: 1;
   display: flex;
