@@ -238,3 +238,8 @@
     animation: none;
   }
 }
+
+/* hide the roaming buddy on small screens — no room, and dragging is touch-awkward */
+@media (max-width: 768px) {
+  .buddy-root { display: none; }
+}

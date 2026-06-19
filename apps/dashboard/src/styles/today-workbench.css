@@ -649,3 +649,9 @@ html.wb-scroll-lock .he-detail { overflow: hidden; }
   .wf-b-stats { grid-template-columns: 1fr; }
   .va-actions { grid-template-columns: 1fr; }
 }
+
+/* hide the dev Workbench on small screens (desktop-only dev tool) */
+@media (max-width: 768px) {
+  .wb-foot-only,
+  .wb-drawer { display: none; }
+}
