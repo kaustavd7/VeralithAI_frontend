@@ -643,3 +643,9 @@ html.wb-scroll-lock .he-detail { overflow: hidden; }
 
 /* stack the overview columns on a narrow viewport */
 @media (max-width: 900px) { .ovc-cols { flex-direction: column; } }
+
+/* phone: collapse the remaining 2-up mini grids */
+@media (max-width: 480px) {
+  .wf-b-stats { grid-template-columns: 1fr; }
+  .va-actions { grid-template-columns: 1fr; }
+}

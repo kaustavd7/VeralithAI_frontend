@@ -3963,6 +3963,22 @@ button.an-tv-leg:hover {
   color: var(--po-fg-4);
   font-size: 13px;
 }
+
+/* ── Responsive: page grids → single column (Analytics / Settings / legacy) ── */
+@media (max-width: 768px) {
+  /* Analytics: collapse the 12-col grid; every panel spans full width */
+  .an-grid { grid-template-columns: 1fr; }
+  .an-grid > * { grid-column: 1 / -1 !important; }
+  /* legacy ProjectOverview (po-*) */
+  .po-kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .po-two-up { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .po-kpi-row { grid-template-columns: 1fr; }
+  /* Settings: stack each row's label over its value */
+  .se-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .se-row-label { width: auto; }
+}
 .se-edit {
   flex: 1;
   display: flex;

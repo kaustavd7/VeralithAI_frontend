@@ -114,6 +114,7 @@
 .fc-sm .fc-spk { display: block; width: 100%; height: 38px; margin-top: 8px; }
 
 @media (max-width: 920px) { .fc-smgrid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 520px) { .fc-smgrid { grid-template-columns: 1fr; } }
 
 /* x-axis zoom brush */
 .fc-zoomwrap { margin: 2px 14px 0 46px; }
