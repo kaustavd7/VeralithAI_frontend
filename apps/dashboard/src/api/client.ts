@@ -25,9 +25,43 @@ import type {
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_API === 'true';
 const BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
+// When the session can't be refreshed (the JWT and its refresh token are dead),
+// sign out and bounce to /login instead of letting requests fail with partial
+// 401/500 errors across the page. The full-page redirect also clears the React
+// Query cache, so no stale/partial data lingers behind the login screen.
+let signingOut = false;
+async function handleAuthExpiry(): Promise<void> {
+  if (signingOut) return;
+  signingOut = true;
+  try {
+    await supabase.auth.signOut();
+  } catch {
+    /* ignore — we're redirecting regardless */
+  }
+  if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+    window.location.assign('/login');
+  }
+}
+
 async function authHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
+  let session = data.session;
+  // Proactively refresh a token that has expired (or expires within 30s) so we
+  // never send a stale JWT — which the backend rejects. If the refresh fails the
+  // session is truly dead, so sign the user out rather than firing doomed calls.
+  if (session?.expires_at && session.expires_at * 1000 < Date.now() + 30_000) {
+    try {
+      const refreshed = await supabase.auth.refreshSession();
+      session = refreshed.data.session;
+    } catch {
+      session = null;
+    }
+    if (!session) {
+      await handleAuthExpiry();
+      throw new ApiError('session_expired', 'Your session has expired. Please sign in again.', 401);
+    }
+  }
+  const token = session?.access_token;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -47,6 +81,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   };
   const res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
   if (!res.ok) {
+    // Auth rejected mid-flight (expired/invalid JWT) → sign out + redirect.
+    if (res.status === 401) {
+      await handleAuthExpiry();
+    }
     // FastAPI returns { detail: string } or { detail: [{ msg, ... }] } (validation);
     // legacy envelope returns { error: { code, message, details } }. Parse both.
     const body = (await res.json().catch(() => null)) as
