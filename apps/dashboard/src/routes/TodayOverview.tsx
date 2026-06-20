@@ -361,10 +361,14 @@ type RhMetric = { k: string; label: string; v: number; delta: number; spark: num
 
 function rhMetrics(s: StatsResponse | undefined): RhMetric[] {
   if (!s) return [];
+  // Only REAL points — drop buckets with no data so the sparkline reflects
+  // actual history (no zero-padding, no invented trend).
+  const real = (vals: (number | null | undefined)[]): number[] =>
+    vals.filter((v): v is number => v != null);
   return [
-    { k: 'suff', label: 'Sufficiency', v: s.avg_sufficiency ?? 0, delta: s.deltas?.avg_sufficiency_delta_24h ?? 0, spark: s.timeseries.map((b) => b.avg_sufficiency ?? 0) },
-    { k: 'faith', label: 'Faithfulness', v: s.avg_faithfulness ?? 0, delta: s.deltas?.avg_faithfulness_delta_24h ?? 0, spark: s.timeseries.map((b) => b.avg_faithfulness ?? 0) },
-    { k: 'comp', label: 'Completeness', v: s.completeness_rate ?? 0, delta: s.deltas?.completeness_rate_pp_24h ?? 0, spark: s.timeseries.map((b) => b.completeness_rate ?? 0) },
+    { k: 'suff', label: 'Sufficiency', v: s.avg_sufficiency ?? 0, delta: s.deltas?.avg_sufficiency_delta_24h ?? 0, spark: real(s.timeseries.map((b) => b.avg_sufficiency)) },
+    { k: 'faith', label: 'Faithfulness', v: s.avg_faithfulness ?? 0, delta: s.deltas?.avg_faithfulness_delta_24h ?? 0, spark: real(s.timeseries.map((b) => b.avg_faithfulness)) },
+    { k: 'comp', label: 'Completeness', v: s.completeness_rate ?? 0, delta: s.deltas?.completeness_rate_pp_24h ?? 0, spark: real(s.timeseries.map((b) => b.completeness_rate)) },
   ];
 }
 
@@ -391,7 +395,7 @@ function RagHealthCard({ s, play = true }: { s: StatsResponse | undefined; play?
             <div className="rh-irow" key={m.k}>
               <span className="rh-ir-dot" style={{ background: rhColor(m.v) }} />
               <span className="rh-ir-l">{m.label}</span>
-              <span className="rh-ir-spark"><Spark seed={7} w={72} h={24} n={24} color={rhColor(m.v)} dot={false} values={m.spark} /></span>
+              <span className="rh-ir-spark"><Spark w={72} h={24} color={rhColor(m.v)} dot={false} values={m.spark.length >= 2 ? m.spark : [m.v, m.v]} /></span>
               <span className="rh-ir-v">{hasData ? <ScrambleNumber value={fmt2(m.v)} play={play} /> : '—'}</span>
               <MetricDelta d={m.delta} />
             </div>
