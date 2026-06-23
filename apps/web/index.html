@@ -122,7 +122,12 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
 /* hold the hero entrance until the screen clears */
 body.is-loading{ overflow:hidden; }
 body.is-loading .rise,
-body.is-loading .settle{ animation-play-state:paused; }
+body.is-loading .settle,
+body.is-loading .cx-w-diagnose::after,
+body.is-loading .cx-w-every::after,
+body.is-loading .cx-w-trace .cx-t,
+body.is-loading .cx-w-trace::after,
+body.is-loading .cx-row{ animation-play-state:paused; }   /* hold the hero intro until the 0→100 loader clears */
 
 /* ============================================================
    NAV
@@ -806,7 +811,10 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 <noscript><style>
   .preloader{ display:none !important; }
   body.is-loading{ overflow:auto !important; }
-  body.is-loading .rise, body.is-loading .settle{ animation-play-state:running !important; }
+  body.is-loading .rise, body.is-loading .settle,
+  body.is-loading .cx-w-diagnose::after, body.is-loading .cx-w-every::after,
+  body.is-loading .cx-w-trace .cx-t, body.is-loading .cx-w-trace::after,
+  body.is-loading .cx-row{ animation-play-state:running !important; }
 </style></noscript>
 
 <!-- ====================== PRELOADER ====================== -->
