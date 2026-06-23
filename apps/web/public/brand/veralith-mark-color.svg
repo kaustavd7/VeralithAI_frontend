@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" role="img" aria-label="Veralith">
+  <title>Veralith</title>
+  <defs>
+    <linearGradient id="vEdge" x1="14" y1="14" x2="86" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#344E41"/><stop offset="1" stop-color="#76936A"/>
+    </linearGradient>
+  </defs>
+  <path d="M22 30L50 20L78 34M22 30L38 62L50 20M78 34L66 66L38 62L52 84L66 66"
+        stroke="url(#vEdge)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#588157">
+    <circle cx="22" cy="30" r="6"/><circle cx="50" cy="20" r="6"/><circle cx="78" cy="34" r="6"/>
+    <circle cx="38" cy="62" r="6"/><circle cx="66" cy="66" r="6"/><circle cx="52" cy="84" r="6"/>
+  </g>
+</svg>
