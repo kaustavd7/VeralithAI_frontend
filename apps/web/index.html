@@ -862,7 +862,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 <!-- ====================== HERO (technical Swiss-grid — ChainGPT-style) ====================== -->
 <style id="hero-redesign">
   .hero-x{
-    --head: clamp(2.4rem, 9vw, 7.8rem);    /* headline size */
+    --head: clamp(3rem, 11vw, 9.6rem);     /* headline size */
     --cell: calc(var(--head) * .92);       /* grid cell == headline line-height → lines lock to grid rows */
     --eyeh: clamp(3.6rem, 9vh, 5.6rem);    /* eyebrow zone height (top gap above the headline) */
     --padl: clamp(1.4rem, 3.5vw, 4rem);    /* left gutter — content sits closer to the left edge */
@@ -876,6 +876,10 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
     background-position: var(--padl) var(--eyeh);   /* a grid line lands on the content's left + the headline top */
     display:flex;
   }
+  /* interactive strata — pixel contour field; a soft pool reacts around the cursor */
+  .hero-x .hero-strata{ position:absolute; inset:0; width:100%; height:100%; z-index:0; display:block; pointer-events:none; }
+  .hero-x .cx-wrap{ z-index:1; }   /* keep content above the strata canvas */
+
   /* corner crop-marks + accent squares */
   .cx-crop{ position:absolute; width:16px; height:16px; z-index:2; }
   .cx-crop.tl{ top:14px; left:14px; border-top:1.5px solid var(--ink); border-left:1.5px solid var(--ink); }
@@ -885,7 +889,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .cx-dot{ position:absolute; width:8px; height:8px; background:var(--leaf); z-index:2; }
   .cx-dot.a{ top:38px; left:40px; } .cx-dot.b{ top:38px; right:40px; }
 
-  .cx-wrap{ position:relative; width:100%; max-width:none; margin-inline:0; flex:1 1 auto; padding:var(--eyeh) var(--cell) 0 var(--padl); display:flex; flex-direction:column; }
+  .cx-wrap{ position:relative; width:100%; max-width:none; margin-inline:0; flex:1 1 auto; padding:var(--eyeh) var(--padl) 0; display:flex; flex-direction:column; align-items:center; text-align:center; }
 
   .cx-eyebrow{ font-family:var(--mono); font-size:.72rem; letter-spacing:.24em; text-transform:uppercase;
     color:var(--ink-soft); display:flex; align-items:flex-end; height:var(--eyeh); padding-bottom:.7rem; }
@@ -894,9 +898,9 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
     letter-spacing:.004em; line-height:var(--cell); color:var(--ink); margin:0;
     font-size:var(--head); }
 
-  .cx-row{ display:flex; flex-direction:column; align-items:flex-start;
+  .cx-row{ display:flex; flex-direction:column; align-items:center;
     margin-top:clamp(1rem,3vh,1.8rem); }
-  .cx-body{ font-family:var(--mono); font-size:.95rem; line-height:1.7; color:var(--ink-soft); max-width:62ch; }
+  .cx-body{ font-family:var(--mono); font-size:.95rem; line-height:1.7; color:var(--ink-soft); max-width:62ch; margin-inline:auto; }
   .cx-cta{ display:inline-flex; align-items:center; gap:.7em; margin-top:1.5rem;
     font-family:var(--mono); font-size:.78rem; letter-spacing:.16em; text-transform:uppercase; font-weight:500;
     background:var(--leaf); color:#fff; padding:.95rem 1.5rem; border-radius:5px;
@@ -904,7 +908,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .cx-cta:hover{ transform:translateY(-2px); box-shadow:0 14px 30px -12px rgba(88,129,87,.7); }
 
   /* hero actions — primary (dark) + ghost (replaces the single green CTA) */
-  .cx-actions{ display:flex; align-items:center; gap:1.5rem; margin-top:1.7rem; flex-wrap:wrap; }
+  .cx-actions{ display:flex; align-items:center; justify-content:center; gap:1.5rem; margin-top:1.7rem; flex-wrap:wrap; }
   .cx-btn{ display:inline-flex; align-items:center; gap:.55em; font-family:var(--mono); font-size:.78rem;
     letter-spacing:.12em; text-transform:uppercase; font-weight:600; }
   .cx-btn-primary{ background:var(--ink); color:#fff; padding:.95rem 1.7rem; border-radius:0;
@@ -914,8 +918,11 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .cx-btn .ar{ transition:transform .2s ease; }
   .cx-btn:hover .ar{ transform:translateX(4px); }
 
-  /* "Supported by" — static, centered row of darkened logos */
-  .cx-supportbar{ margin-top:auto; margin-bottom:clamp(1.2rem,3.5vh,2.4rem);
+  /* "Supported by" — its own band below the hero (white stripe, hairline borders) */
+  .support-stripe{ background:#fff;
+    margin-top:clamp(2.5rem,7vh,5.5rem);   /* breathing room between the hero and the stripe */
+    padding:clamp(1.3rem,3.2vh,2.1rem) clamp(1.4rem,3.5vw,4rem); }
+  .support-stripe-inner{ max-width:1240px; margin-inline:auto;
     display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:clamp(1.4rem,3.5vw,3rem); }
   .cx-support-label{ flex:0 0 auto; margin:0; font-family:var(--mono); font-size:.7rem; letter-spacing:.22em;
     text-transform:uppercase; color:var(--ink-soft); white-space:nowrap; }
@@ -927,10 +934,6 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .cx-logo[data-mark="claude"] svg{ height:42px; }
   .cx-logo[data-mark="gemini"] svg{ height:36px; }
 
-  /* interactive Veralith logo — builds in, scatters away from the cursor, rebuilds (transparent canvas) */
-  .cx-logo-canvas{ position:absolute; top:40%; right:clamp(1rem,3.5vw,4.5rem); transform:translateY(-50%);
-    width:clamp(240px,30vw,460px); height:clamp(240px,30vw,460px); z-index:1; cursor:crosshair; touch-action:none; }
-  @media (max-width:900px){ .cx-logo-canvas{ display:none; } }
 
   .cx-right{ display:flex; justify-content:flex-end; align-items:flex-end; }
   .cx-frame{ position:relative; width:clamp(170px,20vw,250px); aspect-ratio:1; background:transparent;
@@ -1004,6 +1007,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .brand .gem{ background:url('/brand/veralith-mark-color.svg') center/contain no-repeat; border-radius:0; }
 </style>
 <section class="hero hero-x" id="hero">
+  <canvas class="hero-strata" data-veralith-strata data-radius="105" aria-hidden="true"></canvas>
   <span class="cx-crop tl"></span><span class="cx-crop tr"></span><span class="cx-crop bl"></span><span class="cx-crop br"></span>
   <div class="cx-wrap">
     <h1 class="cx-title"><span class="cx-line"><span class="cx-w cx-w-diagnose"><span class="cx-t">Diagnose</span></span></span><span class="cx-line"><span class="cx-w cx-w-every"><span class="cx-t">Every</span></span> <span class="cx-w cx-w-trace"><span class="cx-t">Trace</span></span></span></h1>
@@ -1025,146 +1029,128 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
       <symbol id="lg-langchain" viewBox="0 0 24 24"><path d="M13.796 0a6.93 6.93 0 0 0-4.91 2.019L5.451 5.455l3.273 3.27 3.432-3.432a2.284 2.284 0 0 1 3.277 0 2.28 2.28 0 0 1 0 3.275L12 12.001l3.273 3.273 3.433-3.435c2.692-2.692 2.692-7.127 0-9.82A6.92 6.92 0 0 0 13.796 0m-5.07 8.728-3.433 3.434c-2.692 2.693-2.692 7.126 0 9.819A6.92 6.92 0 0 0 10.203 24a6.93 6.93 0 0 0 4.911-2.02l3.432-3.432-3.271-3.272-3.433 3.433a2.284 2.284 0 0 1-3.277 0 2.28 2.28 0 0 1 0-3.276L12 12z"/></symbol>
       <symbol id="lg-gemini" viewBox="0 0 24 24"><path d="M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81"/></symbol>
     </defs></svg>
-    <div class="cx-supportbar">
-      <span class="cx-support-label">Supported by</span>
-      <div class="cx-logos" aria-hidden="true">
-        <span class="cx-logo" data-mark="claude"><svg viewBox="0 0 24 24"><use href="#lg-claude"/></svg></span>
-        <span class="cx-logo" data-mark="openai"><svg viewBox="0 0 256 260"><use href="#lg-openai"/></svg></span>
-        <span class="cx-logo" data-mark="mistral"><svg viewBox="0 0 24 24"><use href="#lg-mistral"/></svg></span>
-        <span class="cx-logo" data-mark="huggingface"><svg viewBox="0 0 24 24"><use href="#lg-huggingface"/></svg></span>
-        <span class="cx-logo" data-mark="langchain"><svg viewBox="0 0 24 24"><use href="#lg-langchain"/></svg></span>
-        <span class="cx-logo" data-mark="gemini"><svg viewBox="0 0 24 24"><use href="#lg-gemini"/></svg></span>
-      </div>
+  </div>
+</section>
+
+<!-- ====================== SUPPORTED-BY STRIPE (separate band below hero) ====================== -->
+<section class="support-stripe" aria-label="Supported integrations">
+  <div class="support-stripe-inner">
+    <span class="cx-support-label">Supported by</span>
+    <div class="cx-logos" aria-hidden="true">
+      <span class="cx-logo" data-mark="claude"><svg viewBox="0 0 24 24"><use href="#lg-claude"/></svg></span>
+      <span class="cx-logo" data-mark="openai"><svg viewBox="0 0 256 260"><use href="#lg-openai"/></svg></span>
+      <span class="cx-logo" data-mark="mistral"><svg viewBox="0 0 24 24"><use href="#lg-mistral"/></svg></span>
+      <span class="cx-logo" data-mark="huggingface"><svg viewBox="0 0 24 24"><use href="#lg-huggingface"/></svg></span>
+      <span class="cx-logo" data-mark="langchain"><svg viewBox="0 0 24 24"><use href="#lg-langchain"/></svg></span>
+      <span class="cx-logo" data-mark="gemini"><svg viewBox="0 0 24 24"><use href="#lg-gemini"/></svg></span>
     </div>
   </div>
-  <canvas class="cx-logo-canvas" id="veralithLogoCanvas" aria-hidden="true"></canvas>
 </section>
+
+<!-- Strata background — faint pixel contour field; a soft pool darkens the pixels around the cursor. Auto-mounts on <canvas data-veralith-strata>. -->
 <script>
-/* interactive Veralith mark — builds in from the centre, scatters away from the cursor, springs back */
-(function(){
-  var canvas = document.getElementById('veralithLogoCanvas');
-  if(!canvas || !canvas.getContext) return;
-  var ctx = canvas.getContext('2d');
-  var DPR = Math.min(window.devicePixelRatio || 1, 1.5);
-
-  // pre-rendered soft sprites (built once) → glow + shadow with ZERO per-frame blur cost
-  function makeSprite(rr,gg,bb,a0){
-    var s=128, c=document.createElement('canvas'); c.width=c.height=s;
-    var x=c.getContext('2d');
-    var g=x.createRadialGradient(s/2,s/2,0, s/2,s/2,s/2);
-    g.addColorStop(0,'rgba('+rr+','+gg+','+bb+','+a0+')');
-    g.addColorStop(.55,'rgba('+rr+','+gg+','+bb+','+(a0*0.33)+')');
-    g.addColorStop(1,'rgba('+rr+','+gg+','+bb+',0)');
-    x.fillStyle=g; x.fillRect(0,0,s,s); return c;
-  }
-  var glowSprite = makeSprite(120,170,116,0.6), shadowSprite = makeSprite(22,30,20,0.55);
-
-  // mark geometry in a 100x100 design space (the V-gem node graph)
-  var HOME  = [[22,30],[50,20],[78,34],[38,62],[66,66],[52,84]];
-  var EDGES = [[0,1],[1,2],[0,3],[3,1],[2,4],[4,3],[3,5],[5,4]];
-  var CX = 50, CY = 52;
-
-  var nodes = HOME.map(function(h){ return { hx:h[0], hy:h[1], x:CX, y:CY, vx:0, vy:0 }; });
-
-  var W=0, H=0, scale=1, ox=0, oy=0;
-  function resize(){
+(function () {
+  'use strict';
+  var STONE = [90, 96, 86];     // resting contour (olive-grey)
+  var INK   = [38, 48, 26];     // deep olive the pool darkens toward (matches the hero grid)
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+  function fit(canvas) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
     var r = canvas.getBoundingClientRect();
-    W = r.width; H = r.height;
-    if(!W || !H) return;
-    canvas.width = Math.round(W*DPR); canvas.height = Math.round(H*DPR);
-    ctx.setTransform(DPR,0,0,DPR,0,0);
-    var pad = Math.min(W,H)*0.14;
-    scale = (Math.min(W,H) - pad*2)/100;
-    ox = (W - 100*scale)/2; oy = (H - 100*scale)/2;
+    var w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvas.__w = w; canvas.__h = h;
+    return ctx;
   }
-  function tx(x){ return ox + x*scale; }
-  function ty(y){ return oy + y*scale; }
-
-  var mouse = { x:0, y:0, inside:false };
-  function setMouse(e){
-    var r = canvas.getBoundingClientRect();
-    var p = e.touches ? e.touches[0] : e;
-    mouse.x = p.clientX - r.left; mouse.y = p.clientY - r.top; mouse.inside = true;
+  function noise(x, y) {
+    return Math.sin(x * 0.9 + 1.7) * Math.cos(y * 1.1 - 0.4)
+      + 0.5 * Math.sin(x * 2.1 - y * 1.3)
+      + 0.5 * Math.cos(y * 0.5 + x * 0.3);
   }
-  function burst(){
-    mouse.inside = true;
-    for(var i=0;i<nodes.length;i++){
-      var n = nodes[i];
-      var ang = Math.atan2(n.hy-CY, n.hx-CX) + (Math.random()-0.5);
-      var mag = 5 + Math.random()*5;
-      n.vx += Math.cos(ang)*mag; n.vy += Math.sin(ang)*mag;
+  function mount(canvas, opts) {
+    opts = opts || {};
+    var inten = opts.intensity != null ? opts.intensity : 1;
+    var R = opts.radius != null ? opts.radius : 150;
+    var step = opts.step || 4, levels = 9;
+    var ctx = fit(canvas), raf, t = 0;
+    var px = -1e4, py = -1e4, tx = -1e4, ty = -1e4, active = false, cX = -1e4, cY = -1e4, havePtr = false;
+    var ux = 1, uy = 0, spd = 0;   // cursor direction + smoothed speed → velocity smear
+    function host() { return canvas.parentElement || canvas; }
+    function pointer(e) {
+      cX = (e.touches ? e.touches[0].clientX : e.clientX);
+      cY = (e.touches ? e.touches[0].clientY : e.clientY);
+      havePtr = true;
+      var r = canvas.getBoundingClientRect();
+      tx = cX - r.left; ty = cY - r.top;
+      if (!active) { active = true; px = tx; py = ty; }
     }
-  }
-  function leave(){ mouse.inside = false; }
-  canvas.addEventListener('mousemove', setMouse);
-  canvas.addEventListener('mouseenter', burst);
-  canvas.addEventListener('mouseleave', leave);
-  canvas.addEventListener('touchstart', burst, {passive:true});
-  canvas.addEventListener('touchmove', function(e){ setMouse(e); }, {passive:true});
-  canvas.addEventListener('touchend', leave);
-
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-  var built = 0, raf, t = 0;
-
-  function step(){
-    built = Math.min(1, built + 0.025); t++;
-    var k = 0.05, damp = 0.85, R = Math.min(W,H)*0.6;
-    for(var i=0;i<nodes.length;i++){
-      var n = nodes[i];
-      var jx = Math.sin(t*0.035 + i*1.7)*1.4, jy = Math.cos(t*0.045 + i*2.3)*1.4;  // idle jiggle
-      n.vx += (n.hx + jx - n.x)*k;  n.vy += (n.hy + jy - n.y)*k;   // spring to a gently drifting home
-      if(mouse.inside){
-        var dx = tx(n.x)-mouse.x, dy = ty(n.y)-mouse.y;
-        var d = Math.sqrt(dx*dx + dy*dy) || 0.001;
-        if(d < R){ var f = (1 - d/R)*11; n.vx += (dx/d)*f/scale; n.vy += (dy/d)*f/scale; }
+    function leave() { active = false; }
+    var p = host();
+    p.addEventListener('mousemove', pointer);
+    p.addEventListener('mouseleave', leave);
+    p.addEventListener('touchmove', pointer, { passive: true });
+    p.addEventListener('touchend', leave);
+    function frame() {
+      var w = canvas.__w, h = canvas.__h;
+      if (havePtr) { var rr = canvas.getBoundingClientRect(); tx = cX - rr.left; ty = cY - rr.top; }
+      ctx.clearRect(0, 0, w, h);
+      // velocity ≈ how far the eased pool lags its target this frame
+      var vx = tx - px, vy = ty - py;
+      px += vx * 0.16; py += vy * 0.16;
+      var raw = Math.hypot(vx, vy);
+      spd += (raw - spd) * 0.25;                       // smooth the speed a touch
+      if (raw > 0.5) { var inv = 1 / raw; ux = vx * inv; uy = vy * inv; }   // hold last dir when ~still
+      var boost   = Math.min(1, spd / 90);             // 0 (still) → 1 (fast)
+      var Reff    = R * (1 + boost * 0.5);             // pool grows modestly with speed
+      var stretch = 1 + boost * 1.6;                   // elongates along motion
+      var aBoost  = boost * 0.35;                      // brighter when moving fast
+      // fade the field in the central band where the headline/tagline sit; full strength toward the edges
+      var cxp = w * 0.5, cyp = h * 0.40, fx = 1 / (w * 0.42), fy = 1 / (h * 0.42);
+      for (var gy = 0; gy < h; gy += step) {
+        for (var gx = 0; gx < w; gx += step) {
+          var n = noise(gx / 90, gy / 90 + t * 0.0008);
+          var band = (n * levels) % 1;
+          if (!(Math.abs(band) < 0.06 || Math.abs(band) > 0.94)) continue;
+          var near = 0;
+          if (active) {
+            var dx = gx - px, dy = gy - py;
+            var along = dx * ux + dy * uy, perp = dy * ux - dx * uy;   // rotate into the motion frame
+            var dist = Math.hypot(along / stretch, perp);             // ellipse stretched along travel
+            near = Math.max(0, 1 - dist / Reff);
+          }
+          var col = near > 0.02 ? INK : STONE;
+          var mdx = (gx - cxp) * fx, mdy = (gy - cyp) * fy;
+          var mask = 0.12 + 0.88 * Math.min(1, mdx * mdx + mdy * mdy);   // faint center → full edges
+          var a = (near > 0.02 ? 0.10 + near * (0.45 + aBoost) : 0.13) * inten * mask;
+          ctx.fillStyle = rgba(col, a);
+          ctx.fillRect(gx, gy, step, step);
+        }
       }
-      n.vx *= damp; n.vy *= damp;  n.x += n.vx; n.y += n.vy;
+      t += reduce ? 0 : 1;
+      if (!reduce) raf = requestAnimationFrame(frame);
     }
-    draw();
-    raf = requestAnimationFrame(step);
+    frame();
+    var rt;
+    function onResize() { clearTimeout(rt); rt = setTimeout(function () { ctx = fit(canvas); if (reduce) frame(); }, 160); }
+    window.addEventListener('resize', onResize);
+    return { stop: function () { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); } };
   }
-
-  function draw(){
-    ctx.clearRect(0,0,W,H);
-    var a = built, r = Math.max(3, scale*3.2);
-
-    // soft dark shadow blobs, offset down-right (depth) — cached sprite, no blur
-    var sh = r*4.4, soff = scale*2.6;
-    ctx.globalAlpha = 0.5*a;
-    for(var i=0;i<nodes.length;i++){
-      var n = nodes[i];
-      ctx.drawImage(shadowSprite, tx(n.x)-sh/2 + scale*0.8, ty(n.y)-sh/2 + soff, sh, sh);
-    }
-    ctx.globalAlpha = 1;
-
-    // edges
-    ctx.lineCap='round'; ctx.lineJoin='round';
-    ctx.lineWidth = Math.max(1.4, scale*1.5);
-    ctx.strokeStyle = 'rgba(52,78,65,' + (0.9*a) + ')';
-    for(var e=0;e<EDGES.length;e++){
-      var p = nodes[EDGES[e][0]], q = nodes[EDGES[e][1]];
-      ctx.beginPath(); ctx.moveTo(tx(p.x),ty(p.y)); ctx.lineTo(tx(q.x),ty(q.y)); ctx.stroke();
-    }
-
-    // breathing green glow (cached sprite) + node + bright core
-    for(var j=0;j<nodes.length;j++){
-      var m = nodes[j], px = tx(m.x), py = ty(m.y);
-      var pulse = 0.5 + 0.5*Math.sin(t*0.05 + j*1.05);
-      var gd = r*(3.2 + pulse*2.4);
-      ctx.globalAlpha = (0.32 + 0.45*pulse)*a;
-      ctx.drawImage(glowSprite, px-gd/2, py-gd/2, gd, gd);
-      ctx.globalAlpha = 1;
-      ctx.beginPath(); ctx.arc(px, py, r, 0, 6.2832);
-      ctx.fillStyle = 'rgba(88,129,87,' + a + ')'; ctx.fill();
-      ctx.beginPath(); ctx.arc(px, py, r*0.4, 0, 6.2832);
-      ctx.fillStyle = 'rgba(205,225,195,' + (a*(0.25 + 0.55*pulse)) + ')'; ctx.fill();
+  function auto(root) {
+    var nodes = (root || document).querySelectorAll('canvas[data-veralith-strata]');
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].__strata) continue;
+      nodes[i].__strata = mount(nodes[i], {
+        intensity: parseFloat(nodes[i].dataset.intensity || '1'),
+        radius: parseFloat(nodes[i].dataset.radius || '150')
+      });
     }
   }
-
-  resize();
-  window.addEventListener('resize', resize);
-  if(reduce){ for(var i=0;i<nodes.length;i++){ nodes[i].x=nodes[i].hx; nodes[i].y=nodes[i].hy; } built=1; draw(); }
-  else raf = requestAnimationFrame(step);
+  window.VeralithStrata = { mount: mount, auto: auto };
+  if (document.readyState !== 'loading') auto();
+  else document.addEventListener('DOMContentLoaded', function () { auto(); });
 })();
 </script>
 
