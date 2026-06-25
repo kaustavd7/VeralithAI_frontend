@@ -1274,11 +1274,6 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .st-g img{ display:block; width:100%; height:auto; opacity:.94; filter:grayscale(1); }   /* greyscale to match the theme */
   .st-g .cap{ position:absolute; left:12px; bottom:10px; font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--st-ghost); background:color-mix(in srgb,var(--st-paper) 80%,transparent); padding:2px 7px; border-radius:5px; }
 
-  /* "cooking" particle field — a canvas of green/grey bubbles + faint connecting
-     lines that drift (alive), then stream into the centre as the cards materialise.
-     mix-blend multiply so overlaps deepen, matching the reference. Driven by draw(). */
-  .st-cook{ position:absolute; inset:0; width:100%; height:100%; z-index:3; pointer-events:none; mix-blend-mode:multiply; }
-
   .st-resolve{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:6; text-align:center; width:min(440px,80vw); opacity:0; will-change:opacity,transform; }
   .st-resolve h2{ font-size:clamp(30px,3.8vw,46px); font-weight:600; letter-spacing:-.025em; line-height:1.06; margin-top:16px; color:var(--ink); }
   .st-resolve h2 em{ font-style:italic; font-weight:300; color:var(--accent); }   /* the green payoff */
@@ -1875,72 +1870,6 @@ img, svg, canvas, video, iframe, table, pre{ max-width:100%; }
     toks.push({ el, bx: 6 + rnd() * 88, by: 6 + rnd() * 88, depth, rot: (rnd() - 0.5) * 24, baseOp: 0.32 + depth * 0.6 });
   }
 
-  /* the "cooking" particle field — green/grey bubbles + faint connecting lines on a
-     canvas. They drift while alive, then stream into the centre as the cards
-     materialise. draw() sets cookStrength (visibility) and converge (pull to centre);
-     a rAF loop (only while the scene is on screen) does the continuous drift + lines. */
-  const canvas = document.createElement('canvas');
-  canvas.className = 'st-cook';
-  canvas.setAttribute('aria-hidden', 'true');
-  (root.querySelector('.st-stage') || scene).appendChild(canvas);
-  const cookCtx = canvas.getContext('2d');
-  const COOK_COLORS = [[88,129,87],[111,143,78],[138,153,112],[154,163,154],[95,107,96],[163,177,138]];
-  const parts = [];
-  for (let i = 0; i < 36; i++) {
-    const ang = rnd() * Math.PI * 2, rad = rnd() * 205;
-    parts.push({
-      x: Math.cos(ang) * rad, y: Math.sin(ang) * rad,
-      vx: (rnd() - 0.5) * 1.3, vy: (rnd() - 0.5) * 1.3,
-      r: 2 + rnd() * 10, col: COOK_COLORS[Math.floor(rnd() * COOK_COLORS.length)], a: 0.4 + rnd() * 0.45,
-    });
-  }
-  let cookStrength = 0, converge = 0, rafCook = 0, cdpr = 1;
-  function sizeCook() {
-    const st = canvas.parentNode;
-    cdpr = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = Math.max(1, Math.round(st.clientWidth * cdpr));
-    canvas.height = Math.max(1, Math.round(st.clientHeight * cdpr));
-  }
-  function cookFrame() {
-    rafCook = requestAnimationFrame(cookFrame);
-    const cw = canvas.width, ch = canvas.height;
-    cookCtx.clearRect(0, 0, cw, ch);
-    if (cookStrength < 0.01) return;
-    const cx = cw / 2, cy = ch / 2, k = cdpr, spread = 1 - converge, pts = [];
-    for (const p of parts) {
-      /* lively wander + a gentle spring toward the centre so the whole cluster
-         stays put (it used to random-walk off to one side over time). */
-      p.vx = (p.vx - p.x * 0.0007 + (rnd() - 0.5) * 0.85) * 0.9;
-      p.vy = (p.vy - p.y * 0.0007 + (rnd() - 0.5) * 0.85) * 0.9;
-      p.x += p.vx; p.y += p.vy;
-      const rr = Math.sqrt(p.x * p.x + p.y * p.y);   // hard bound so nothing drifts out of the cluster
-      if (rr > 230) { p.x = p.x / rr * 230; p.y = p.y / rr * 230; p.vx *= 0.4; p.vy *= 0.4; }
-      pts.push({ x: cx + p.x * spread * k, y: cy + p.y * spread * k, p });
-    }
-    const maxD = 140 * k;
-    for (let i = 0; i < pts.length; i++) {
-      for (let j = i + 1; j < pts.length; j++) {
-        const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y, d = Math.sqrt(dx * dx + dy * dy);
-        if (d < maxD) {
-          cookCtx.strokeStyle = 'rgba(120,132,108,' + ((1 - d / maxD) * 0.24 * cookStrength * spread).toFixed(3) + ')';
-          cookCtx.lineWidth = k;
-          cookCtx.beginPath(); cookCtx.moveTo(pts[i].x, pts[i].y); cookCtx.lineTo(pts[j].x, pts[j].y); cookCtx.stroke();
-        }
-      }
-    }
-    for (const pt of pts) {
-      const p = pt.p, r = Math.max(0.5, p.r * k * (0.45 + 0.55 * cookStrength) * (1 - converge * 0.6));
-      cookCtx.fillStyle = 'rgba(' + p.col[0] + ',' + p.col[1] + ',' + p.col[2] + ',' + (p.a * cookStrength).toFixed(3) + ')';
-      cookCtx.beginPath(); cookCtx.arc(pt.x, pt.y, r, 0, 6.2832); cookCtx.fill();
-    }
-  }
-  sizeCook();
-  new IntersectionObserver((ents) => {
-    const on = ents[0] && ents[0].isIntersecting;
-    if (on && !rafCook && !reduce) { sizeCook(); cookFrame(); }
-    else if (!on && rafCook) { cancelAnimationFrame(rafCook); rafCook = 0; cookCtx.clearRect(0, 0, canvas.width, canvas.height); }
-  }, { threshold: 0 }).observe(root);
-
   function progress() {
     const rect = scene.getBoundingClientRect();
     const total = scene.offsetHeight - window.innerHeight;
@@ -1969,29 +1898,28 @@ img, svg, canvas, video, iframe, table, pre{ max-width:100%; }
     leadmid.style.opacity = leadOp.toFixed(3);
     leadmid.style.transform = 'translate(-50%,-50%) scale(' + (1 - (1 - leadOp) * 0.06).toFixed(3) + ')';
 
-    /* ---- "cooking" bridge: the circle cluster swells out of the collapse point
-       as the tokens vanish (~p 0.28), holds through the gap, and dissolves as the
-       first cards rise (~p 0.54) — so the scroll between never feels dead. ---- */
-    const cookIn = clamp((p - 0.27) / 0.09, 0, 1);
-    const cookOut = 1 - clamp((p - 0.40) / 0.10, 0, 1);
-    cookStrength = cookIn * cookOut;                       // visibility of the bubble field
-    converge = clamp((p - 0.40) / 0.11, 0, 1);             // 0 = spread · 1 = streamed into the centre
-
-    /* ---- the cards EMERGE from that centre point (p 0.46 → ~0.99), after the
-       cooking bridge. easeInOut (gentle in + gentle out) so they don't snap out
-       of the point; the slower opacity fade-in removes the old glitchy flash. ---- */
-    graphs.forEach((g) => {
+    /* ---- STACK → SPREAD: with the tokens gone, the cards POP onto the pile one at a
+       time — each snaps to full opacity instantly (no translucent fade) with a little
+       scale bounce, like a real card slapped on top — then the pile spreads out to the
+       final scattered positions. Sharp & full-size from the first frame. ---- */
+    const NC = graphs.length;
+    graphs.forEach((g, ci) => {
       const rx = +g.dataset.x, ry = +g.dataset.y, rot = +g.dataset.rot, delay = +g.dataset.delay;
-      /* start as the bubbles converge (~0.42) so there's no white gap between the
-         collapse and the cards. opacity rides the LINEAR progress (visible fast),
-         while position + blur ride easeInOut so the motion still feels smooth. */
-      const lin = clamp((p - 0.42 - delay * 0.34) / 0.46, 0, 1);
-      const gp = easeInOut(lin);
-      g.style.left = (50 + (rx - 50) * gp) + '%';
-      g.style.top = (50 + (ry - 50) * gp) + '%';
-      g.style.transform = 'translate(-50%,-50%) rotate(' + (rot * gp).toFixed(2) + 'deg) scale(' + (0.52 + 0.48 * gp).toFixed(3) + ')';
-      g.style.opacity = clamp(lin / 0.26, 0, 1).toFixed(3);
-      g.style.filter = gp < 0.985 ? 'blur(' + ((1 - gp) * 16).toFixed(1) + 'px)' : 'none';   /* focus-in: blurry → sharp as it materialises */
+      const t0 = 0.30 + ci * 0.045;                                       // when THIS card pops onto the pile — a beat between each
+      const op = clamp((p - t0) / 0.012, 0, 1);                           // opacity SNAPS on — no hazy crossfade
+      const land = easeOut(clamp((p - t0) / 0.05, 0, 1));                 // quick settle after the pop
+      const pop = 1 + 0.12 * (1 - land);                                  // 1.12 → 1.0 scale bounce as it lands
+      const spread = easeInOut(clamp((p - 0.54 - delay * 0.20) / 0.40, 0, 1)); // hold the full pile, then fan it out
+      const srot = (ci - (NC - 1) / 2) * 6;                               // small fan angle while stacked
+      const lx = 50 + (rx - 50) * spread, ly = 50 + (ry - 50) * spread;   // centre → final position
+      const rotNow = srot + (rot - srot) * spread;                       // stack fan → final tilt
+      const sc = pop * (1 - spread) + 1 * spread;                         // bounce while stacking, exactly 1 once spread
+      g.style.left = lx + '%';
+      g.style.top = ly + '%';
+      g.style.transform = 'translate(-50%,-50%) rotate(' + rotNow.toFixed(2) + 'deg) scale(' + sc.toFixed(3) + ')';
+      g.style.opacity = op.toFixed(3);
+      g.style.filter = 'none';
+      g.style.zIndex = spread < 1 ? String(20 + ci) : '';                // last popped sits on top of the pile
     });
 
     /* resolve zoom-reveals in step with the cards settling */
@@ -2008,7 +1936,7 @@ img, svg, canvas, video, iframe, table, pre{ max-width:100%; }
   }
   draw(reduce ? 0.95 : progress());
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', () => { if (mobileScene()) { nav && nav.classList.remove('st-away'); return; } sizeCook(); draw(progress()); });
+  window.addEventListener('resize', () => { if (mobileScene()) { nav && nav.classList.remove('st-away'); return; } draw(progress()); });
 })();
 </script>
 
