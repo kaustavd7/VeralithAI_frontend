@@ -68,8 +68,10 @@ function AppRoutes() {
           would bounce to /login mid-exchange). Finishes the URL code exchange. */}
       <Route path="/auth/callback" element={<AuthCallback />} />
 
-      {/* Projects Home — post-login landing. Lists the user's projects;
-          empty-state CTA links to /onboarding for the first project. */}
+      {/* Projects Home — post-login landing. Lists the user's projects; both the
+          "New project" tile and the empty-state CTA open the create-project modal,
+          which provisions a default key and reveals its one-time secret before
+          routing to the project. (/onboarding offers the same guided reveal.) */}
       <Route
         path="/projects"
         element={
