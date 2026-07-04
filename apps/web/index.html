@@ -127,6 +127,7 @@ body.is-loading .cx-w-diagnose::after,
 body.is-loading .cx-w-every::after,
 body.is-loading .cx-w-trace .cx-t,
 body.is-loading .cx-w-trace::after,
+body.is-loading .cx-eyebrow,
 body.is-loading .cx-row{ animation-play-state:paused; }   /* hold the hero intro until the 0→100 loader clears */
 
 /* ============================================================
@@ -814,7 +815,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   body.is-loading .rise, body.is-loading .settle,
   body.is-loading .cx-w-diagnose::after, body.is-loading .cx-w-every::after,
   body.is-loading .cx-w-trace .cx-t, body.is-loading .cx-w-trace::after,
-  body.is-loading .cx-row{ animation-play-state:running !important; }
+  body.is-loading .cx-eyebrow, body.is-loading .cx-row{ animation-play-state:running !important; }
 </style></noscript>
 
 <!-- ====================== PRELOADER ====================== -->
@@ -862,7 +863,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 <!-- ====================== HERO (technical Swiss-grid — ChainGPT-style) ====================== -->
 <style id="hero-redesign">
   .hero-x{
-    --head: clamp(2.4rem, 9vw, 7.8rem);    /* headline size */
+    --head: clamp(2.1rem, 7.5vw, 6.4rem);  /* headline size (reduced) */
     --cell: calc(var(--head) * .92);       /* grid cell == headline line-height → lines lock to grid rows */
     --eyeh: clamp(3.6rem, 9vh, 5.6rem);    /* eyebrow zone height (top gap above the headline) */
     --padl: clamp(1.4rem, 3.5vw, 4rem);    /* left gutter — content sits closer to the left edge */
@@ -885,7 +886,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .cx-dot{ position:absolute; width:8px; height:8px; background:var(--leaf); z-index:2; }
   .cx-dot.a{ top:38px; left:40px; } .cx-dot.b{ top:38px; right:40px; }
 
-  .cx-wrap{ position:relative; width:100%; max-width:none; margin-inline:0; flex:1 1 auto; padding:var(--eyeh) var(--cell) 0 var(--padl); display:flex; flex-direction:column; }
+  .cx-wrap{ position:relative; width:100%; max-width:none; margin-inline:0; flex:1 1 auto; padding:0 var(--cell) 0 var(--padl); display:flex; flex-direction:column; }
 
   .cx-eyebrow{ font-family:var(--mono); font-size:.72rem; letter-spacing:.24em; text-transform:uppercase;
     color:var(--ink-soft); display:flex; align-items:flex-end; height:var(--eyeh); padding-bottom:.7rem; }
@@ -927,10 +928,6 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .cx-logo[data-mark="claude"] svg{ height:42px; }
   .cx-logo[data-mark="gemini"] svg{ height:36px; }
 
-  /* interactive Veralith logo — builds in, scatters away from the cursor, rebuilds (transparent canvas) */
-  .cx-logo-canvas{ position:absolute; top:40%; right:clamp(1rem,3.5vw,4.5rem); transform:translateY(-50%);
-    width:clamp(240px,30vw,460px); height:clamp(240px,30vw,460px); z-index:1; cursor:crosshair; touch-action:none; }
-  @media (max-width:900px){ .cx-logo-canvas{ display:none; } }
 
   .cx-right{ display:flex; justify-content:flex-end; align-items:flex-end; }
   .cx-frame{ position:relative; width:clamp(170px,20vw,250px); aspect-ratio:1; background:transparent;
@@ -1006,6 +1003,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 <section class="hero hero-x" id="hero">
   <span class="cx-crop tl"></span><span class="cx-crop tr"></span><span class="cx-crop bl"></span><span class="cx-crop br"></span>
   <div class="cx-wrap">
+    <span class="cx-eyebrow">Try our self-healing RAG</span>
     <h1 class="cx-title"><span class="cx-line"><span class="cx-w cx-w-diagnose"><span class="cx-t">Diagnose</span></span></span><span class="cx-line"><span class="cx-w cx-w-every"><span class="cx-t">Every</span></span> <span class="cx-w cx-w-trace"><span class="cx-t">Trace</span></span></span></h1>
     <div class="cx-row">
       <div class="cx-left">
@@ -1037,136 +1035,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
       </div>
     </div>
   </div>
-  <canvas class="cx-logo-canvas" id="veralithLogoCanvas" aria-hidden="true"></canvas>
 </section>
-<script>
-/* interactive Veralith mark — builds in from the centre, scatters away from the cursor, springs back */
-(function(){
-  var canvas = document.getElementById('veralithLogoCanvas');
-  if(!canvas || !canvas.getContext) return;
-  var ctx = canvas.getContext('2d');
-  var DPR = Math.min(window.devicePixelRatio || 1, 1.5);
-
-  // pre-rendered soft sprites (built once) → glow + shadow with ZERO per-frame blur cost
-  function makeSprite(rr,gg,bb,a0){
-    var s=128, c=document.createElement('canvas'); c.width=c.height=s;
-    var x=c.getContext('2d');
-    var g=x.createRadialGradient(s/2,s/2,0, s/2,s/2,s/2);
-    g.addColorStop(0,'rgba('+rr+','+gg+','+bb+','+a0+')');
-    g.addColorStop(.55,'rgba('+rr+','+gg+','+bb+','+(a0*0.33)+')');
-    g.addColorStop(1,'rgba('+rr+','+gg+','+bb+',0)');
-    x.fillStyle=g; x.fillRect(0,0,s,s); return c;
-  }
-  var glowSprite = makeSprite(120,170,116,0.6), shadowSprite = makeSprite(22,30,20,0.55);
-
-  // mark geometry in a 100x100 design space (the V-gem node graph)
-  var HOME  = [[22,30],[50,20],[78,34],[38,62],[66,66],[52,84]];
-  var EDGES = [[0,1],[1,2],[0,3],[3,1],[2,4],[4,3],[3,5],[5,4]];
-  var CX = 50, CY = 52;
-
-  var nodes = HOME.map(function(h){ return { hx:h[0], hy:h[1], x:CX, y:CY, vx:0, vy:0 }; });
-
-  var W=0, H=0, scale=1, ox=0, oy=0;
-  function resize(){
-    var r = canvas.getBoundingClientRect();
-    W = r.width; H = r.height;
-    if(!W || !H) return;
-    canvas.width = Math.round(W*DPR); canvas.height = Math.round(H*DPR);
-    ctx.setTransform(DPR,0,0,DPR,0,0);
-    var pad = Math.min(W,H)*0.14;
-    scale = (Math.min(W,H) - pad*2)/100;
-    ox = (W - 100*scale)/2; oy = (H - 100*scale)/2;
-  }
-  function tx(x){ return ox + x*scale; }
-  function ty(y){ return oy + y*scale; }
-
-  var mouse = { x:0, y:0, inside:false };
-  function setMouse(e){
-    var r = canvas.getBoundingClientRect();
-    var p = e.touches ? e.touches[0] : e;
-    mouse.x = p.clientX - r.left; mouse.y = p.clientY - r.top; mouse.inside = true;
-  }
-  function burst(){
-    mouse.inside = true;
-    for(var i=0;i<nodes.length;i++){
-      var n = nodes[i];
-      var ang = Math.atan2(n.hy-CY, n.hx-CX) + (Math.random()-0.5);
-      var mag = 5 + Math.random()*5;
-      n.vx += Math.cos(ang)*mag; n.vy += Math.sin(ang)*mag;
-    }
-  }
-  function leave(){ mouse.inside = false; }
-  canvas.addEventListener('mousemove', setMouse);
-  canvas.addEventListener('mouseenter', burst);
-  canvas.addEventListener('mouseleave', leave);
-  canvas.addEventListener('touchstart', burst, {passive:true});
-  canvas.addEventListener('touchmove', function(e){ setMouse(e); }, {passive:true});
-  canvas.addEventListener('touchend', leave);
-
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-  var built = 0, raf, t = 0;
-
-  function step(){
-    built = Math.min(1, built + 0.025); t++;
-    var k = 0.05, damp = 0.85, R = Math.min(W,H)*0.6;
-    for(var i=0;i<nodes.length;i++){
-      var n = nodes[i];
-      var jx = Math.sin(t*0.035 + i*1.7)*1.4, jy = Math.cos(t*0.045 + i*2.3)*1.4;  // idle jiggle
-      n.vx += (n.hx + jx - n.x)*k;  n.vy += (n.hy + jy - n.y)*k;   // spring to a gently drifting home
-      if(mouse.inside){
-        var dx = tx(n.x)-mouse.x, dy = ty(n.y)-mouse.y;
-        var d = Math.sqrt(dx*dx + dy*dy) || 0.001;
-        if(d < R){ var f = (1 - d/R)*11; n.vx += (dx/d)*f/scale; n.vy += (dy/d)*f/scale; }
-      }
-      n.vx *= damp; n.vy *= damp;  n.x += n.vx; n.y += n.vy;
-    }
-    draw();
-    raf = requestAnimationFrame(step);
-  }
-
-  function draw(){
-    ctx.clearRect(0,0,W,H);
-    var a = built, r = Math.max(3, scale*3.2);
-
-    // soft dark shadow blobs, offset down-right (depth) — cached sprite, no blur
-    var sh = r*4.4, soff = scale*2.6;
-    ctx.globalAlpha = 0.5*a;
-    for(var i=0;i<nodes.length;i++){
-      var n = nodes[i];
-      ctx.drawImage(shadowSprite, tx(n.x)-sh/2 + scale*0.8, ty(n.y)-sh/2 + soff, sh, sh);
-    }
-    ctx.globalAlpha = 1;
-
-    // edges
-    ctx.lineCap='round'; ctx.lineJoin='round';
-    ctx.lineWidth = Math.max(1.4, scale*1.5);
-    ctx.strokeStyle = 'rgba(52,78,65,' + (0.9*a) + ')';
-    for(var e=0;e<EDGES.length;e++){
-      var p = nodes[EDGES[e][0]], q = nodes[EDGES[e][1]];
-      ctx.beginPath(); ctx.moveTo(tx(p.x),ty(p.y)); ctx.lineTo(tx(q.x),ty(q.y)); ctx.stroke();
-    }
-
-    // breathing green glow (cached sprite) + node + bright core
-    for(var j=0;j<nodes.length;j++){
-      var m = nodes[j], px = tx(m.x), py = ty(m.y);
-      var pulse = 0.5 + 0.5*Math.sin(t*0.05 + j*1.05);
-      var gd = r*(3.2 + pulse*2.4);
-      ctx.globalAlpha = (0.32 + 0.45*pulse)*a;
-      ctx.drawImage(glowSprite, px-gd/2, py-gd/2, gd, gd);
-      ctx.globalAlpha = 1;
-      ctx.beginPath(); ctx.arc(px, py, r, 0, 6.2832);
-      ctx.fillStyle = 'rgba(88,129,87,' + a + ')'; ctx.fill();
-      ctx.beginPath(); ctx.arc(px, py, r*0.4, 0, 6.2832);
-      ctx.fillStyle = 'rgba(205,225,195,' + (a*(0.25 + 0.55*pulse)) + ')'; ctx.fill();
-    }
-  }
-
-  resize();
-  window.addEventListener('resize', resize);
-  if(reduce){ for(var i=0;i<nodes.length;i++){ nodes[i].x=nodes[i].hx; nodes[i].y=nodes[i].hy; } built=1; draw(); }
-  else raf = requestAnimationFrame(step);
-})();
-</script>
 
 <!-- ====================== SUPPORTED BY — quiet trust strip ======================
      LLMs / frameworks Veralith works with. Monochrome marks, one quiet green note. -->
