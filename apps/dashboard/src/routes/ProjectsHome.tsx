@@ -7,7 +7,7 @@ import { ErrorState, EmptyState } from '../components/StateViews';
 import { Skel, SkelStatus } from '../components/Skeleton';
 import { api } from '../api/client';
 import { prefetchProjectData } from '../lib/prefetch';
-import type { Project } from '../api/types';
+import type { ApiKeyWithSecret, Project } from '../api/types';
 
 /* ─────────────────────────────────────────────────────────────
    Icons
@@ -266,9 +266,11 @@ function ProjectsHomeSkeleton() {
 /* ─────────────────────────────────────────────────────────────
    Create-project modal — name + region. Region is cosmetic (no
    backend param yet); on Create we provision the project plus a
-   default API key so it can receive traces immediately, then route
-   to the new project's overview. The guided one-time full-key
-   reveal still lives in /onboarding.
+   default API key so it can receive traces immediately, then reveal
+   the key's one-time secret before routing to the new project. The
+   plaintext secret is returned only once at creation (the backend
+   stores a hash), so we MUST surface it here — otherwise the issued
+   key is unusable. Mirrors the guided reveal in /onboarding.
    ─────────────────────────────────────────────────────────── */
 
 function CreateProjectModal({ onClose }: { onClose: () => void }) {
@@ -276,24 +278,48 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [region, setRegion] = useState('us-east');
+  // Once created we hold the project + its one-time key so the modal can switch
+  // to the reveal step instead of redirecting straight to the dashboard.
+  const [created, setCreated] = useState<{ project: Project; apiKey: ApiKeyWithSecret | null } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const create = useMutation({
     mutationFn: async (projName: string) => {
       const { project } = await api.createProject({ name: projName });
       // Provision a default key so the new project can ingest right away.
+      let apiKey: ApiKeyWithSecret | null = null;
       try {
-        await api.createApiKey(project.id, { name: 'default' });
+        const res = await api.createApiKey(project.id, { name: 'default' });
+        apiKey = res.api_key;
       } catch {
-        /* non-fatal — the key can be issued later */
+        /* non-fatal — the key can be issued later from Settings → API keys */
       }
-      return project;
+      return { project, apiKey };
     },
-    onSuccess: (project) => {
+    onSuccess: ({ project, apiKey }) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      onClose();
-      navigate(`/projects/${project.slug ?? project.id}`);
+      // Reveal the one-time key before leaving — don't redirect yet.
+      setCreated({ project, apiKey });
     },
   });
+
+  function finish() {
+    const project = created?.project;
+    onClose();
+    if (project) navigate(`/projects/${project.slug ?? project.id}`);
+  }
+
+  async function copyKey() {
+    const secret = created?.apiKey?.secret;
+    if (!secret) return;
+    try {
+      await navigator.clipboard.writeText(secret);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard blocked — user can still select and copy the text */
+    }
+  }
 
   const trimmed = name.trim();
   const regions: [string, string][] = [
@@ -306,58 +332,117 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
     <div
       className="ph-scrim"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target !== e.currentTarget) return;
+        // In the reveal step an outside click still lands the user on their new
+        // project; in the create step it just dismisses.
+        if (created) finish();
+        else onClose();
       }}
     >
       <div className="ph-modal" role="dialog" aria-modal="true">
-        <div className="ph-modal-head">
-          <div className="ph-modal-title">Create a new project</div>
-          <div className="ph-modal-sub">A project groups traces, judges and analytics behind one API key.</div>
-        </div>
-        <div className="ph-modal-body">
-          <div className="ph-form-row">
-            <label className="ph-form-label" htmlFor="ph-proj-name">Project name</label>
-            <input
-              id="ph-proj-name"
-              className="ph-form-control"
-              placeholder="e.g. billing-rag"
-              autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && trimmed && !create.isPending) create.mutate(trimmed);
-              }}
-            />
-            <span className="ph-form-hint">Lowercase, used in your project URL and key prefix.</span>
-          </div>
-          <div className="ph-form-row">
-            <label className="ph-form-label">Region</label>
-            <div className="ph-seg">
-              {regions.map(([id, label]) => (
-                <button
-                  type="button"
-                  key={id}
-                  className={'ph-seg-opt' + (region === id ? ' is-active' : '')}
-                  onClick={() => setRegion(id)}
-                >
-                  {label}
-                </button>
-              ))}
+        {created ? (
+          <>
+            <div className="ph-modal-head">
+              <div className="ph-modal-title">Project created — here’s your API key</div>
+              <div className="ph-modal-sub">
+                {created.apiKey
+                  ? 'This is the only time the full key is shown. Copy it somewhere safe.'
+                  : 'Project created, but we couldn’t issue a key automatically. You can create one anytime in Settings → API keys.'}
+              </div>
             </div>
-          </div>
-          {create.isError && <span className="ph-form-err">Couldn’t create the project. Please try again.</span>}
-        </div>
-        <div className="ph-modal-foot">
-          <button type="button" className="ph-btn-ghost" onClick={onClose}>Cancel</button>
-          <button
-            type="button"
-            className="ph-btn-primary"
-            disabled={!trimmed || create.isPending}
-            onClick={() => create.mutate(trimmed)}
-          >
-            {create.isPending ? 'Creating…' : 'Create project'}
-          </button>
-        </div>
+            <div className="ph-modal-body">
+              {created.apiKey && (
+                <>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <code
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        background: 'var(--po-bg)',
+                        border: '1px solid var(--po-line)',
+                        borderRadius: 'var(--po-radius-sm)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 12.5,
+                        color: 'var(--po-fg)',
+                        wordBreak: 'break-all',
+                      }}
+                    >
+                      {created.apiKey.secret}
+                    </code>
+                    <button
+                      type="button"
+                      className="ph-btn-ghost"
+                      style={{ margin: 0, flex: '0 0 auto' }}
+                      onClick={copyKey}
+                    >
+                      {copied ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <span className="ph-form-hint">
+                    Add it to your RAG app:{' '}
+                    <code style={{ fontFamily: 'var(--font-mono)' }}>export VERALITH_API_KEY=…</code>
+                  </span>
+                </>
+              )}
+            </div>
+            <div className="ph-modal-foot">
+              <button type="button" className="ph-btn-primary" style={{ marginLeft: 'auto' }} onClick={finish}>
+                Continue to project →
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="ph-modal-head">
+              <div className="ph-modal-title">Create a new project</div>
+              <div className="ph-modal-sub">A project groups traces, judges and analytics behind one API key.</div>
+            </div>
+            <div className="ph-modal-body">
+              <div className="ph-form-row">
+                <label className="ph-form-label" htmlFor="ph-proj-name">Project name</label>
+                <input
+                  id="ph-proj-name"
+                  className="ph-form-control"
+                  placeholder="e.g. billing-rag"
+                  autoFocus
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && trimmed && !create.isPending) create.mutate(trimmed);
+                  }}
+                />
+                <span className="ph-form-hint">Lowercase, used in your project URL and key prefix.</span>
+              </div>
+              <div className="ph-form-row">
+                <label className="ph-form-label">Region</label>
+                <div className="ph-seg">
+                  {regions.map(([id, label]) => (
+                    <button
+                      type="button"
+                      key={id}
+                      className={'ph-seg-opt' + (region === id ? ' is-active' : '')}
+                      onClick={() => setRegion(id)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {create.isError && <span className="ph-form-err">Couldn’t create the project. Please try again.</span>}
+            </div>
+            <div className="ph-modal-foot">
+              <button type="button" className="ph-btn-ghost" onClick={onClose}>Cancel</button>
+              <button
+                type="button"
+                className="ph-btn-primary"
+                disabled={!trimmed || create.isPending}
+                onClick={() => create.mutate(trimmed)}
+              >
+                {create.isPending ? 'Creating…' : 'Create project'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

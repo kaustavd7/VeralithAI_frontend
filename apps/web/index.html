@@ -127,7 +127,6 @@ body.is-loading .cx-w-diagnose::after,
 body.is-loading .cx-w-every::after,
 body.is-loading .cx-w-trace .cx-t,
 body.is-loading .cx-w-trace::after,
-body.is-loading .cx-eyebrow,
 body.is-loading .cx-row{ animation-play-state:paused; }   /* hold the hero intro until the 0→100 loader clears */
 
 /* ============================================================
@@ -815,7 +814,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   body.is-loading .rise, body.is-loading .settle,
   body.is-loading .cx-w-diagnose::after, body.is-loading .cx-w-every::after,
   body.is-loading .cx-w-trace .cx-t, body.is-loading .cx-w-trace::after,
-  body.is-loading .cx-eyebrow, body.is-loading .cx-row{ animation-play-state:running !important; }
+  body.is-loading .cx-row{ animation-play-state:running !important; }
 </style></noscript>
 
 <!-- ====================== PRELOADER ====================== -->
@@ -863,7 +862,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
 <!-- ====================== HERO (technical Swiss-grid — ChainGPT-style) ====================== -->
 <style id="hero-redesign">
   .hero-x{
-    --head: clamp(2.1rem, 7.5vw, 6.4rem);  /* headline size (reduced) */
+    --head: clamp(3rem, 11vw, 9.6rem);     /* headline size */
     --cell: calc(var(--head) * .92);       /* grid cell == headline line-height → lines lock to grid rows */
     --eyeh: clamp(3.6rem, 9vh, 5.6rem);    /* eyebrow zone height (top gap above the headline) */
     --padl: clamp(1.4rem, 3.5vw, 4rem);    /* left gutter — content sits closer to the left edge */
@@ -877,6 +876,10 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
     background-position: var(--padl) var(--eyeh);   /* a grid line lands on the content's left + the headline top */
     display:flex;
   }
+  /* interactive strata — pixel contour field; a soft pool reacts around the cursor */
+  .hero-x .hero-strata{ position:absolute; inset:0; width:100%; height:100%; z-index:0; display:block; pointer-events:none; }
+  .hero-x .cx-wrap{ z-index:1; }   /* keep content above the strata canvas */
+
   /* corner crop-marks + accent squares */
   .cx-crop{ position:absolute; width:16px; height:16px; z-index:2; }
   .cx-crop.tl{ top:14px; left:14px; border-top:1.5px solid var(--ink); border-left:1.5px solid var(--ink); }
@@ -886,7 +889,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .cx-dot{ position:absolute; width:8px; height:8px; background:var(--leaf); z-index:2; }
   .cx-dot.a{ top:38px; left:40px; } .cx-dot.b{ top:38px; right:40px; }
 
-  .cx-wrap{ position:relative; width:100%; max-width:none; margin-inline:0; flex:1 1 auto; padding:0 var(--cell) 0 var(--padl); display:flex; flex-direction:column; }
+  .cx-wrap{ position:relative; width:100%; max-width:none; margin-inline:0; flex:1 1 auto; padding:var(--eyeh) var(--padl) 0; display:flex; flex-direction:column; align-items:center; text-align:center; }
 
   .cx-eyebrow{ font-family:var(--mono); font-size:.72rem; letter-spacing:.24em; text-transform:uppercase;
     color:var(--ink-soft); display:flex; align-items:flex-end; height:var(--eyeh); padding-bottom:.7rem; }
@@ -895,9 +898,9 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
     letter-spacing:.004em; line-height:var(--cell); color:var(--ink); margin:0;
     font-size:var(--head); }
 
-  .cx-row{ display:flex; flex-direction:column; align-items:flex-start;
+  .cx-row{ display:flex; flex-direction:column; align-items:center;
     margin-top:clamp(1rem,3vh,1.8rem); }
-  .cx-body{ font-family:var(--mono); font-size:.95rem; line-height:1.7; color:var(--ink-soft); max-width:62ch; }
+  .cx-body{ font-family:var(--mono); font-size:.95rem; line-height:1.7; color:var(--ink-soft); max-width:62ch; margin-inline:auto; }
   .cx-cta{ display:inline-flex; align-items:center; gap:.7em; margin-top:1.5rem;
     font-family:var(--mono); font-size:.78rem; letter-spacing:.16em; text-transform:uppercase; font-weight:500;
     background:var(--leaf); color:#fff; padding:.95rem 1.5rem; border-radius:5px;
@@ -905,7 +908,7 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .cx-cta:hover{ transform:translateY(-2px); box-shadow:0 14px 30px -12px rgba(88,129,87,.7); }
 
   /* hero actions — primary (dark) + ghost (replaces the single green CTA) */
-  .cx-actions{ display:flex; align-items:center; gap:1.5rem; margin-top:1.7rem; flex-wrap:wrap; }
+  .cx-actions{ display:flex; align-items:center; justify-content:center; gap:1.5rem; margin-top:1.7rem; flex-wrap:wrap; }
   .cx-btn{ display:inline-flex; align-items:center; gap:.55em; font-family:var(--mono); font-size:.78rem;
     letter-spacing:.12em; text-transform:uppercase; font-weight:600; }
   .cx-btn-primary{ background:var(--ink); color:#fff; padding:.95rem 1.7rem; border-radius:0;
@@ -915,8 +918,11 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .cx-btn .ar{ transition:transform .2s ease; }
   .cx-btn:hover .ar{ transform:translateX(4px); }
 
-  /* "Supported by" — static, centered row of darkened logos */
-  .cx-supportbar{ margin-top:auto; margin-bottom:clamp(1.2rem,3.5vh,2.4rem);
+  /* "Supported by" — its own band below the hero (white stripe, hairline borders) */
+  .support-stripe{ background:#fff;
+    margin-top:clamp(2.5rem,7vh,5.5rem);   /* breathing room between the hero and the stripe */
+    padding:clamp(1.3rem,3.2vh,2.1rem) clamp(1.4rem,3.5vw,4rem); }
+  .support-stripe-inner{ max-width:1240px; margin-inline:auto;
     display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:clamp(1.4rem,3.5vw,3rem); }
   .cx-support-label{ flex:0 0 auto; margin:0; font-family:var(--mono); font-size:.7rem; letter-spacing:.22em;
     text-transform:uppercase; color:var(--ink-soft); white-space:nowrap; }
@@ -1001,9 +1007,9 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
   .brand .gem{ background:url('/brand/veralith-mark-color.svg') center/contain no-repeat; border-radius:0; }
 </style>
 <section class="hero hero-x" id="hero">
+  <canvas class="hero-strata" data-veralith-strata data-radius="105" aria-hidden="true"></canvas>
   <span class="cx-crop tl"></span><span class="cx-crop tr"></span><span class="cx-crop bl"></span><span class="cx-crop br"></span>
   <div class="cx-wrap">
-    <span class="cx-eyebrow">Try our self-healing RAG</span>
     <h1 class="cx-title"><span class="cx-line"><span class="cx-w cx-w-diagnose"><span class="cx-t">Diagnose</span></span></span><span class="cx-line"><span class="cx-w cx-w-every"><span class="cx-t">Every</span></span> <span class="cx-w cx-w-trace"><span class="cx-t">Trace</span></span></span></h1>
     <div class="cx-row">
       <div class="cx-left">
@@ -1023,19 +1029,130 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
       <symbol id="lg-langchain" viewBox="0 0 24 24"><path d="M13.796 0a6.93 6.93 0 0 0-4.91 2.019L5.451 5.455l3.273 3.27 3.432-3.432a2.284 2.284 0 0 1 3.277 0 2.28 2.28 0 0 1 0 3.275L12 12.001l3.273 3.273 3.433-3.435c2.692-2.692 2.692-7.127 0-9.82A6.92 6.92 0 0 0 13.796 0m-5.07 8.728-3.433 3.434c-2.692 2.693-2.692 7.126 0 9.819A6.92 6.92 0 0 0 10.203 24a6.93 6.93 0 0 0 4.911-2.02l3.432-3.432-3.271-3.272-3.433 3.433a2.284 2.284 0 0 1-3.277 0 2.28 2.28 0 0 1 0-3.276L12 12z"/></symbol>
       <symbol id="lg-gemini" viewBox="0 0 24 24"><path d="M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81"/></symbol>
     </defs></svg>
-    <div class="cx-supportbar">
-      <span class="cx-support-label">Supported by</span>
-      <div class="cx-logos" aria-hidden="true">
-        <span class="cx-logo" data-mark="claude"><svg viewBox="0 0 24 24"><use href="#lg-claude"/></svg></span>
-        <span class="cx-logo" data-mark="openai"><svg viewBox="0 0 256 260"><use href="#lg-openai"/></svg></span>
-        <span class="cx-logo" data-mark="mistral"><svg viewBox="0 0 24 24"><use href="#lg-mistral"/></svg></span>
-        <span class="cx-logo" data-mark="huggingface"><svg viewBox="0 0 24 24"><use href="#lg-huggingface"/></svg></span>
-        <span class="cx-logo" data-mark="langchain"><svg viewBox="0 0 24 24"><use href="#lg-langchain"/></svg></span>
-        <span class="cx-logo" data-mark="gemini"><svg viewBox="0 0 24 24"><use href="#lg-gemini"/></svg></span>
-      </div>
+  </div>
+</section>
+
+<!-- ====================== SUPPORTED-BY STRIPE (separate band below hero) ====================== -->
+<section class="support-stripe" aria-label="Supported integrations">
+  <div class="support-stripe-inner">
+    <span class="cx-support-label">Supported by</span>
+    <div class="cx-logos" aria-hidden="true">
+      <span class="cx-logo" data-mark="claude"><svg viewBox="0 0 24 24"><use href="#lg-claude"/></svg></span>
+      <span class="cx-logo" data-mark="openai"><svg viewBox="0 0 256 260"><use href="#lg-openai"/></svg></span>
+      <span class="cx-logo" data-mark="mistral"><svg viewBox="0 0 24 24"><use href="#lg-mistral"/></svg></span>
+      <span class="cx-logo" data-mark="huggingface"><svg viewBox="0 0 24 24"><use href="#lg-huggingface"/></svg></span>
+      <span class="cx-logo" data-mark="langchain"><svg viewBox="0 0 24 24"><use href="#lg-langchain"/></svg></span>
+      <span class="cx-logo" data-mark="gemini"><svg viewBox="0 0 24 24"><use href="#lg-gemini"/></svg></span>
     </div>
   </div>
 </section>
+
+<!-- Strata background — faint pixel contour field; a soft pool darkens the pixels around the cursor. Auto-mounts on <canvas data-veralith-strata>. -->
+<script>
+(function () {
+  'use strict';
+  var STONE = [90, 96, 86];     // resting contour (olive-grey)
+  var INK   = [38, 48, 26];     // deep olive the pool darkens toward (matches the hero grid)
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+  function fit(canvas) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = canvas.getBoundingClientRect();
+    var w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvas.__w = w; canvas.__h = h;
+    return ctx;
+  }
+  function noise(x, y) {
+    return Math.sin(x * 0.9 + 1.7) * Math.cos(y * 1.1 - 0.4)
+      + 0.5 * Math.sin(x * 2.1 - y * 1.3)
+      + 0.5 * Math.cos(y * 0.5 + x * 0.3);
+  }
+  function mount(canvas, opts) {
+    opts = opts || {};
+    var inten = opts.intensity != null ? opts.intensity : 1;
+    var R = opts.radius != null ? opts.radius : 150;
+    var step = opts.step || 4, levels = 9;
+    var ctx = fit(canvas), raf, t = 0;
+    var px = -1e4, py = -1e4, tx = -1e4, ty = -1e4, active = false, cX = -1e4, cY = -1e4, havePtr = false;
+    var ux = 1, uy = 0, spd = 0;   // cursor direction + smoothed speed → velocity smear
+    function host() { return canvas.parentElement || canvas; }
+    function pointer(e) {
+      cX = (e.touches ? e.touches[0].clientX : e.clientX);
+      cY = (e.touches ? e.touches[0].clientY : e.clientY);
+      havePtr = true;
+      var r = canvas.getBoundingClientRect();
+      tx = cX - r.left; ty = cY - r.top;
+      if (!active) { active = true; px = tx; py = ty; }
+    }
+    function leave() { active = false; }
+    var p = host();
+    p.addEventListener('mousemove', pointer);
+    p.addEventListener('mouseleave', leave);
+    p.addEventListener('touchmove', pointer, { passive: true });
+    p.addEventListener('touchend', leave);
+    function frame() {
+      var w = canvas.__w, h = canvas.__h;
+      if (havePtr) { var rr = canvas.getBoundingClientRect(); tx = cX - rr.left; ty = cY - rr.top; }
+      ctx.clearRect(0, 0, w, h);
+      // velocity ≈ how far the eased pool lags its target this frame
+      var vx = tx - px, vy = ty - py;
+      px += vx * 0.16; py += vy * 0.16;
+      var raw = Math.hypot(vx, vy);
+      spd += (raw - spd) * 0.25;                       // smooth the speed a touch
+      if (raw > 0.5) { var inv = 1 / raw; ux = vx * inv; uy = vy * inv; }   // hold last dir when ~still
+      var boost   = Math.min(1, spd / 90);             // 0 (still) → 1 (fast)
+      var Reff    = R * (1 + boost * 0.5);             // pool grows modestly with speed
+      var stretch = 1 + boost * 1.6;                   // elongates along motion
+      var aBoost  = boost * 0.35;                      // brighter when moving fast
+      // fade the field in the central band where the headline/tagline sit; full strength toward the edges
+      var cxp = w * 0.5, cyp = h * 0.40, fx = 1 / (w * 0.42), fy = 1 / (h * 0.42);
+      for (var gy = 0; gy < h; gy += step) {
+        for (var gx = 0; gx < w; gx += step) {
+          var n = noise(gx / 90, gy / 90 + t * 0.0008);
+          var band = (n * levels) % 1;
+          if (!(Math.abs(band) < 0.06 || Math.abs(band) > 0.94)) continue;
+          var near = 0;
+          if (active) {
+            var dx = gx - px, dy = gy - py;
+            var along = dx * ux + dy * uy, perp = dy * ux - dx * uy;   // rotate into the motion frame
+            var dist = Math.hypot(along / stretch, perp);             // ellipse stretched along travel
+            near = Math.max(0, 1 - dist / Reff);
+          }
+          var col = near > 0.02 ? INK : STONE;
+          var mdx = (gx - cxp) * fx, mdy = (gy - cyp) * fy;
+          var mask = 0.12 + 0.88 * Math.min(1, mdx * mdx + mdy * mdy);   // faint center → full edges
+          var a = (near > 0.02 ? 0.10 + near * (0.45 + aBoost) : 0.13) * inten * mask;
+          ctx.fillStyle = rgba(col, a);
+          ctx.fillRect(gx, gy, step, step);
+        }
+      }
+      t += reduce ? 0 : 1;
+      if (!reduce) raf = requestAnimationFrame(frame);
+    }
+    frame();
+    var rt;
+    function onResize() { clearTimeout(rt); rt = setTimeout(function () { ctx = fit(canvas); if (reduce) frame(); }, 160); }
+    window.addEventListener('resize', onResize);
+    return { stop: function () { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); } };
+  }
+  function auto(root) {
+    var nodes = (root || document).querySelectorAll('canvas[data-veralith-strata]');
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].__strata) continue;
+      nodes[i].__strata = mount(nodes[i], {
+        intensity: parseFloat(nodes[i].dataset.intensity || '1'),
+        radius: parseFloat(nodes[i].dataset.radius || '150')
+      });
+    }
+  }
+  window.VeralithStrata = { mount: mount, auto: auto };
+  if (document.readyState !== 'loading') auto();
+  else document.addEventListener('DOMContentLoaded', function () { auto(); });
+})();
+</script>
 
 <!-- ====================== SUPPORTED BY — quiet trust strip ======================
      LLMs / frameworks Veralith works with. Monochrome marks, one quiet green note. -->
@@ -1156,11 +1273,6 @@ footer{ background:var(--obsidian); color:#B7C49B; padding:4.5rem 0 2.5rem; }
     will-change:left,top,transform,opacity; }
   .st-g img{ display:block; width:100%; height:auto; opacity:.94; filter:grayscale(1); }   /* greyscale to match the theme */
   .st-g .cap{ position:absolute; left:12px; bottom:10px; font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--st-ghost); background:color-mix(in srgb,var(--st-paper) 80%,transparent); padding:2px 7px; border-radius:5px; }
-
-  /* "cooking" particle field — a canvas of green/grey bubbles + faint connecting
-     lines that drift (alive), then stream into the centre as the cards materialise.
-     mix-blend multiply so overlaps deepen, matching the reference. Driven by draw(). */
-  .st-cook{ position:absolute; inset:0; width:100%; height:100%; z-index:3; pointer-events:none; mix-blend-mode:multiply; }
 
   .st-resolve{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:6; text-align:center; width:min(440px,80vw); opacity:0; will-change:opacity,transform; }
   .st-resolve h2{ font-size:clamp(30px,3.8vw,46px); font-weight:600; letter-spacing:-.025em; line-height:1.06; margin-top:16px; color:var(--ink); }
@@ -1758,72 +1870,6 @@ img, svg, canvas, video, iframe, table, pre{ max-width:100%; }
     toks.push({ el, bx: 6 + rnd() * 88, by: 6 + rnd() * 88, depth, rot: (rnd() - 0.5) * 24, baseOp: 0.32 + depth * 0.6 });
   }
 
-  /* the "cooking" particle field — green/grey bubbles + faint connecting lines on a
-     canvas. They drift while alive, then stream into the centre as the cards
-     materialise. draw() sets cookStrength (visibility) and converge (pull to centre);
-     a rAF loop (only while the scene is on screen) does the continuous drift + lines. */
-  const canvas = document.createElement('canvas');
-  canvas.className = 'st-cook';
-  canvas.setAttribute('aria-hidden', 'true');
-  (root.querySelector('.st-stage') || scene).appendChild(canvas);
-  const cookCtx = canvas.getContext('2d');
-  const COOK_COLORS = [[88,129,87],[111,143,78],[138,153,112],[154,163,154],[95,107,96],[163,177,138]];
-  const parts = [];
-  for (let i = 0; i < 36; i++) {
-    const ang = rnd() * Math.PI * 2, rad = rnd() * 205;
-    parts.push({
-      x: Math.cos(ang) * rad, y: Math.sin(ang) * rad,
-      vx: (rnd() - 0.5) * 1.3, vy: (rnd() - 0.5) * 1.3,
-      r: 2 + rnd() * 10, col: COOK_COLORS[Math.floor(rnd() * COOK_COLORS.length)], a: 0.4 + rnd() * 0.45,
-    });
-  }
-  let cookStrength = 0, converge = 0, rafCook = 0, cdpr = 1;
-  function sizeCook() {
-    const st = canvas.parentNode;
-    cdpr = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = Math.max(1, Math.round(st.clientWidth * cdpr));
-    canvas.height = Math.max(1, Math.round(st.clientHeight * cdpr));
-  }
-  function cookFrame() {
-    rafCook = requestAnimationFrame(cookFrame);
-    const cw = canvas.width, ch = canvas.height;
-    cookCtx.clearRect(0, 0, cw, ch);
-    if (cookStrength < 0.01) return;
-    const cx = cw / 2, cy = ch / 2, k = cdpr, spread = 1 - converge, pts = [];
-    for (const p of parts) {
-      /* lively wander + a gentle spring toward the centre so the whole cluster
-         stays put (it used to random-walk off to one side over time). */
-      p.vx = (p.vx - p.x * 0.0007 + (rnd() - 0.5) * 0.85) * 0.9;
-      p.vy = (p.vy - p.y * 0.0007 + (rnd() - 0.5) * 0.85) * 0.9;
-      p.x += p.vx; p.y += p.vy;
-      const rr = Math.sqrt(p.x * p.x + p.y * p.y);   // hard bound so nothing drifts out of the cluster
-      if (rr > 230) { p.x = p.x / rr * 230; p.y = p.y / rr * 230; p.vx *= 0.4; p.vy *= 0.4; }
-      pts.push({ x: cx + p.x * spread * k, y: cy + p.y * spread * k, p });
-    }
-    const maxD = 140 * k;
-    for (let i = 0; i < pts.length; i++) {
-      for (let j = i + 1; j < pts.length; j++) {
-        const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y, d = Math.sqrt(dx * dx + dy * dy);
-        if (d < maxD) {
-          cookCtx.strokeStyle = 'rgba(120,132,108,' + ((1 - d / maxD) * 0.24 * cookStrength * spread).toFixed(3) + ')';
-          cookCtx.lineWidth = k;
-          cookCtx.beginPath(); cookCtx.moveTo(pts[i].x, pts[i].y); cookCtx.lineTo(pts[j].x, pts[j].y); cookCtx.stroke();
-        }
-      }
-    }
-    for (const pt of pts) {
-      const p = pt.p, r = Math.max(0.5, p.r * k * (0.45 + 0.55 * cookStrength) * (1 - converge * 0.6));
-      cookCtx.fillStyle = 'rgba(' + p.col[0] + ',' + p.col[1] + ',' + p.col[2] + ',' + (p.a * cookStrength).toFixed(3) + ')';
-      cookCtx.beginPath(); cookCtx.arc(pt.x, pt.y, r, 0, 6.2832); cookCtx.fill();
-    }
-  }
-  sizeCook();
-  new IntersectionObserver((ents) => {
-    const on = ents[0] && ents[0].isIntersecting;
-    if (on && !rafCook && !reduce) { sizeCook(); cookFrame(); }
-    else if (!on && rafCook) { cancelAnimationFrame(rafCook); rafCook = 0; cookCtx.clearRect(0, 0, canvas.width, canvas.height); }
-  }, { threshold: 0 }).observe(root);
-
   function progress() {
     const rect = scene.getBoundingClientRect();
     const total = scene.offsetHeight - window.innerHeight;
@@ -1852,29 +1898,28 @@ img, svg, canvas, video, iframe, table, pre{ max-width:100%; }
     leadmid.style.opacity = leadOp.toFixed(3);
     leadmid.style.transform = 'translate(-50%,-50%) scale(' + (1 - (1 - leadOp) * 0.06).toFixed(3) + ')';
 
-    /* ---- "cooking" bridge: the circle cluster swells out of the collapse point
-       as the tokens vanish (~p 0.28), holds through the gap, and dissolves as the
-       first cards rise (~p 0.54) — so the scroll between never feels dead. ---- */
-    const cookIn = clamp((p - 0.27) / 0.09, 0, 1);
-    const cookOut = 1 - clamp((p - 0.40) / 0.10, 0, 1);
-    cookStrength = cookIn * cookOut;                       // visibility of the bubble field
-    converge = clamp((p - 0.40) / 0.11, 0, 1);             // 0 = spread · 1 = streamed into the centre
-
-    /* ---- the cards EMERGE from that centre point (p 0.46 → ~0.99), after the
-       cooking bridge. easeInOut (gentle in + gentle out) so they don't snap out
-       of the point; the slower opacity fade-in removes the old glitchy flash. ---- */
-    graphs.forEach((g) => {
+    /* ---- STACK → SPREAD: with the tokens gone, the cards POP onto the pile one at a
+       time — each snaps to full opacity instantly (no translucent fade) with a little
+       scale bounce, like a real card slapped on top — then the pile spreads out to the
+       final scattered positions. Sharp & full-size from the first frame. ---- */
+    const NC = graphs.length;
+    graphs.forEach((g, ci) => {
       const rx = +g.dataset.x, ry = +g.dataset.y, rot = +g.dataset.rot, delay = +g.dataset.delay;
-      /* start as the bubbles converge (~0.42) so there's no white gap between the
-         collapse and the cards. opacity rides the LINEAR progress (visible fast),
-         while position + blur ride easeInOut so the motion still feels smooth. */
-      const lin = clamp((p - 0.42 - delay * 0.34) / 0.46, 0, 1);
-      const gp = easeInOut(lin);
-      g.style.left = (50 + (rx - 50) * gp) + '%';
-      g.style.top = (50 + (ry - 50) * gp) + '%';
-      g.style.transform = 'translate(-50%,-50%) rotate(' + (rot * gp).toFixed(2) + 'deg) scale(' + (0.52 + 0.48 * gp).toFixed(3) + ')';
-      g.style.opacity = clamp(lin / 0.26, 0, 1).toFixed(3);
-      g.style.filter = gp < 0.985 ? 'blur(' + ((1 - gp) * 16).toFixed(1) + 'px)' : 'none';   /* focus-in: blurry → sharp as it materialises */
+      const t0 = 0.30 + ci * 0.045;                                       // when THIS card pops onto the pile — a beat between each
+      const op = clamp((p - t0) / 0.012, 0, 1);                           // opacity SNAPS on — no hazy crossfade
+      const land = easeOut(clamp((p - t0) / 0.05, 0, 1));                 // quick settle after the pop
+      const pop = 1 + 0.12 * (1 - land);                                  // 1.12 → 1.0 scale bounce as it lands
+      const spread = easeInOut(clamp((p - 0.54 - delay * 0.20) / 0.40, 0, 1)); // hold the full pile, then fan it out
+      const srot = (ci - (NC - 1) / 2) * 6;                               // small fan angle while stacked
+      const lx = 50 + (rx - 50) * spread, ly = 50 + (ry - 50) * spread;   // centre → final position
+      const rotNow = srot + (rot - srot) * spread;                       // stack fan → final tilt
+      const sc = pop * (1 - spread) + 1 * spread;                         // bounce while stacking, exactly 1 once spread
+      g.style.left = lx + '%';
+      g.style.top = ly + '%';
+      g.style.transform = 'translate(-50%,-50%) rotate(' + rotNow.toFixed(2) + 'deg) scale(' + sc.toFixed(3) + ')';
+      g.style.opacity = op.toFixed(3);
+      g.style.filter = 'none';
+      g.style.zIndex = spread < 1 ? String(20 + ci) : '';                // last popped sits on top of the pile
     });
 
     /* resolve zoom-reveals in step with the cards settling */
@@ -1891,7 +1936,7 @@ img, svg, canvas, video, iframe, table, pre{ max-width:100%; }
   }
   draw(reduce ? 0.95 : progress());
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', () => { if (mobileScene()) { nav && nav.classList.remove('st-away'); return; } sizeCook(); draw(progress()); });
+  window.addEventListener('resize', () => { if (mobileScene()) { nav && nav.classList.remove('st-away'); return; } draw(progress()); });
 })();
 </script>
 
