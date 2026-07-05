@@ -450,8 +450,15 @@ export default function TraceExplorer() {
       }
       bucket.rows.push(r);
     }
-    return order.map((k) => ({ key: k, label: map.get(k)!.label, rows: map.get(k)!.rows }));
+    return order.map((k) => {
+      const b = map.get(k)!;
+      return { key: k, label: b.label, rows: b.rows, abstained: b.rows.filter(isHonestAbstention).length };
+    });
   }, [rows]);
+
+  // Count honest abstentions across the loaded rows so the header can reassure
+  // ("a lot of incomplete·grounded, but most are correct 'I don't know's").
+  const abstainCount = useMemo(() => rows.filter(isHonestAbstention).length, [rows]);
 
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   function toggleSection(key: string) {
@@ -526,8 +533,11 @@ export default function TraceExplorer() {
           <div>
             <h1 className="te-title">Traces</h1>
             <div className="te-sub">
-              <span className="po-mono">{total.toLocaleString()}</span> traces in last {timeWindow} ·{' '}
-              sorted <span className="po-mono">{sortLabel}</span>
+              <span className="po-mono">{total.toLocaleString()}</span> traces in last {timeWindow}
+              {abstainCount > 0 && (
+                <> · <span className="po-mono">{abstainCount}</span> honest abstention{abstainCount === 1 ? '' : 's'}</>
+              )}
+              {' '}· sorted <span className="po-mono">{sortLabel}</span>
               {sort === 'sufficiency_asc' && (
                 <span> · client-side over current page</span>
               )}
@@ -640,6 +650,14 @@ export default function TraceExplorer() {
                         </svg>
                         <span className="te-section-label">{sec.label}</span>
                         <span className="te-section-count">{sec.rows.length}</span>
+                        {sec.abstained > 0 && (
+                          <span className="te-section-abstain" title="Honest abstentions in this section — the model correctly declined instead of fabricating">
+                            <svg width="9" height="9" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                              <path d="M2.5 6.2l2.3 2.3L9.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            {sec.abstained} abstained
+                          </span>
+                        )}
                       </button>
                       {!isCollapsed && sec.rows.map((r) => {
                   const cell = r.failure_cell ? CELL_BY_ID[r.failure_cell] : null;
