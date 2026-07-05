@@ -8,9 +8,11 @@ import { QueryPane } from '../components/detail/QueryPane';
 import { ResponsePane } from '../components/detail/ResponsePane';
 import { RetrievedChunks } from '../components/detail/RetrievedChunks';
 import { PerClaimTable } from '../components/detail/PerClaimTable';
-import { HealButton } from '../components/detail/HealButton';
 import { HealHistory } from '../components/detail/HealHistory';
 import { useTrace } from '../hooks/useTrace';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '../api/client';
+import type { TraceDetail as TraceDetailType } from '../api/types';
 
 export default function TraceDetail() {
   const { slug = '', id = '' } = useParams<{ slug: string; id: string }>();
@@ -36,11 +38,13 @@ export default function TraceDetail() {
     setHoveredChunkRank(rank);
   }
 
-  const shell = (body: React.ReactNode) => (
+  const shell = (body: React.ReactNode, traceForActions?: TraceDetailType) => (
     <ProjectShell slug={slug} active="traces" project={projectName}>
       <div className={detailStyles.page}>
         <DetailActionBar
+          slug={slug}
           traceId={id}
+          trace={traceForActions}
           onBack={() => navigate(`/projects/${slug}/traces`)}
         />
         {body}
@@ -63,7 +67,7 @@ export default function TraceDetail() {
   const evaluated = trace.status === 'evaluated' && trace.diagnosis;
 
   return shell(
-    <>
+    (<>
       {(trace.heal_sessions?.length ?? 0) > 0 && (
         <HealHistory sessions={trace.heal_sessions ?? []} />
       )}
@@ -155,7 +159,8 @@ export default function TraceDetail() {
         </div>
       )}
 
-    </>,
+    </>),
+    trace,
   );
 }
 
@@ -239,13 +244,61 @@ function TraceDetailSkeleton() {
    ProjectTopbar already shows the workspace/project breadcrumb,
    so this row only carries the trace ID + per-trace actions.
    ─────────────────────────────────────────────────────────── */
+/* Build a Markdown briefing of the trace to paste into Claude Code. */
+function traceMarkdown(traceId: string, t: TraceDetailType): string {
+  const d = t.diagnosis;
+  const chunks = (t.context_chunks ?? [])
+    .map((c, i) => `${i + 1}. ${c.text}`)
+    .join('\n');
+  const diag = d
+    ? [
+        `- Failure cell: \`${d.failure_cell}\``,
+        `- Sufficiency: ${d.sufficiency_fraction.toFixed(2)}`,
+        `- Faithfulness: ${d.faithfulness_fraction.toFixed(2)}`,
+        `- Honest abstention: ${t.is_abstention ? 'yes' : 'no'}`,
+      ].join('\n')
+    : '- Not evaluated yet.';
+  return (
+    `# Veralith trace #${traceId.slice(0, 8)}\n\n` +
+    `## Query\n${t.query}\n\n` +
+    `## Response\n${t.response}\n\n` +
+    `## Retrieved context (${t.context_chunks?.length ?? 0} chunks)\n${chunks || '_none_'}\n\n` +
+    `## Veralith diagnosis\n${diag}\n\n` +
+    `Explain why this trace was classified this way, whether the classification ` +
+    `looks correct, and what a good fix in my RAG pipeline would be.`
+  );
+}
+
 function DetailActionBar({
+  slug,
   traceId,
+  trace,
   onBack,
 }: {
+  slug: string;
   traceId: string;
+  trace?: TraceDetailType;
   onBack: () => void;
 }) {
+  const queryClient = useQueryClient();
+  const [copied, setCopied] = useState(false);
+
+  const reeval = useMutation({
+    mutationFn: () => api.reevaluateTrace(slug, traceId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trace', slug, traceId] }),
+  });
+
+  async function copyMarkdown() {
+    if (!trace) return;
+    try {
+      await navigator.clipboard.writeText(traceMarkdown(traceId, trace));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard blocked — user can still select the text elsewhere */
+    }
+  }
+
   return (
     <div className={detailStyles.topbar}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -272,45 +325,31 @@ function DetailActionBar({
         </div>
       </div>
       <div className={detailStyles.topActions}>
-        {/* Dead actions — no handler/endpoint yet. Gated as disabled "soon"
-            stubs (mirrors HealButton) so they aren't interactive no-ops. */}
         <button
           type="button"
-          className={`${detailStyles.btn} ${detailStyles.btnDisabled}`}
-          disabled
-          title="Coming soon"
-        >
-          Re-evaluate
-          <span className={detailStyles.healBadge}>soon</span>
-        </button>
-        <button
-          type="button"
-          className={`${detailStyles.btn} ${detailStyles.btnDisabled}`}
-          disabled
-          title="Coming soon"
-        >
-          Flag false positive
-          <span className={detailStyles.healBadge}>soon</span>
-        </button>
-        <button
-          type="button"
-          className={`${detailStyles.btn} ${detailStyles.btnDisabled}`}
-          disabled
-          title="Coming soon"
+          className={detailStyles.btn}
+          onClick={() => reeval.mutate()}
+          disabled={reeval.isPending}
+          title="Drop the current evaluation and re-run the judges"
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path
-              d="M3 3v6h6M3 9l5-5"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            <path d="M10 4a4 4 0 1 0 .5 3.5M10 4V1.5M10 4H7.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Open raw JSON
-          <span className={detailStyles.healBadge}>soon</span>
+          {reeval.isPending ? 'Re-evaluating…' : 'Re-evaluate'}
         </button>
-        <HealButton />
+        <button
+          type="button"
+          className={detailStyles.btn}
+          onClick={copyMarkdown}
+          disabled={!trace}
+          title="Copy a Markdown briefing of this trace to paste into Claude Code"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <rect x="3" y="3" width="6" height="7" rx="1" stroke="currentColor" strokeWidth="1.3" />
+            <path d="M5 3V2a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H9" stroke="currentColor" strokeWidth="1.3" fill="none" />
+          </svg>
+          {copied ? 'Copied ✓' : 'Copy as Markdown'}
+        </button>
       </div>
     </div>
   );

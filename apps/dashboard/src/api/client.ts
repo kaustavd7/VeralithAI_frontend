@@ -211,6 +211,12 @@ export const api = {
     return request(`/v1/projects/${projectId}/traces/${traceId}`);
   },
 
+  // Force a fresh evaluation of a trace (drops the old eval, re-runs the judges).
+  async reevaluateTrace(projectId: string, traceId: string): Promise<{ status: string; id: string }> {
+    if (USE_MOCK) return { status: 'reevaluating', id: traceId };
+    return request(`/v1/projects/${projectId}/traces/${traceId}/reevaluate`, { method: 'POST' });
+  },
+
   // -------------------------------------------------------------------------
   // §5.0  GET /v1/me
   // -------------------------------------------------------------------------
