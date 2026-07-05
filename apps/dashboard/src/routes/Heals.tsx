@@ -67,17 +67,23 @@ const ROW_H = 132;
 const COL_GAP = 40;
 const PAD = 14;
 
-/* Cluster cards by status into left→right columns (newest first within each). */
+/* Cluster cards by status into left→right columns (newest first within each).
+   Empty buckets are skipped so populated columns sit adjacent — otherwise a
+   resolved card lands in the far-right "done" column with big empty gaps before
+   it. Each populated bucket just takes the next column over. */
 function autoLayout(cards: HealCardSummary[]): Record<string, Pos> {
   const res: Record<string, Pos> = {};
-  BUCKETS.forEach((bucket, ci) => {
-    const x = PAD + ci * (NODE_W + COL_GAP);
-    cards
+  let col = 0;
+  BUCKETS.forEach((bucket) => {
+    const inBucket = cards
       .filter((c) => bucket.statuses.includes(c.status))
-      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
-      .forEach((c, ri) => {
-        res[c.id] = { x, y: PAD + ri * ROW_H };
-      });
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    if (inBucket.length === 0) return; // skip empty column — no dead gap
+    const x = PAD + col * (NODE_W + COL_GAP);
+    inBucket.forEach((c, ri) => {
+      res[c.id] = { x, y: PAD + ri * ROW_H };
+    });
+    col += 1;
   });
   return res;
 }
