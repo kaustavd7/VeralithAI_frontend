@@ -434,8 +434,17 @@ function HealCommand({ cardId, verb }: { cardId: string; verb: string }) {
   return (
     <div className="he-cmd">
       <div className="he-cmd-label">{verb} — run this in your repo terminal (Claude Code + veralith MCP)</div>
-      <div className="he-cmd-box">
-        <code className="he-cmd-code" title={command}>{command}</code>
+      <div className="he-term" role="img" aria-label="Terminal command to paste">
+        <div className="he-term-bar">
+          <span className="he-term-dot he-term-dot-r" />
+          <span className="he-term-dot he-term-dot-y" />
+          <span className="he-term-dot he-term-dot-g" />
+          <span className="he-term-title">bash — your repo</span>
+        </div>
+        <div className="he-term-body">
+          <span className="he-term-prompt" aria-hidden="true">$</span>
+          <code className="he-term-cmd" title={command}>{command}</code>
+        </div>
       </div>
     </div>
   );
