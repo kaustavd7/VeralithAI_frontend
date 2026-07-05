@@ -60,7 +60,10 @@ const BUCKETS: BucketDef[] = [
    Canvas geometry + per-project layout persistence
    ─────────────────────────────────────────────────────────── */
 
-type Pos = { x: number; y: number };
+type Pos = { x: number; y: number; w?: number; h?: number };
+
+const MIN_NODE_W = 180;
+const MIN_NODE_H = 96;
 
 const NODE_W = 232;
 const ROW_H = 132;
@@ -205,6 +208,7 @@ function useIsMobile(query = '(max-width: 768px)') {
 
 function HealNode({
   card, pos, selected, flash, dragging, mobile, onPointerDown, onPointerMove, onPointerUp, onOpen,
+  onResizeDown, onResizeMove, onResizeUp,
 }: {
   card: HealCardSummary;
   pos: Pos;
@@ -215,6 +219,9 @@ function HealNode({
   onPointerDown: (e: React.PointerEvent, card: HealCardSummary) => void;
   onPointerMove: (e: React.PointerEvent) => void;
   onPointerUp: (e: React.PointerEvent, card: HealCardSummary) => void;
+  onResizeDown: (e: React.PointerEvent, card: HealCardSummary) => void;
+  onResizeMove: (e: React.PointerEvent) => void;
+  onResizeUp: (e: React.PointerEvent) => void;
   onOpen: (id: string) => void;
 }) {
   const m = STATUS_META[card.status] ?? { label: card.status, phrase: null, color: 'var(--po-grey)' };
@@ -228,7 +235,7 @@ function HealNode({
   return (
     <div
       className={'he-node' + (selected ? ' is-selected' : '') + (flash ? ' is-flash' : '') + (dragging ? ' is-dragging' : '')}
-      style={{ transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`, '--c': m.color } as React.CSSProperties}
+      style={{ transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`, width: pos.w ?? NODE_W, height: pos.h, '--c': m.color } as React.CSSProperties}
       role="button"
       tabIndex={0}
       aria-label={`${card.title} — ${m.label}`}
@@ -259,6 +266,17 @@ function HealNode({
           <span className="he-node-time">{relativeTime(card.last_trace_at)}</span>
         </span>
       </div>
+      {!mobile && (
+        <span
+          className="he-node-resize"
+          aria-label="Resize card"
+          title="Drag to resize"
+          onPointerDown={(e) => onResizeDown(e, card)}
+          onPointerMove={onResizeMove}
+          onPointerUp={onResizeUp}
+          onClick={(e) => e.stopPropagation()}
+        />
+      )}
     </div>
   );
 }
@@ -1088,7 +1106,7 @@ export default function Heals() {
   // anything without an override falls back to the status auto-layout.
   const [positions, setPositions] = useState<Record<string, Pos>>({});
   const [dragId, setDragId] = useState<string | null>(null);
-  const dragRef = useRef<{ id: string; sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
+  const dragRef = useRef<{ id: string; sx: number; sy: number; ox: number; oy: number; ow?: number; oh?: number; moved: boolean } | null>(null);
   const isMobile = useIsMobile();
 
   // GET /v1/heals is global across the user's projects; we fetch everything and
@@ -1197,7 +1215,7 @@ export default function Heals() {
   function onNodeDown(e: React.PointerEvent, card: HealCardSummary) {
     if (e.button !== 0) return;
     const p = posOf(card.id);
-    dragRef.current = { id: card.id, sx: e.clientX, sy: e.clientY, ox: p.x, oy: p.y, moved: false };
+    dragRef.current = { id: card.id, sx: e.clientX, sy: e.clientY, ox: p.x, oy: p.y, ow: p.w, oh: p.h, moved: false };
     setDragId(card.id);
     try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* unsupported */ }
   }
@@ -1210,8 +1228,37 @@ export default function Heals() {
     if (d.moved) {
       const nx = Math.max(0, d.ox + dx);
       const ny = Math.max(0, d.oy + dy);
-      setPositions((prev) => ({ ...prev, [d.id]: { x: nx, y: ny } }));
+      // preserve any custom size while moving
+      setPositions((prev) => ({ ...prev, [d.id]: { x: nx, y: ny, w: d.ow, h: d.oh } }));
     }
+  }
+  // --- resize handlers (bottom-right corner grip) ---
+  const resizeRef = useRef<{ id: string; sx: number; sy: number; ox: number; oy: number; ow: number; oh: number } | null>(null);
+  function onResizeDown(e: React.PointerEvent, card: HealCardSummary) {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    const p = posOf(card.id);
+    const nodeEl = (e.currentTarget as HTMLElement).parentElement;
+    resizeRef.current = {
+      id: card.id, sx: e.clientX, sy: e.clientY, ox: p.x, oy: p.y,
+      ow: p.w ?? nodeEl?.offsetWidth ?? NODE_W,
+      oh: p.h ?? nodeEl?.offsetHeight ?? ROW_H,
+    };
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* unsupported */ }
+  }
+  function onResizeMove(e: React.PointerEvent) {
+    const r = resizeRef.current;
+    if (!r) return;
+    const nw = Math.max(MIN_NODE_W, r.ow + (e.clientX - r.sx));
+    const nh = Math.max(MIN_NODE_H, r.oh + (e.clientY - r.sy));
+    setPositions((prev) => ({ ...prev, [r.id]: { x: r.ox, y: r.oy, w: nw, h: nh } }));
+  }
+  function onResizeUp(e: React.PointerEvent) {
+    const r = resizeRef.current;
+    if (!r) return;
+    try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* unsupported */ }
+    resizeRef.current = null;
+    if (projectId) setPositions((prev) => { saveLayout(projectId, prev); return prev; });
   }
   function onNodeUp(e: React.PointerEvent, card: HealCardSummary) {
     const d = dragRef.current;
@@ -1338,6 +1385,9 @@ export default function Heals() {
                     onPointerDown={onNodeDown}
                     onPointerMove={onNodeMove}
                     onPointerUp={onNodeUp}
+                    onResizeDown={onResizeDown}
+                    onResizeMove={onResizeMove}
+                    onResizeUp={onResizeUp}
                     onOpen={openCard}
                   />
                 ))
