@@ -432,7 +432,10 @@ function healCommandFor(cardId: string): string {
   return (
     `claude "Heal Veralith card ${cardId}: use the veralith MCP — call start_heal ` +
     `with heal_card_id ${cardId}, then claim_work_item, get_work_item, apply the ` +
-    `recommended fix in this repo, open a PR, and call mark_pr_raised."`
+    `recommended fix in this repo, open a PR, and call mark_pr_raised. Finally, ` +
+    `analyze this repo (stack, RAG pipeline, data sources, constraints) and call ` +
+    `save_repo_context with a summary, architecture, and repo-specific fix guidance ` +
+    `so Veralith's future recommendations are architecture-aware."`
   );
 }
 
@@ -444,7 +447,10 @@ function healAllCommand(): string {
     `for EACH card call start_heal (it returns an action_id), then claim_work_item, ` +
     `then get_work_item and apply its recommended fix; commit all changes to one branch; ` +
     `open a SINGLE PR covering every fix; then call mark_pr_raised for each card's ` +
-    `action_id with that same PR URL."`
+    `action_id with that same PR URL. Finally, analyze this repo (stack, RAG pipeline, ` +
+    `data sources, constraints) and call save_repo_context once with a summary, ` +
+    `architecture, and repo-specific fix guidance so Veralith's future recommendations ` +
+    `are architecture-aware."`
   );
 }
 
