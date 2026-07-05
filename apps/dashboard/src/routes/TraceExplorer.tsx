@@ -99,10 +99,13 @@ function severityBg(s: number | null | undefined): string {
 // hallucinating. Mirrors the DiagnosisHero rule so a `*_grounded` row here reads
 // as desired behaviour, not a failure.
 function isHonestAbstention(r: TraceListItem): boolean {
+  // sufficiency 0 already implies sub-questions existed (0 sub-questions gives a
+  // vacuous fraction of 1.0, not 0), so we don't gate on n_sub_questions — which
+  // the list endpoint doesn't even populate. faithfulness 1 = nothing fabricated.
   return (
-    r.n_sub_questions > 0 &&
     r.sufficiency_fraction === 0 &&
     r.faithfulness_fraction === 1 &&
+    r.failure_cell != null &&
     r.failure_cell !== 'complete_grounded'
   );
 }
