@@ -101,6 +101,16 @@ export function DiagnosisHero({ diagnosis, suggestion, traceId }: Props) {
   const groundedClaims = Math.round(fFrac * diagnosis.n_claims);
   const passedSubs = Math.round(sufFrac * diagnosis.n_sub_questions);
 
+  // Honest abstention: retrieval covered nothing (sufficiency 0) AND the model
+  // fabricated nothing (faithfulness perfect). The model correctly declined
+  // instead of hallucinating — desired RAG-safety behaviour, not a real failure.
+  // Surfaced as a positive note so a `*_grounded` cell here doesn't read as a bug.
+  const isHonestAbstention =
+    diagnosis.n_sub_questions > 0 &&
+    sufFrac === 0 &&
+    fFrac === 1 &&
+    diagnosis.failure_cell !== 'complete_grounded';
+
   async function handleCopy() {
     const md = buildMarkdown(traceId, diagnosis.failure_cell, suggestion);
     try {
@@ -134,6 +144,18 @@ export function DiagnosisHero({ diagnosis, suggestion, traceId }: Props) {
           </span>
           <div className={styles.cellName}>{meta.label}</div>
           <div className={styles.cellMeaning}>{meaning}</div>
+          {isHonestAbstention && (
+            <div className={styles.abstentionNote}>
+              <span className={styles.abstentionBadge}>
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M2.5 6.2l2.3 2.3L9.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Honest abstention
+              </span>
+              Retrieval had nothing for this query and the model declined instead of
+              fabricating — desired RAG-safety behaviour, not a hallucination.
+            </div>
+          )}
           <div className={styles.sfPair}>
             <div className={styles.sfBox}>
               <div className={styles.sfL}>Sufficiency</div>

@@ -130,6 +130,32 @@
   word-break: break-word;
 }
 .cellMeaning { color: var(--po-fg-2); font-size: 12.5px; line-height: 1.55; }
+
+/* Honest-abstention callout — reframes a *_grounded cell on a total retrieval
+   miss as desired behaviour (model declined instead of hallucinating). */
+.abstentionNote {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: var(--po-radius-sm);
+  border: 1px solid color-mix(in oklab, var(--cell-cg) 32%, transparent);
+  background: color-mix(in oklab, var(--cell-cg) 10%, transparent);
+  color: var(--po-fg-2);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.abstentionBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--cell-cg);
+  vertical-align: 1px;
+}
 .sfPair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
 .sfBox { background: var(--po-panel-2); border: 1px solid var(--po-line); border-radius: var(--po-radius-sm); padding: 11px 13px; }
 .sfL { font-size: 10px; color: var(--po-fg-3); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -288,6 +314,24 @@
 }
 .claimBad .claimBadge { color: var(--cell-cu); border-color: color-mix(in oklab, var(--cell-cu) 30%, transparent); }
 .claimOk .claimBadge  { color: var(--cell-cg); border-color: color-mix(in oklab, var(--cell-cg) 30%, transparent); }
+
+/* "extra" claim — grounded but not answering any sub-question (Ri with no Qi).
+   Dashed underline distinguishes it from a normal grounded claim + an "extra" tag. */
+.claimExtra { border-bottom-style: dashed; border-bottom-width: 1.5px; }
+.claimExtraTag {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cell-eg);
+  background: color-mix(in oklab, var(--cell-eg) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--cell-eg) 32%, transparent);
+  padding: 0 4px;
+  border-radius: 3px;
+  margin-left: 2px;
+  vertical-align: 1px;
+}
+.tipExtra { display: block; margin-top: 4px; color: var(--cell-eg); font-weight: 500; }
 
 /* tooltip — pure CSS, opens on :hover (revisit in Phase 6 a11y pass) */
 .tip {
