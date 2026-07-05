@@ -436,6 +436,17 @@ function healCommandFor(cardId: string): string {
   );
 }
 
+/* One command that heals EVERY open card into a single combined PR. */
+function healAllCommand(): string {
+  return (
+    `claude "Heal ALL open Veralith cards in this repo into ONE pull request. ` +
+    `Use the veralith MCP: call list_heal_cards (status open) to get every open card; ` +
+    `for EACH card call start_heal then get_work_item and apply its recommended fix; ` +
+    `commit all changes to one branch; open a SINGLE PR covering every fix; then call ` +
+    `mark_pr_raised for each card with that same PR URL."`
+  );
+}
+
 /* Display-only command box. The Copy button lives in the action row next to
    Ignore (see ActionBar) so it's the most obvious control, not buried here. */
 function HealCommand({ cardId, verb }: { cardId: string; verb: string }) {
@@ -942,6 +953,22 @@ export default function Heals() {
     placeholderData: keepPreviousData,
   });
 
+  // Bulk ops: copy the "heal all" command; mark every pr_raised card resolved.
+  const [healAllCopied, setHealAllCopied] = useState(false);
+  async function copyHealAll() {
+    try {
+      await navigator.clipboard.writeText(healAllCommand());
+      setHealAllCopied(true);
+      window.setTimeout(() => setHealAllCopied(false), 1800);
+    } catch {
+      /* clipboard denied — user can still select the per-card command */
+    }
+  }
+  const acceptAllMutation = useMutation({
+    mutationFn: () => api.acceptAllHeals(projectId!),
+    onSuccess: () => listQuery.refetch(),
+  });
+
   // Scope the global list to the current project. Until the project resolves we
   // return nothing rather than the unscoped global list, so no cross-project
   // cards ever paint into the canvas.
@@ -1001,6 +1028,7 @@ export default function Heals() {
   }, [cards, positions, fallback]);
 
   const openCount = cards.filter((c) => c.status === 'open').length;
+  const prRaisedCount = cards.filter((c) => c.status === 'pr_raised').length;
 
   // The open panel stack: cards beneath + the route card on top.
   const fullStack = cardId ? [...belowStack, cardId] : [];
@@ -1083,6 +1111,27 @@ export default function Heals() {
           </div>
           {!loading && !isEmpty && (
             <div className="he-toolbar-actions">
+              {prRaisedCount > 0 && (
+                <button
+                  type="button"
+                  className="he-btn he-btn-good"
+                  disabled={acceptAllMutation.isPending}
+                  onClick={() => acceptAllMutation.mutate()}
+                  title="Mark every PR-raised card as resolved (after the combined PR is merged)"
+                >
+                  {acceptAllMutation.isPending ? <><span className="he-spinner" />…</> : `Mark all resolved (${prRaisedCount})`}
+                </button>
+              )}
+              {openCount >= 2 && (
+                <button
+                  type="button"
+                  className="he-btn he-btn-primary"
+                  onClick={copyHealAll}
+                  title="Copy a command that heals every open card into one combined PR — paste it into Claude Code"
+                >
+                  {healAllCopied ? 'Copied ✓' : `Heal all (${openCount})`}
+                </button>
+              )}
               <button type="button" className="he-btn he-btn-ghost" onClick={resetLayout} title="Re-arrange cards by status">
                 <ResetIcon />Reset layout
               </button>
