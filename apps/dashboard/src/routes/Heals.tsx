@@ -337,8 +337,8 @@ function EvidenceRow({
             <div className="he-ev-resp">{trace.response}</div>
           </div>
           <div className="he-ev-foot">
-            <span className="he-score"><span className="he-score-k">sufficiency</span> <b>{trace.sufficiency_score.toFixed(2)}</b></span>
-            <span className="he-score"><span className="he-score-k">faithfulness</span> <b>{trace.faithfulness_score.toFixed(2)}</b></span>
+            <span className="he-score"><span className="he-score-k">sufficiency</span> <b>{trace.sufficiency_score != null ? trace.sufficiency_score.toFixed(2) : '—'}</b></span>
+            <span className="he-score"><span className="he-score-k">faithfulness</span> <b>{trace.faithfulness_score != null ? trace.faithfulness_score.toFixed(2) : '—'}</b></span>
           </div>
         </div>
       )}

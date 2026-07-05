@@ -370,8 +370,8 @@ export interface HealEvidenceTrace {
   added_at: string;
   // Null when the evidence trace has no Evaluation row yet (backend sends null).
   failure_cell: FailureCell | null;
-  sufficiency_score: number;
-  faithfulness_score: number;
+  sufficiency_score: number | null;
+  faithfulness_score: number | null;
 }
 
 export interface HealCardDetail extends HealCardSummary {
