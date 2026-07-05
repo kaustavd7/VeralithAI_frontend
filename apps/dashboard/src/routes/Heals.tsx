@@ -441,9 +441,10 @@ function healAllCommand(): string {
   return (
     `claude "Heal ALL open Veralith cards in this repo into ONE pull request. ` +
     `Use the veralith MCP: call list_heal_cards (status open) to get every open card; ` +
-    `for EACH card call start_heal then get_work_item and apply its recommended fix; ` +
-    `commit all changes to one branch; open a SINGLE PR covering every fix; then call ` +
-    `mark_pr_raised for each card with that same PR URL."`
+    `for EACH card call start_heal (it returns an action_id), then claim_work_item, ` +
+    `then get_work_item and apply its recommended fix; commit all changes to one branch; ` +
+    `open a SINGLE PR covering every fix; then call mark_pr_raised for each card's ` +
+    `action_id with that same PR URL."`
   );
 }
 
