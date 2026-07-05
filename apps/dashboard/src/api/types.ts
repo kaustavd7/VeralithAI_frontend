@@ -68,6 +68,9 @@ export interface StatsResponse {
   total_traces: number;
   by_cell: Record<FailureCell, number>;
   healthy_rate: number;
+  // Honest abstentions in the window (correct "I don't know" declines). Optional
+  // until the backend abstained_count deploy lands.
+  abstained_count?: number | null;
   avg_sufficiency: number;
   avg_faithfulness: number;
   // Share of evaluated traces whose completeness verdict is "complete" (0..1).
