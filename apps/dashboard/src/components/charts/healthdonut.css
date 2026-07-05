@@ -49,6 +49,7 @@
 .pb-badge:hover { background: color-mix(in oklab, var(--accent) 14%, transparent);
   border-color: color-mix(in oklab, var(--accent) 45%, var(--po-line)); }
 .pb-badge-ic { display: inline-flex; align-items: center; justify-content: center; color: var(--accent); flex: none; }
+.pb-badge-empty { font-size: 12px; color: var(--po-fg-4); }
 
 .pb-ministats { display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; }
 .pb-ministat { flex: 1; min-width: 92px; display: flex; flex-direction: column; gap: 4px;

@@ -162,6 +162,14 @@ export function DiagnosisHero({ diagnosis, suggestion, traceId, isAbstention }: 
               fabricating — desired RAG-safety behaviour, not a hallucination.
             </div>
           )}
+          {!isHonestAbstention && diagnosis.sufficiency_level === 'low' && (
+            <div className={styles.retrievalNote}>
+              <span className={styles.retrievalBadge}>Retrieval gap</span>
+              Sufficiency is low — the retrieved context didn’t cover the query.
+              That’s the root cause here; the <b>{meta.label}</b> cell is secondary.
+              Fix retrieval (coverage / top-K / chunking) first.
+            </div>
+          )}
           <div className={styles.sfPair}>
             <div className={styles.sfBox}>
               <div className={styles.sfL}>Sufficiency</div>

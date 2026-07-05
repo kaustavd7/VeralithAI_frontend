@@ -897,6 +897,7 @@ function TodayContent() {
               {total > 0 ? (
                 <BigChart
                   h={150}
+                  color={healthyPct >= 85 ? 'var(--po-live)' : healthyPct >= 70 ? 'var(--po-idle)' : 'var(--po-bad)'}
                   cap={`// healthy rate · ${win.bucket === 'day' ? 'daily' : 'hourly'}`}
                   l={period === 'week' ? '7d ago' : '12:00 AM'}
                   r="now"
@@ -955,7 +956,14 @@ function TodayContent() {
                 <HealthDonut counts={cells} onCellClick={(cell) => navigate(tracesPath(slug, cell))} />
               ) : null}
             </div>
-            <div className="wf-profile-side"><ProfileBadges /></div>
+            <div className="wf-profile-side">
+              <ProfileBadges
+                totalTraces={total}
+                hallucinationRate={total > 0 ? failures / total : 0}
+                healsResolved={projectHeals.filter((c) => c.status === 'resolved').length}
+                healsOpen={pendingHeals.length}
+              />
+            </div>
           </div>
         </div>
       </section>
