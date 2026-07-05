@@ -3826,6 +3826,23 @@ button.an-tv-leg:hover {
   max-width: 58ch;
   text-wrap: pretty;
 }
+.he-fix-impact {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--po-fg-4);
+  max-width: 58ch;
+}
+.he-fix-impact-lab {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cell-ig);
+  margin-right: 5px;
+}
+.he-plan-fix-impact { display: block; font-size: 11.5px; line-height: 1.5; color: var(--po-fg-4); margin-top: 3px; }
 .he-conf {
   flex: none;
   font-size: 10.5px;

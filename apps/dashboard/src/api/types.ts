@@ -367,6 +367,8 @@ export interface HealCardSummary {
 export interface ProposedFix {
   title: string;
   body: string;
+  // Trade-off / blast radius of applying this fix (what it affects beyond this trace).
+  impact?: string | null;
   classification_confidence: 'high' | 'medium' | 'low';
   matched_via: 'llm' | 'heuristic' | string;
 }

@@ -768,6 +768,9 @@ function DetailPane({
                     <ConfidencePill level={f.classification_confidence} />
                   </div>
                   <p className="he-fix-text">{f.body}</p>
+                  {f.impact && (
+                    <p className="he-fix-impact"><span className="he-fix-impact-lab">Impact</span> {f.impact}</p>
+                  )}
                 </div>
               </li>
             ))}
@@ -1018,6 +1021,7 @@ function HealAllPanel({ cards, onClose }: { cards: HealCardSummary[]; onClose: (
                                 <li key={fi}>
                                   <span className="he-plan-fix-title">{f.title}</span>
                                   <span className="he-plan-fix-body">{f.body}</span>
+                                  {f.impact && <span className="he-plan-fix-impact"><b>Impact:</b> {f.impact}</span>}
                                 </li>
                               ))}
                             </ul>
