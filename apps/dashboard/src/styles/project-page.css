@@ -3441,10 +3441,9 @@ button.an-tv-leg:hover {
   color: var(--po-fg-3);
   letter-spacing: 0.01em;
 }
-/* GitHub "new repo" style: command in a box with a copy icon pinned to the
-   right edge — always visible, no scrolling needed to reach it. */
+/* Command display box — the actual Copy button lives in the action row next to
+   Ignore (the most obvious control). This box just shows the command. */
 .he-cmd-box {
-  position: relative;
   background: var(--po-panel-2);
   border: 1px solid var(--po-line);
   border-radius: var(--po-radius-sm);
@@ -3456,34 +3455,9 @@ button.an-tv-leg:hover {
   font-size: 12px;
   line-height: 1.5;
   color: var(--po-fg);
-  padding: 9px 44px 9px 11px;   /* right pad leaves room for the pinned copy button */
+  padding: 9px 11px;
   white-space: nowrap;
   overflow-x: auto;
-}
-.he-cmd-copy {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  border: 1px solid var(--po-line);
-  background: var(--po-panel);
-  color: var(--po-fg-2);
-  cursor: pointer;
-  transition: background 120ms, color 120ms, border-color 120ms;
-}
-.he-cmd-copy:hover {
-  color: var(--po-fg);
-  border-color: var(--po-line-strong);
-  background: color-mix(in oklab, var(--po-fg) 8%, var(--po-panel));
-}
-.he-cmd-copy.is-copied {
-  color: var(--cell-cg);
-  border-color: color-mix(in oklab, var(--cell-cg) 40%, transparent);
 }
 
 .he-spinner {

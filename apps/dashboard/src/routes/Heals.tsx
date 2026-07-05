@@ -427,12 +427,26 @@ function healCommandFor(cardId: string): string {
   );
 }
 
+/* Display-only command box. The Copy button lives in the action row next to
+   Ignore (see ActionBar) so it's the most obvious control, not buried here. */
 function HealCommand({ cardId, verb }: { cardId: string; verb: string }) {
-  const [copied, setCopied] = useState(false);
   const command = healCommandFor(cardId);
+  return (
+    <div className="he-cmd">
+      <div className="he-cmd-label">{verb} — run this in your repo terminal (Claude Code + veralith MCP)</div>
+      <div className="he-cmd-box">
+        <code className="he-cmd-code" title={command}>{command}</code>
+      </div>
+    </div>
+  );
+}
+
+/* Prominent Copy button for the heal command — sits in the action row. */
+function CopyCommandButton({ cardId }: { cardId: string }) {
+  const [copied, setCopied] = useState(false);
   async function copy() {
     try {
-      await navigator.clipboard.writeText(command);
+      await navigator.clipboard.writeText(healCommandFor(cardId));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -440,30 +454,18 @@ function HealCommand({ cardId, verb }: { cardId: string; verb: string }) {
     }
   }
   return (
-    <div className="he-cmd">
-      <div className="he-cmd-label">{verb} — run this in your repo terminal (Claude Code + veralith MCP)</div>
-      <div className="he-cmd-box">
-        <code className="he-cmd-code" title={command}>{command}</code>
-        <button
-          type="button"
-          className={'he-cmd-copy' + (copied ? ' is-copied' : '')}
-          onClick={copy}
-          aria-label={copied ? 'Copied' : 'Copy command'}
-          title={copied ? 'Copied!' : 'Copy command'}
-        >
-          {copied ? (
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M3.5 8.6l3 3 6-7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          ) : (
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <rect x="4" y="4" width="8" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M6.6 4V2.9A1.4 1.4 0 018 1.5h4.1A1.4 1.4 0 0113.5 2.9V9A1.4 1.4 0 0112.1 10.4H11" stroke="currentColor" strokeWidth="1.4" />
-            </svg>
-          )}
-        </button>
-      </div>
-    </div>
+    <button type="button" className="he-btn he-btn-primary" onClick={copy}>
+      {copied ? (
+        <><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ marginRight: 2 }}>
+          <path d="M3.5 8.6l3 3 6-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>Copied</>
+      ) : (
+        <><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ marginRight: 2 }}>
+          <rect x="4" y="4" width="8" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M6.6 4V2.9A1.4 1.4 0 018 1.5h4.1A1.4 1.4 0 0113.5 2.9V9A1.4 1.4 0 0112.1 10.4H11" stroke="currentColor" strokeWidth="1.5" />
+        </svg>Copy command</>
+      )}
+    </button>
   );
 }
 
@@ -514,11 +516,13 @@ function ActionBar({
   if (st === 'open') {
     buttons = <>
       <HealCommand cardId={card.id} verb="Heal with Claude Code" />
+      <CopyCommandButton cardId={card.id} />
       {IgnoreSplit}
     </>;
   } else if (st === 'failed') {
     buttons = <>
       <HealCommand cardId={card.id} verb="Retry the heal" />
+      <CopyCommandButton cardId={card.id} />
       {IgnoreSplit}
     </>;
   } else if (st === 'in_progress') {
