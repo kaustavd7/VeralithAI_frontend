@@ -264,9 +264,9 @@ function ProjectsHomeSkeleton() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Create-project modal — name + region. Region is cosmetic (no
-   backend param yet); on Create we provision the project plus a
-   default API key so it can receive traces immediately, then reveal
+   Create-project modal — name only. On Create we provision the
+   project plus a default API key so it can receive traces
+   immediately, then reveal
    the key's one-time secret before routing to the new project. The
    plaintext secret is returned only once at creation (the backend
    stores a hash), so we MUST surface it here — otherwise the issued
@@ -277,7 +277,6 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
-  const [region, setRegion] = useState('us-east');
   // Once created we hold the project + its one-time key so the modal can switch
   // to the reveal step instead of redirecting straight to the dashboard.
   const [created, setCreated] = useState<{ project: Project; apiKey: ApiKeyWithSecret | null } | null>(null);
@@ -322,11 +321,6 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
   }
 
   const trimmed = name.trim();
-  const regions: [string, string][] = [
-    ['us-east', 'US East'],
-    ['eu-west', 'EU West'],
-    ['ap-south', 'AP South'],
-  ];
 
   return (
     <div
@@ -412,21 +406,6 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
                   }}
                 />
                 <span className="ph-form-hint">Lowercase, used in your project URL and key prefix.</span>
-              </div>
-              <div className="ph-form-row">
-                <label className="ph-form-label">Region</label>
-                <div className="ph-seg">
-                  {regions.map(([id, label]) => (
-                    <button
-                      type="button"
-                      key={id}
-                      className={'ph-seg-opt' + (region === id ? ' is-active' : '')}
-                      onClick={() => setRegion(id)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
               </div>
               {create.isError && <span className="ph-form-err">Couldn’t create the project. Please try again.</span>}
             </div>
