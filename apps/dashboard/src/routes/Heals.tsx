@@ -442,10 +442,25 @@ function HealCommand({ cardId, verb }: { cardId: string; verb: string }) {
   return (
     <div className="he-cmd">
       <div className="he-cmd-label">{verb} — run this in your repo terminal (Claude Code + veralith MCP)</div>
-      <div className="he-cmd-row">
+      <div className="he-cmd-box">
         <code className="he-cmd-code" title={command}>{command}</code>
-        <button type="button" className="he-btn he-btn-primary he-cmd-copy" onClick={copy}>
-          {copied ? 'Copied ✓' : 'Copy'}
+        <button
+          type="button"
+          className={'he-cmd-copy' + (copied ? ' is-copied' : '')}
+          onClick={copy}
+          aria-label={copied ? 'Copied' : 'Copy command'}
+          title={copied ? 'Copied!' : 'Copy command'}
+        >
+          {copied ? (
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3.5 8.6l3 3 6-7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <rect x="4" y="4" width="8" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M6.6 4V2.9A1.4 1.4 0 018 1.5h4.1A1.4 1.4 0 0113.5 2.9V9A1.4 1.4 0 0112.1 10.4H11" stroke="currentColor" strokeWidth="1.4" />
+            </svg>
+          )}
         </button>
       </div>
     </div>
