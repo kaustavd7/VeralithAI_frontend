@@ -368,7 +368,8 @@ export interface HealEvidenceTrace {
   query: string;
   response: string;
   added_at: string;
-  failure_cell: FailureCell;
+  // Null when the evidence trace has no Evaluation row yet (backend sends null).
+  failure_cell: FailureCell | null;
   sufficiency_score: number;
   faithfulness_score: number;
 }

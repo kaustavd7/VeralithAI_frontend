@@ -269,8 +269,11 @@ function EvidenceRow({
   onOpenTrace: (traceId: string) => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
-  // FailureCell → 2-letter abbreviation for chip
-  const abbr = trace.failure_cell.split('_').map((p) => p[0]).join('') as 'cu' | 'iu' | 'ig' | 'eu' | 'eg' | 'cg';
+  // FailureCell → 2-letter abbreviation for chip. failure_cell can be null when
+  // the evidence trace hasn't been scored yet — guard so it doesn't blank the page.
+  const abbr = trace.failure_cell
+    ? (trace.failure_cell.split('_').map((p) => p[0]).join('') as 'cu' | 'iu' | 'ig' | 'eu' | 'eg' | 'cg')
+    : null;
   const cellLabels: Record<string, string> = {
     cu: 'complete · ungrounded', iu: 'incomplete · ungrounded',
     ig: 'incomplete · grounded', eu: 'extra · ungrounded',
@@ -306,9 +309,9 @@ function EvidenceRow({
           <Caret open={open} />
         </button>
         <span className="he-ev-id" title={trace.id}>{shortId(trace.id)}</span>
-        <span className="he-cell-chip" style={{ '--c': `var(--fcell-${abbr})` } as React.CSSProperties}>
+        <span className="he-cell-chip" style={{ '--c': abbr ? `var(--fcell-${abbr})` : 'var(--po-fg-4)' } as React.CSSProperties}>
           <span className="he-cell-dot" />
-          {cellLabels[abbr]}
+          {abbr ? cellLabels[abbr] : 'unscored'}
         </span>
         <span className="he-ev-q">{trace.query}</span>
         <span className="he-card-go" aria-hidden="true">
