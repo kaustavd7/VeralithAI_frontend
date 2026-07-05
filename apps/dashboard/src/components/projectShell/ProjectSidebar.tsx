@@ -1,6 +1,12 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useSidebarMode, type SidebarMode } from '../../lib/sidebarMode';
+import { useProjects } from '../../hooks/useProjects';
+import { api } from '../../api/client';
+
+// Heal-card statuses that need the user's attention (drive the sidebar count).
+const HEAL_ATTENTION_STATUSES = new Set(['open', 'pr_raised', 'failed']);
 
 export type SidebarNavId =
   | 'overview'
@@ -238,6 +244,29 @@ export function ProjectSidebar({ active, slug = '', variant = 'project', mobileO
   const expanded = mode === 'expanded' || (mode === 'hover' && hover);
   const grps = variant === 'workspace' ? workspaceGroups() : projectGroups(slug);
 
+  // Per-section notification counts (WhatsApp-style). Heals: cards awaiting the
+  // user's action (open / pr_raised / failed). Shares the ['heals', …] cache with
+  // the Heals page; polls modestly so the badge stays fresh from any page.
+  const projects = useProjects();
+  const projectId = useMemo(
+    () => projects.data?.projects.find((p) => p.slug === slug || p.id === slug)?.id ?? null,
+    [projects.data, slug],
+  );
+  const healsQuery = useQuery({
+    queryKey: ['heals', projectId, 'all'],
+    queryFn: () => api.listHeals({ limit: 100 }),
+    enabled: variant === 'project' && !!projectId,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+  const navCounts = useMemo<Record<string, number>>(() => {
+    const cards = healsQuery.data ?? [];
+    const healCount = projectId
+      ? cards.filter((c) => c.project_id === projectId && HEAL_ATTENTION_STATUSES.has(c.status)).length
+      : 0;
+    return { heals: healCount };
+  }, [healsQuery.data, projectId]);
+
   // Leader-key chord map built from each item's `kbd` hint (e.g. "g t" → route),
   // so the live shortcuts can never drift from the tooltips that advertise them.
   const chords = useMemo(() => {
@@ -328,6 +357,14 @@ export function ProjectSidebar({ active, slug = '', variant = 'project', mobileO
                 >
                   <span className="sb-item-ic">
                     <SbIcon name={it.icon} />
+                    {navCounts[it.id] > 0 && (
+                      <span
+                        className="sb-item-count"
+                        aria-label={`${navCounts[it.id]} awaiting attention`}
+                      >
+                        {navCounts[it.id] > 9 ? '9+' : navCounts[it.id]}
+                      </span>
+                    )}
                   </span>
                   <span className="sb-item-label">{it.label}</span>
                   {it.badge && <span className="sb-item-badge">{it.badge}</span>}

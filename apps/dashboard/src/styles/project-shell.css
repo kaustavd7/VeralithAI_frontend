@@ -412,7 +412,25 @@
 .sb-item-ic {
   width: 20px; flex: none; display: inline-flex; justify-content: center;
   color: var(--po-fg-3);
+  position: relative;
 }
+/* WhatsApp-style unread count, pinned to the icon's top-right — stays visible
+   whether the sidebar is collapsed or expanded. */
+.sb-item-count {
+  position: absolute;
+  top: -6px; right: -8px;
+  min-width: 15px; height: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-sans);
+  font-size: 9.5px; font-weight: 700; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 2px var(--po-shell-bg);   /* ring so it reads off the icon */
+  pointer-events: none;
+}
+.sb-item.is-active .sb-item-count { box-shadow: 0 0 0 2px var(--po-shell-bg); }
 .sb-item.is-active .sb-item-ic       { color: var(--po-live); }
 .sb-item:hover .sb-item-ic           { color: var(--po-fg-2); }
 .sb-item.is-active:hover .sb-item-ic { color: var(--po-live); }
