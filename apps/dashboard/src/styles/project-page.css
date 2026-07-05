@@ -1540,6 +1540,60 @@
   border: 1px solid color-mix(in oklab, var(--cell-cg) 32%, transparent);
 }
 
+/* Outlook-style collapsible date section headers in the trace table. */
+.te-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 14px 8px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--po-line);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--po-fg-3);
+}
+.te-section:first-child .te-section-head { border-top: none; }
+.te-section-head:hover { color: var(--po-fg-2); }
+.te-section-caret {
+  flex: none;
+  color: var(--po-fg-4);
+  transition: transform 120ms ease;
+}
+.te-section-caret.is-open { transform: rotate(90deg); }
+.te-section-label { flex: none; }
+.te-section-count {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--po-fg-4);
+  background: var(--po-panel-2);
+  border: 1px solid var(--po-line);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.te-section-abstain {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--cell-cg);
+  background: color-mix(in oklab, var(--cell-cg) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--cell-cg) 32%, transparent);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
 .te-meter {
   display: flex;
   align-items: center;
@@ -3441,49 +3495,60 @@ button.an-tv-leg:hover {
   color: var(--po-fg-3);
   letter-spacing: 0.01em;
 }
-/* GitHub "new repo" style: command in a box with a copy icon pinned to the
-   right edge — always visible, no scrolling needed to reach it. */
-.he-cmd-box {
-  position: relative;
-  background: var(--po-panel-2);
-  border: 1px solid var(--po-line);
-  border-radius: var(--po-radius-sm);
-}
-.he-cmd-code {
-  display: block;
-  min-width: 0;
+/* Terminal-styled command block — looks like what the user will paste into
+   their shell. Traffic-light title bar + green "$" prompt. The Copy button
+   lives in the action row next to Ignore. Deliberately dark in both themes
+   (a terminal is a terminal). */
+.he-term {
+  border: 1px solid #2b3240;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0c0f14;
   font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--po-fg);
-  padding: 9px 44px 9px 11px;   /* right pad leaves room for the pinned copy button */
-  white-space: nowrap;
-  overflow-x: auto;
 }
-.he-cmd-copy {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
+.he-term-bar {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  border: 1px solid var(--po-line);
-  background: var(--po-panel);
-  color: var(--po-fg-2);
-  cursor: pointer;
-  transition: background 120ms, color 120ms, border-color 120ms;
+  gap: 6px;
+  padding: 7px 11px;
+  background: #171c24;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
-.he-cmd-copy:hover {
-  color: var(--po-fg);
-  border-color: var(--po-line-strong);
-  background: color-mix(in oklab, var(--po-fg) 8%, var(--po-panel));
+.he-term-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
 }
-.he-cmd-copy.is-copied {
-  color: var(--cell-cg);
-  border-color: color-mix(in oklab, var(--cell-cg) 40%, transparent);
+.he-term-dot-r { background: #ff5f57; }
+.he-term-dot-y { background: #febc2e; }
+.he-term-dot-g { background: #28c840; }
+.he-term-title {
+  margin-left: 8px;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  color: rgba(230, 237, 243, 0.42);
+}
+.he-term-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 13px;
+}
+.he-term-prompt {
+  flex: none;
+  color: #3ad07a;
+  font-size: 12.5px;
+  line-height: 1.6;
+  user-select: none;
+}
+.he-term-cmd {
+  min-width: 0;
+  color: #d6dee8;
+  font-size: 12.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .he-spinner {

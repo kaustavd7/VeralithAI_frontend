@@ -261,6 +261,13 @@ export const api = {
     if (USE_MOCK) return mockApi.healAction(healId, action);
     return request(`/v1/heals/${healId}/${action}`, { method: 'POST' });
   },
+
+  // Bulk-accept every pr_raised card in a project → resolved (after a combined
+  // "Heal all" PR merges).
+  async acceptAllHeals(projectId: string): Promise<{ resolved: number }> {
+    if (USE_MOCK) return { resolved: 0 };
+    return request(`/v1/heals/accept-all?project_id=${encodeURIComponent(projectId)}`, { method: 'POST' });
+  },
 };
 
 export { ApiError };

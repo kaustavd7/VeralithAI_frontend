@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
-import { EmptyState, ErrorState } from '../components/StateViews';
+import { ErrorState } from '../components/StateViews';
 import { useProjects } from '../hooks/useProjects';
 import { useStats, useTraces } from '../hooks/useOverviewData';
 import type { FailureCell, TraceListItem } from '../api/types';
@@ -61,6 +61,25 @@ function relativeTime(iso: string): string {
   return `${day}d ago`;
 }
 
+// Outlook-style date sections: bucket a trace by its created_at relative to the
+// start of today, so the list groups into Today / Yesterday / Earlier this week
+// / etc. instead of one flat run (and never shows a bare "no traces" when data
+// just sits in an older bucket).
+function startOfDayMs(t: number): number {
+  const d = new Date(t);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+function dateSectionFor(iso: string, todayStart: number): { key: string; label: string } {
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return { key: 'unknown', label: 'Unknown date' };
+  if (t >= todayStart) return { key: 'today', label: 'Today' };
+  if (t >= todayStart - 86_400_000) return { key: 'yesterday', label: 'Yesterday' };
+  if (t >= todayStart - 7 * 86_400_000) return { key: 'last7', label: 'Earlier this week' };
+  if (t >= todayStart - 30 * 86_400_000) return { key: 'last30', label: 'Earlier this month' };
+  return { key: 'older', label: 'Older' };
+}
+
 function severityAttr(s: number | null | undefined): 'iu' | 'ig' | undefined {
   if (s == null) return undefined;
   if (s < 0.3) return 'iu';
@@ -80,10 +99,13 @@ function severityBg(s: number | null | undefined): string {
 // hallucinating. Mirrors the DiagnosisHero rule so a `*_grounded` row here reads
 // as desired behaviour, not a failure.
 function isHonestAbstention(r: TraceListItem): boolean {
+  // sufficiency 0 already implies sub-questions existed (0 sub-questions gives a
+  // vacuous fraction of 1.0, not 0), so we don't gate on n_sub_questions — which
+  // the list endpoint doesn't even populate. faithfulness 1 = nothing fabricated.
   return (
-    r.n_sub_questions > 0 &&
     r.sufficiency_fraction === 0 &&
     r.faithfulness_fraction === 1 &&
+    r.failure_cell != null &&
     r.failure_cell !== 'complete_grounded'
   );
 }
@@ -350,7 +372,9 @@ export default function TraceExplorer() {
   const [searchParams] = useSearchParams();
   const [timeWindow, setTimeWindow] = useState<TimeWindow>(() => {
     const w = searchParams.get('window');
-    return w === '1h' || w === '24h' || w === '7d' || w === '30d' ? w : '24h';
+    // Default 7d (not 24h) so traces from earlier days show on load, grouped by
+    // date section, instead of a misleading empty "0 in 24h".
+    return w === '1h' || w === '24h' || w === '7d' || w === '30d' ? w : '7d';
   });
   const [activeCells, setActiveCells] = useState<Set<FailureCell>>(() => {
     const raw = searchParams.get('cells');
@@ -409,6 +433,43 @@ export default function TraceExplorer() {
     return [...evalRows, ...scored];
   }, [traces.data, search, sort]);
 
+  // Group the (already sorted) rows into Outlook-style date sections, preserving
+  // the row order — sections appear in first-seen order (Today first for newest
+  // sort, Older first for oldest sort).
+  const sections = useMemo(() => {
+    const todayStart = startOfDayMs(Date.now());
+    const map = new Map<string, { label: string; rows: TraceListItem[] }>();
+    const order: string[] = [];
+    for (const r of rows) {
+      const s = dateSectionFor(r.created_at, todayStart);
+      let bucket = map.get(s.key);
+      if (!bucket) {
+        bucket = { label: s.label, rows: [] };
+        map.set(s.key, bucket);
+        order.push(s.key);
+      }
+      bucket.rows.push(r);
+    }
+    return order.map((k) => {
+      const b = map.get(k)!;
+      return { key: k, label: b.label, rows: b.rows, abstained: b.rows.filter(isHonestAbstention).length };
+    });
+  }, [rows]);
+
+  // Count honest abstentions across the loaded rows so the header can reassure
+  // ("a lot of incomplete·grounded, but most are correct 'I don't know's").
+  const abstainCount = useMemo(() => rows.filter(isHonestAbstention).length, [rows]);
+
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  function toggleSection(key: string) {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
   const total = traces.data?.total ?? 0;
   const offset = page * PAGE_SIZE;
   const showingFrom = total === 0 ? 0 : offset + 1;
@@ -441,7 +502,7 @@ export default function TraceExplorer() {
   function resetFilters() {
     setSearch('');
     setActiveCells(new Set());
-    setTimeWindow('24h');
+    setTimeWindow('7d');
     setSort('newest');
     setPage(0);
   }
@@ -472,8 +533,11 @@ export default function TraceExplorer() {
           <div>
             <h1 className="te-title">Traces</h1>
             <div className="te-sub">
-              <span className="po-mono">{total.toLocaleString()}</span> traces in last {timeWindow} ·{' '}
-              sorted <span className="po-mono">{sortLabel}</span>
+              <span className="po-mono">{total.toLocaleString()}</span> traces in last {timeWindow}
+              {abstainCount > 0 && (
+                <> · <span className="po-mono">{abstainCount}</span> honest abstention{abstainCount === 1 ? '' : 's'}</>
+              )}
+              {' '}· sorted <span className="po-mono">{sortLabel}</span>
               {sort === 'sufficiency_asc' && (
                 <span> · client-side over current page</span>
               )}
@@ -537,19 +601,12 @@ export default function TraceExplorer() {
         ) : traces.isLoading ? (
           <TraceSkeleton />
         ) : isEmptyProject ? (
-          <EmptyState
-            title="No traces yet"
-            sub="Connect your SDK and send your first trace — they'll appear here in real time."
-            action={
-              <Link
-                to={`/projects/${slug}`}
-                className="po-btn"
-                style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
-              >
-                Connect your SDK
-              </Link>
-            }
-          />
+          <div className="te-empty">
+            <div className="te-empty-title">No traces yet</div>
+            <div className="te-empty-sub">
+              Traces appear here in real time as your app sends them.
+            </div>
+          </div>
         ) : isEmptyAfterFilters ? (
           <div className="te-empty">
             <div className="te-empty-mark">
@@ -578,7 +635,31 @@ export default function TraceExplorer() {
                 <span className="te-th" style={{ textAlign: 'right' }}>Last seen</span>
               </div>
               <div className="te-tbody">
-                {rows.map((r) => {
+                {sections.map((sec) => {
+                  const isCollapsed = collapsedSections.has(sec.key);
+                  return (
+                    <div key={sec.key} className="te-section">
+                      <button
+                        type="button"
+                        className="te-section-head"
+                        onClick={() => toggleSection(sec.key)}
+                        aria-expanded={!isCollapsed}
+                      >
+                        <svg className={'te-section-caret' + (isCollapsed ? '' : ' is-open')} width="9" height="9" viewBox="0 0 10 10" fill="none">
+                          <path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className="te-section-label">{sec.label}</span>
+                        <span className="te-section-count">{sec.rows.length}</span>
+                        {sec.abstained > 0 && (
+                          <span className="te-section-abstain" title="Honest abstentions in this section — the model correctly declined instead of fabricating">
+                            <svg width="9" height="9" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                              <path d="M2.5 6.2l2.3 2.3L9.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            {sec.abstained} abstained
+                          </span>
+                        )}
+                      </button>
+                      {!isCollapsed && sec.rows.map((r) => {
                   const cell = r.failure_cell ? CELL_BY_ID[r.failure_cell] : null;
                   const evaluating = r.status === 'evaluating';
                   return (
@@ -655,6 +736,9 @@ export default function TraceExplorer() {
                         {evaluating ? <span className="te-shimmer" /> : <MeterBar value={r.faithfulness_fraction} />}
                       </div>
                       <div className="te-td te-col-time po-mono">{relativeTime(r.created_at)}</div>
+                    </div>
+                  );
+                      })}
                     </div>
                   );
                 })}

@@ -67,17 +67,23 @@ const ROW_H = 132;
 const COL_GAP = 40;
 const PAD = 14;
 
-/* Cluster cards by status into left→right columns (newest first within each). */
+/* Cluster cards by status into left→right columns (newest first within each).
+   Empty buckets are skipped so populated columns sit adjacent — otherwise a
+   resolved card lands in the far-right "done" column with big empty gaps before
+   it. Each populated bucket just takes the next column over. */
 function autoLayout(cards: HealCardSummary[]): Record<string, Pos> {
   const res: Record<string, Pos> = {};
-  BUCKETS.forEach((bucket, ci) => {
-    const x = PAD + ci * (NODE_W + COL_GAP);
-    cards
+  let col = 0;
+  BUCKETS.forEach((bucket) => {
+    const inBucket = cards
       .filter((c) => bucket.statuses.includes(c.status))
-      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
-      .forEach((c, ri) => {
-        res[c.id] = { x, y: PAD + ri * ROW_H };
-      });
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    if (inBucket.length === 0) return; // skip empty column — no dead gap
+    const x = PAD + col * (NODE_W + COL_GAP);
+    inBucket.forEach((c, ri) => {
+      res[c.id] = { x, y: PAD + ri * ROW_H };
+    });
+    col += 1;
   });
   return res;
 }
@@ -269,8 +275,11 @@ function EvidenceRow({
   onOpenTrace: (traceId: string) => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
-  // FailureCell → 2-letter abbreviation for chip
-  const abbr = trace.failure_cell.split('_').map((p) => p[0]).join('') as 'cu' | 'iu' | 'ig' | 'eu' | 'eg' | 'cg';
+  // FailureCell → 2-letter abbreviation for chip. failure_cell can be null when
+  // the evidence trace hasn't been scored yet — guard so it doesn't blank the page.
+  const abbr = trace.failure_cell
+    ? (trace.failure_cell.split('_').map((p) => p[0]).join('') as 'cu' | 'iu' | 'ig' | 'eu' | 'eg' | 'cg')
+    : null;
   const cellLabels: Record<string, string> = {
     cu: 'complete · ungrounded', iu: 'incomplete · ungrounded',
     ig: 'incomplete · grounded', eu: 'extra · ungrounded',
@@ -306,9 +315,9 @@ function EvidenceRow({
           <Caret open={open} />
         </button>
         <span className="he-ev-id" title={trace.id}>{shortId(trace.id)}</span>
-        <span className="he-cell-chip" style={{ '--c': `var(--fcell-${abbr})` } as React.CSSProperties}>
+        <span className="he-cell-chip" style={{ '--c': abbr ? `var(--fcell-${abbr})` : 'var(--po-fg-4)' } as React.CSSProperties}>
           <span className="he-cell-dot" />
-          {cellLabels[abbr]}
+          {abbr ? cellLabels[abbr] : 'unscored'}
         </span>
         <span className="he-ev-q">{trace.query}</span>
         <span className="he-card-go" aria-hidden="true">
@@ -328,8 +337,8 @@ function EvidenceRow({
             <div className="he-ev-resp">{trace.response}</div>
           </div>
           <div className="he-ev-foot">
-            <span className="he-score"><span className="he-score-k">sufficiency</span> <b>{trace.sufficiency_score.toFixed(2)}</b></span>
-            <span className="he-score"><span className="he-score-k">faithfulness</span> <b>{trace.faithfulness_score.toFixed(2)}</b></span>
+            <span className="he-score"><span className="he-score-k">sufficiency</span> <b>{trace.sufficiency_score != null ? trace.sufficiency_score.toFixed(2) : '—'}</b></span>
+            <span className="he-score"><span className="he-score-k">faithfulness</span> <b>{trace.faithfulness_score != null ? trace.faithfulness_score.toFixed(2) : '—'}</b></span>
           </div>
         </div>
       )}
@@ -427,12 +436,46 @@ function healCommandFor(cardId: string): string {
   );
 }
 
+/* One command that heals EVERY open card into a single combined PR. */
+function healAllCommand(): string {
+  return (
+    `claude "Heal ALL open Veralith cards in this repo into ONE pull request. ` +
+    `Use the veralith MCP: call list_heal_cards (status open) to get every open card; ` +
+    `for EACH card call start_heal then get_work_item and apply its recommended fix; ` +
+    `commit all changes to one branch; open a SINGLE PR covering every fix; then call ` +
+    `mark_pr_raised for each card with that same PR URL."`
+  );
+}
+
+/* Display-only command box. The Copy button lives in the action row next to
+   Ignore (see ActionBar) so it's the most obvious control, not buried here. */
 function HealCommand({ cardId, verb }: { cardId: string; verb: string }) {
-  const [copied, setCopied] = useState(false);
   const command = healCommandFor(cardId);
+  return (
+    <div className="he-cmd">
+      <div className="he-cmd-label">{verb} — run this in your repo terminal (Claude Code + veralith MCP)</div>
+      <div className="he-term" role="img" aria-label="Terminal command to paste">
+        <div className="he-term-bar">
+          <span className="he-term-dot he-term-dot-r" />
+          <span className="he-term-dot he-term-dot-y" />
+          <span className="he-term-dot he-term-dot-g" />
+          <span className="he-term-title">bash — your repo</span>
+        </div>
+        <div className="he-term-body">
+          <span className="he-term-prompt" aria-hidden="true">$</span>
+          <code className="he-term-cmd" title={command}>{command}</code>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Prominent Copy button for the heal command — sits in the action row. */
+function CopyCommandButton({ cardId }: { cardId: string }) {
+  const [copied, setCopied] = useState(false);
   async function copy() {
     try {
-      await navigator.clipboard.writeText(command);
+      await navigator.clipboard.writeText(healCommandFor(cardId));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -440,30 +483,18 @@ function HealCommand({ cardId, verb }: { cardId: string; verb: string }) {
     }
   }
   return (
-    <div className="he-cmd">
-      <div className="he-cmd-label">{verb} — run this in your repo terminal (Claude Code + veralith MCP)</div>
-      <div className="he-cmd-box">
-        <code className="he-cmd-code" title={command}>{command}</code>
-        <button
-          type="button"
-          className={'he-cmd-copy' + (copied ? ' is-copied' : '')}
-          onClick={copy}
-          aria-label={copied ? 'Copied' : 'Copy command'}
-          title={copied ? 'Copied!' : 'Copy command'}
-        >
-          {copied ? (
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M3.5 8.6l3 3 6-7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          ) : (
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <rect x="4" y="4" width="8" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M6.6 4V2.9A1.4 1.4 0 018 1.5h4.1A1.4 1.4 0 0113.5 2.9V9A1.4 1.4 0 0112.1 10.4H11" stroke="currentColor" strokeWidth="1.4" />
-            </svg>
-          )}
-        </button>
-      </div>
-    </div>
+    <button type="button" className="he-btn he-btn-primary" onClick={copy}>
+      {copied ? (
+        <><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ marginRight: 2 }}>
+          <path d="M3.5 8.6l3 3 6-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>Copied</>
+      ) : (
+        <><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ marginRight: 2 }}>
+          <rect x="4" y="4" width="8" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M6.6 4V2.9A1.4 1.4 0 018 1.5h4.1A1.4 1.4 0 0113.5 2.9V9A1.4 1.4 0 0112.1 10.4H11" stroke="currentColor" strokeWidth="1.5" />
+        </svg>Copy command</>
+      )}
+    </button>
   );
 }
 
@@ -514,11 +545,13 @@ function ActionBar({
   if (st === 'open') {
     buttons = <>
       <HealCommand cardId={card.id} verb="Heal with Claude Code" />
+      <CopyCommandButton cardId={card.id} />
       {IgnoreSplit}
     </>;
   } else if (st === 'failed') {
     buttons = <>
       <HealCommand cardId={card.id} verb="Retry the heal" />
+      <CopyCommandButton cardId={card.id} />
       {IgnoreSplit}
     </>;
   } else if (st === 'in_progress') {
@@ -530,7 +563,7 @@ function ActionBar({
   } else if (st === 'pr_raised') {
     buttons = <>
       <button className="he-btn he-btn-good" disabled={busy} onClick={() => onAction('accept')}>
-        {actionLabel('accept', 'Accept PR')}
+        {actionLabel('accept', 'Mark heal as resolved')}
       </button>
       <button className="he-btn he-btn-ghost" disabled={busy} onClick={() => onAction('decline')}>
         {actionLabel('decline', 'Decline')}
@@ -920,6 +953,22 @@ export default function Heals() {
     placeholderData: keepPreviousData,
   });
 
+  // Bulk ops: copy the "heal all" command; mark every pr_raised card resolved.
+  const [healAllCopied, setHealAllCopied] = useState(false);
+  async function copyHealAll() {
+    try {
+      await navigator.clipboard.writeText(healAllCommand());
+      setHealAllCopied(true);
+      window.setTimeout(() => setHealAllCopied(false), 1800);
+    } catch {
+      /* clipboard denied — user can still select the per-card command */
+    }
+  }
+  const acceptAllMutation = useMutation({
+    mutationFn: () => api.acceptAllHeals(projectId!),
+    onSuccess: () => listQuery.refetch(),
+  });
+
   // Scope the global list to the current project. Until the project resolves we
   // return nothing rather than the unscoped global list, so no cross-project
   // cards ever paint into the canvas.
@@ -979,6 +1028,7 @@ export default function Heals() {
   }, [cards, positions, fallback]);
 
   const openCount = cards.filter((c) => c.status === 'open').length;
+  const prRaisedCount = cards.filter((c) => c.status === 'pr_raised').length;
 
   // The open panel stack: cards beneath + the route card on top.
   const fullStack = cardId ? [...belowStack, cardId] : [];
@@ -1061,6 +1111,27 @@ export default function Heals() {
           </div>
           {!loading && !isEmpty && (
             <div className="he-toolbar-actions">
+              {prRaisedCount > 0 && (
+                <button
+                  type="button"
+                  className="he-btn he-btn-good"
+                  disabled={acceptAllMutation.isPending}
+                  onClick={() => acceptAllMutation.mutate()}
+                  title="Mark every PR-raised card as resolved (after the combined PR is merged)"
+                >
+                  {acceptAllMutation.isPending ? <><span className="he-spinner" />…</> : `Mark all resolved (${prRaisedCount})`}
+                </button>
+              )}
+              {openCount >= 2 && (
+                <button
+                  type="button"
+                  className="he-btn he-btn-primary"
+                  onClick={copyHealAll}
+                  title="Copy a command that heals every open card into one combined PR — paste it into Claude Code"
+                >
+                  {healAllCopied ? 'Copied ✓' : `Heal all (${openCount})`}
+                </button>
+              )}
               <button type="button" className="he-btn he-btn-ghost" onClick={resetLayout} title="Re-arrange cards by status">
                 <ResetIcon />Reset layout
               </button>

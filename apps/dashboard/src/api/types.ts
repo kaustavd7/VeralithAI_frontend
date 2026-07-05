@@ -68,6 +68,9 @@ export interface StatsResponse {
   total_traces: number;
   by_cell: Record<FailureCell, number>;
   healthy_rate: number;
+  // Honest abstentions in the window (correct "I don't know" declines). Optional
+  // until the backend abstained_count deploy lands.
+  abstained_count?: number | null;
   avg_sufficiency: number;
   avg_faithfulness: number;
   // Share of evaluated traces whose completeness verdict is "complete" (0..1).
@@ -368,9 +371,10 @@ export interface HealEvidenceTrace {
   query: string;
   response: string;
   added_at: string;
-  failure_cell: FailureCell;
-  sufficiency_score: number;
-  faithfulness_score: number;
+  // Null when the evidence trace has no Evaluation row yet (backend sends null).
+  failure_cell: FailureCell | null;
+  sufficiency_score: number | null;
+  faithfulness_score: number | null;
 }
 
 export interface HealCardDetail extends HealCardSummary {

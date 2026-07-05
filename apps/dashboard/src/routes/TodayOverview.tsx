@@ -796,6 +796,12 @@ function TodayContent() {
     ? (cells.complete_ungrounded ?? 0) + (cells.incomplete_ungrounded ?? 0) + (cells.extra_ungrounded ?? 0)
     : 0;
   const total = s?.total_traces ?? 0;
+  // Abstention-adjusted health: counting honest abstentions (correct "I don't
+  // know" declines) as acceptable lifts the effective healthy rate, so a low raw
+  // rate that's mostly abstentions reads as "actually fine".
+  const abstained = s?.abstained_count ?? 0;
+  const adjustedPct = total > 0 ? Math.min(100, healthyPct + (abstained / total) * 100) : 0;
+  const showAdjusted = abstained > 0 && total > 0;
   const chartValues = (s?.timeseries ?? []).map((b) => {
     const t = b.ok + b.failed;
     return t > 0 ? b.ok / t : s?.healthy_rate ?? 0;
@@ -877,6 +883,17 @@ function TodayContent() {
                   <span className="wf-metric-muted">No traces in this window yet</span>
                 )}
               </div>
+              {showAdjusted && (
+                <div
+                  className="wf-abstain-line"
+                  title="Honest abstentions — the model correctly declined ('I don't know') instead of fabricating. Counting them as acceptable gives the effective healthy rate."
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2.5 6.2l2.3 2.3L9.5 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <b>{adjustedPct.toFixed(1)}%</b> effective · incl. {abstained} honest abstention{abstained === 1 ? '' : 's'}
+                </div>
+              )}
               {total > 0 ? (
                 <BigChart
                   h={150}
