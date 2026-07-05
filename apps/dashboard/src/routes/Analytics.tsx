@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
 import { Skel, SkelStatus } from '../components/Skeleton';
@@ -281,7 +281,7 @@ function AnSkeletonPanel({ span, shimmer }: { span: number; shimmer: boolean }) 
   );
 }
 
-function AnalyticsEmpty({ slug }: { slug: string }) {
+function AnalyticsEmpty() {
   return (
     <div className="an-empty-wrap">
       {/* Ghost panels keep the dashboard structure; one card carries the message. */}
@@ -293,12 +293,8 @@ function AnalyticsEmpty({ slug }: { slug: string }) {
       <div className="an-empty-card">
         <div className="an-empty-title">No traces in this window</div>
         <div className="an-empty-sub">
-          Charts populate as traces arrive. Widen the time range, or connect your
-          SDK to start sending traces.
+          Charts populate as traces arrive. Try widening the time range.
         </div>
-        <Link to={`/projects/${slug}`} className="po-btn an-empty-cta">
-          Connect your SDK
-        </Link>
       </div>
     </div>
   );
@@ -461,7 +457,7 @@ function TraceVolumePanel({ slug, pageWindow }: { slug: string; pageWindow: Time
         windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
         <EmptyState
           title="No traces in this window"
-          sub="Adjust the time range, or connect your SDK to start receiving traces."
+          sub="Try widening the time range."
         />
       </AnPanel>
     );
@@ -967,7 +963,7 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
       >
         <EmptyState
           title="No traces in this window"
-          sub="Adjust the time range, or connect your SDK to start receiving traces."
+          sub="Try widening the time range."
         />
       </AnPanel>
     );
@@ -1216,7 +1212,7 @@ function TopFailingPanel({
       >
         <EmptyState
           title="No traces in this window"
-          sub="Adjust the time range, or connect your SDK to start receiving traces."
+          sub="Try widening the time range."
         />
       </AnPanel>
     );
@@ -1445,7 +1441,7 @@ function HallucinationTrendPanel({
         windowed win={win} override={override} onWin={setOverride} onClearWin={clearOverride}>
         <EmptyState
           title="No traces in this window"
-          sub="Adjust the time range, or connect your SDK to start receiving traces."
+          sub="Try widening the time range."
         />
       </AnPanel>
     );
@@ -1624,7 +1620,9 @@ export default function Analytics() {
   );
 
   // Page default window. Each panel may override locally via its ⋯ menu.
-  const [pageWindow, setPageWindow] = useState<TimeWindow>('24h');
+  // Default 7d (not 24h) so charts show recent data on load instead of an empty
+  // "No traces in this window" when traces are a day or two old.
+  const [pageWindow, setPageWindow] = useState<TimeWindow>('7d');
   const projectName = project?.name ?? slug;
 
   // Page-level primary data probes. These share react-query keys with the
@@ -1694,7 +1692,7 @@ export default function Analytics() {
         ) : statsQuery.isPending ? (
           <AnalyticsSkeleton />
         ) : (statsQuery.data?.total_traces ?? 0) === 0 ? (
-          <AnalyticsEmpty slug={slug} />
+          <AnalyticsEmpty />
         ) : (
           <div className="an-grid">
             <TraceVolumePanel slug={slug} pageWindow={pageWindow} />
