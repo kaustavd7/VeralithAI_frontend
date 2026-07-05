@@ -9,6 +9,9 @@ interface Props {
   diagnosis: Diagnosis;
   suggestion: Suggestion;
   traceId: string;
+  // Backend's authoritative honest-abstention flag; falls back to a local
+  // heuristic when undefined (pre-deploy).
+  isAbstention?: boolean;
 }
 
 const CELL_MEANINGS: Record<string, string> = {
@@ -78,7 +81,7 @@ const CELL_META_FALLBACK = {
   short: '?',
 } as const;
 
-export function DiagnosisHero({ diagnosis, suggestion, traceId }: Props) {
+export function DiagnosisHero({ diagnosis, suggestion, traceId, isAbstention }: Props) {
   const { slug = '' } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [toast, setToast] = useState(false);
@@ -101,15 +104,18 @@ export function DiagnosisHero({ diagnosis, suggestion, traceId }: Props) {
   const groundedClaims = Math.round(fFrac * diagnosis.n_claims);
   const passedSubs = Math.round(sufFrac * diagnosis.n_sub_questions);
 
-  // Honest abstention: retrieval covered nothing (sufficiency 0) AND the model
-  // fabricated nothing (faithfulness perfect). The model correctly declined
-  // instead of hallucinating — desired RAG-safety behaviour, not a real failure.
-  // Surfaced as a positive note so a `*_grounded` cell here doesn't read as a bug.
+  // Honest abstention: the model correctly declined an unanswerable query
+  // instead of hallucinating. Prefer the backend's authoritative flag (robust to
+  // refusals phrased as ungrounded meta-claims — which the local sufficiency/
+  // faithfulness heuristic misses); fall back to the heuristic pre-deploy.
+  // Surfaced as a positive note so this cell doesn't read as a bug.
   const isHonestAbstention =
-    diagnosis.n_sub_questions > 0 &&
-    sufFrac === 0 &&
-    fFrac === 1 &&
-    diagnosis.failure_cell !== 'complete_grounded';
+    isAbstention !== undefined
+      ? isAbstention
+      : diagnosis.n_sub_questions > 0 &&
+        sufFrac === 0 &&
+        fFrac === 1 &&
+        diagnosis.failure_cell !== 'complete_grounded';
 
   async function handleCopy() {
     const md = buildMarkdown(traceId, diagnosis.failure_cell, suggestion);

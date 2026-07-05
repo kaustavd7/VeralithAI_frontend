@@ -99,9 +99,10 @@ function severityBg(s: number | null | undefined): string {
 // hallucinating. Mirrors the DiagnosisHero rule so a `*_grounded` row here reads
 // as desired behaviour, not a failure.
 function isHonestAbstention(r: TraceListItem): boolean {
-  // sufficiency 0 already implies sub-questions existed (0 sub-questions gives a
-  // vacuous fraction of 1.0, not 0), so we don't gate on n_sub_questions — which
-  // the list endpoint doesn't even populate. faithfulness 1 = nothing fabricated.
+  // Prefer the backend's authoritative flag (robust to refusals phrased as
+  // ungrounded meta-claims). Fall back to the old sufficiency 0 && faithfulness 1
+  // heuristic only when the field is absent (pre-deploy).
+  if (r.is_abstention !== undefined) return r.is_abstention;
   return (
     r.sufficiency_fraction === 0 &&
     r.faithfulness_fraction === 1 &&
