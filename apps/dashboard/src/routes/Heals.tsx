@@ -534,7 +534,7 @@ function ActionBar({
   } else if (st === 'pr_raised') {
     buttons = <>
       <button className="he-btn he-btn-good" disabled={busy} onClick={() => onAction('accept')}>
-        {actionLabel('accept', 'Accept PR')}
+        {actionLabel('accept', 'Mark heal as resolved')}
       </button>
       <button className="he-btn he-btn-ghost" disabled={busy} onClick={() => onAction('decline')}>
         {actionLabel('decline', 'Decline')}
