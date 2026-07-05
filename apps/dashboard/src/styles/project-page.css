@@ -3674,6 +3674,60 @@ button.an-tv-leg:hover {
   color: var(--po-fg-4);
 }
 
+/* Heal-all plan list — one block per open card. */
+.he-plan-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.he-plan-item {
+  border: 1px solid var(--po-line);
+  border-radius: var(--po-radius-sm);
+  background: var(--po-panel-2);
+  padding: 12px 14px;
+}
+.he-plan-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.he-plan-num {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: color-mix(in oklab, var(--accent) 16%, transparent);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.he-plan-title { font-size: 13.5px; font-weight: 600; color: var(--po-fg); line-height: 1.3; }
+.he-plan-slug { font-family: var(--font-mono); font-size: 11px; color: var(--po-fg-4); margin-top: 2px; }
+.he-plan-desc { margin: 0 0 8px; font-size: 12.5px; line-height: 1.55; color: var(--po-fg-2); }
+.he-plan-loading { display: flex; flex-direction: column; gap: 6px; }
+.he-plan-fixes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.he-plan-fixes li {
+  border-left: 2px solid color-mix(in oklab, var(--cell-cg) 40%, transparent);
+  padding-left: 10px;
+}
+.he-plan-fix-title { display: block; font-size: 12.5px; font-weight: 600; color: var(--po-fg); }
+.he-plan-fix-body { display: block; font-size: 12px; line-height: 1.5; color: var(--po-fg-3); margin-top: 2px; }
+
 .he-fixes {
   list-style: none;
   margin: 0;

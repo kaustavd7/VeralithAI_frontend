@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useQueryClient, useMutation, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useQueries, useQueryClient, useMutation, keepPreviousData } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
@@ -876,6 +876,141 @@ function HealPanel({
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Heal-all plan panel — opens like a card detail, but shows the combined plan
+   across every open card (each card's real proposed fixes, fetched live) plus
+   the one command that heals them all into a single PR.
+   ─────────────────────────────────────────────────────────── */
+
+function HealAllPanel({ cards, onClose }: { cards: HealCardSummary[]; onClose: () => void }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+  const command = healAllCommand();
+
+  // Fetch each open card's detail (real suggestion + proposed fixes) so the plan
+  // is substantive, not just a list of titles. Reuses the ['heal', id] cache.
+  const details = useQueries({
+    queries: cards.map((c) => ({
+      queryKey: ['heal', c.id],
+      queryFn: () => api.getHeal(c.id),
+    })),
+  });
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(command);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard denied */
+    }
+  }
+
+  useEffect(() => {
+    panelRef.current?.focus();
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div className="he-panels">
+      <div className="he-panel-wrap is-top" style={{ '--d': 0, zIndex: 200 } as React.CSSProperties}>
+        <div className="he-panel" ref={panelRef} tabIndex={-1} role="dialog" aria-label="Heal all plan">
+          <div className="he-detail">
+            <div className="he-detail-head">
+              <button className="he-detail-close" onClick={onClose} title="Close (Esc)" aria-label="Close">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                  <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              </button>
+              <div className="he-detail-statusline">
+                <StatusBadge status="open" size="lg" />
+                <span className="he-phrase" style={{ color: 'var(--po-fg-3)' }}>
+                  Heals every open card into one combined PR
+                </span>
+              </div>
+              <h2 className="he-detail-title">Heal all · {cards.length} open card{cards.length === 1 ? '' : 's'}</h2>
+              <div className="he-meta">
+                <span>{cards.length} cards</span>
+                <span className="he-dot-sep">·</span>
+                <span>one PR · runs in Claude Code</span>
+              </div>
+            </div>
+
+            <div className="he-section">
+              <div className="he-section-h">Run this in your repo terminal</div>
+              <div className="he-term" role="img" aria-label="Heal-all command">
+                <div className="he-term-bar">
+                  <span className="he-term-dot he-term-dot-r" />
+                  <span className="he-term-dot he-term-dot-y" />
+                  <span className="he-term-dot he-term-dot-g" />
+                  <span className="he-term-title">bash — your repo</span>
+                </div>
+                <div className="he-term-body">
+                  <span className="he-term-prompt" aria-hidden="true">$</span>
+                  <code className="he-term-cmd" title={command}>{command}</code>
+                </div>
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <button type="button" className="he-btn he-btn-primary" onClick={copy}>
+                  {copied ? 'Copied ✓' : 'Copy command'}
+                </button>
+              </div>
+            </div>
+
+            <div className="he-section">
+              <div className="he-section-h">
+                What will change <span className="he-section-count">{cards.length}</span>
+              </div>
+              <ol className="he-plan-list">
+                {cards.map((c, i) => {
+                  const d = details[i]?.data;
+                  const isLoading = details[i]?.isLoading;
+                  return (
+                    <li className="he-plan-item" key={c.id}>
+                      <div className="he-plan-head">
+                        <span className="he-plan-num">{i + 1}</span>
+                        <div>
+                          <div className="he-plan-title">{c.title}</div>
+                          <div className="he-plan-slug">{c.suggestion_slug}</div>
+                        </div>
+                      </div>
+                      {isLoading ? (
+                        <div className="he-plan-loading"><Skel w="90%" h={11} /><Skel w="70%" h={11} /></div>
+                      ) : d ? (
+                        <>
+                          <p className="he-plan-desc">{d.suggestion_description}</p>
+                          {d.proposed_fixes && d.proposed_fixes.length > 0 ? (
+                            <ul className="he-plan-fixes">
+                              {d.proposed_fixes.map((f, fi) => (
+                                <li key={fi}>
+                                  <span className="he-plan-fix-title">{f.title}</span>
+                                  <span className="he-plan-fix-body">{f.body}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="he-empty-line">Fix will be synthesized when the heal runs.</p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="he-empty-line">Couldn’t load this card’s plan.</p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
    Skeleton — ghost nodes scattered on the canvas, so the loading → loaded
    swap is shift-free (same canvas, same absolutely-placed cards).
    ─────────────────────────────────────────────────────────── */
@@ -953,17 +1088,8 @@ export default function Heals() {
     placeholderData: keepPreviousData,
   });
 
-  // Bulk ops: copy the "heal all" command; mark every pr_raised card resolved.
-  const [healAllCopied, setHealAllCopied] = useState(false);
-  async function copyHealAll() {
-    try {
-      await navigator.clipboard.writeText(healAllCommand());
-      setHealAllCopied(true);
-      window.setTimeout(() => setHealAllCopied(false), 1800);
-    } catch {
-      /* clipboard denied — user can still select the per-card command */
-    }
-  }
+  // Bulk ops: open the heal-all plan panel; mark every pr_raised card resolved.
+  const [healAllOpen, setHealAllOpen] = useState(false);
   const acceptAllMutation = useMutation({
     mutationFn: () => api.acceptAllHeals(projectId!),
     onSuccess: () => listQuery.refetch(),
@@ -1126,10 +1252,10 @@ export default function Heals() {
                 <button
                   type="button"
                   className="he-btn he-btn-primary"
-                  onClick={copyHealAll}
-                  title="Copy a command that heals every open card into one combined PR — paste it into Claude Code"
+                  onClick={() => setHealAllOpen(true)}
+                  title="See the combined plan and the command that heals every open card into one PR"
                 >
-                  {healAllCopied ? 'Copied ✓' : `Heal all (${openCount})`}
+                  Heal all ({openCount})
                 </button>
               )}
               <button type="button" className="he-btn he-btn-ghost" onClick={resetLayout} title="Re-arrange cards by status">
@@ -1221,6 +1347,13 @@ export default function Heals() {
               />
             ))}
           </div>
+        )}
+
+        {healAllOpen && (
+          <HealAllPanel
+            cards={cards.filter((c) => c.status === 'open')}
+            onClose={() => setHealAllOpen(false)}
+          />
         )}
       </div>
     </ProjectShell>
