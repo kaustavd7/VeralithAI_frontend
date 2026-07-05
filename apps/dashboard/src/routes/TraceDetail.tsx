@@ -73,6 +73,7 @@ export default function TraceDetail() {
           diagnosis={trace.diagnosis}
           suggestion={trace.suggestion}
           traceId={trace.id}
+          isAbstention={trace.is_abstention}
         />
       ) : (
         <div className={detailStyles.empty}>

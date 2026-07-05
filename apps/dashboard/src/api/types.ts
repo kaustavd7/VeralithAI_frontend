@@ -169,6 +169,9 @@ export interface TraceListItem {
   failure_cell: FailureCell | null;
   sufficiency_fraction: number | null;
   faithfulness_fraction: number | null;
+  // Backend-computed honest-abstention flag (robust to messy refusals). Optional
+  // until the abstention-detection deploy lands.
+  is_abstention?: boolean;
   n_sub_questions: number;
   n_claims: number;
   created_at: string;
@@ -275,6 +278,8 @@ export interface TraceDetail {
   query: string;
   response: string;
   status: TraceStatus;
+  // Backend-computed honest-abstention flag. Optional until the deploy lands.
+  is_abstention?: boolean;
   created_at: string;
   evaluated_at: string | null;
   cost_usd: number | null;
