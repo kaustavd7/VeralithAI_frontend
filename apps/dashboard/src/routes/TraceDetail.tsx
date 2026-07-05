@@ -123,8 +123,10 @@ export default function TraceDetail() {
             sufficiency={trace.sufficiency}
           />
           <ResponsePane
+            response={trace.response}
             claims={trace.claims}
             faithfulness={trace.faithfulness}
+            extraClaimIds={trace.completeness?.extra_claim_ids ?? []}
             hoveredChunkRank={hoveredChunkRank}
             onClaimHover={onClaimHover}
           />

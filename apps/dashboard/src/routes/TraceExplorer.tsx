@@ -75,6 +75,19 @@ function severityBg(s: number | null | undefined): string {
   return 'transparent';
 }
 
+// Honest abstention: retrieval covered nothing (sufficiency 0) AND nothing was
+// fabricated (faithfulness perfect) — the model correctly declined instead of
+// hallucinating. Mirrors the DiagnosisHero rule so a `*_grounded` row here reads
+// as desired behaviour, not a failure.
+function isHonestAbstention(r: TraceListItem): boolean {
+  return (
+    r.n_sub_questions > 0 &&
+    r.sufficiency_fraction === 0 &&
+    r.faithfulness_fraction === 1 &&
+    r.failure_cell !== 'complete_grounded'
+  );
+}
+
 function meterColor(value: number): string {
   if (value < 0.3) return 'var(--cell-iu)';
   if (value < 0.6) return 'var(--cell-ig)';
@@ -622,6 +635,17 @@ export default function TraceExplorer() {
                           </button>
                         ) : (
                           <span className="po-mono" style={{ color: 'var(--po-fg-4)', fontSize: 12 }}>—</span>
+                        )}
+                        {!evaluating && isHonestAbstention(r) && (
+                          <span
+                            className="te-abstain"
+                            title="Honest abstention — retrieval had nothing for this query and the model declined instead of fabricating. Desired behaviour, not a hallucination."
+                          >
+                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                              <path d="M2.5 6.2l2.3 2.3L9.5 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            abstained
+                          </span>
                         )}
                       </div>
                       <div className="te-td te-col-s">

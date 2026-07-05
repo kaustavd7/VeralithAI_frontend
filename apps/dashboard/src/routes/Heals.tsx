@@ -415,6 +415,58 @@ function ConfirmModal({
 
 type ActionKind = 'heal' | 'accept' | 'decline' | 'retry' | 'dismiss-fixed' | 'dismiss-ignore';
 
+/* The copy-paste command that starts Claude Code and drives the whole heal via
+   the veralith MCP (start_heal → claim → get_work_item → edit → PR →
+   mark_pr_raised). Replaces the old "Heal with Claude Code" button, which only
+   queued the action and relied on the user separately running a slash command. */
+function healCommandFor(cardId: string): string {
+  return (
+    `claude "Heal Veralith card ${cardId}: use the veralith MCP — call start_heal ` +
+    `with heal_card_id ${cardId}, then claim_work_item, get_work_item, apply the ` +
+    `recommended fix in this repo, open a PR, and call mark_pr_raised."`
+  );
+}
+
+function HealCommand({ cardId, verb }: { cardId: string; verb: string }) {
+  const [copied, setCopied] = useState(false);
+  const command = healCommandFor(cardId);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(command);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard denied — user can still select the text manually */
+    }
+  }
+  return (
+    <div className="he-cmd">
+      <div className="he-cmd-label">{verb} — run this in your repo terminal (Claude Code + veralith MCP)</div>
+      <div className="he-cmd-box">
+        <code className="he-cmd-code" title={command}>{command}</code>
+        <button
+          type="button"
+          className={'he-cmd-copy' + (copied ? ' is-copied' : '')}
+          onClick={copy}
+          aria-label={copied ? 'Copied' : 'Copy command'}
+          title={copied ? 'Copied!' : 'Copy command'}
+        >
+          {copied ? (
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3.5 8.6l3 3 6-7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <rect x="4" y="4" width="8" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M6.6 4V2.9A1.4 1.4 0 018 1.5h4.1A1.4 1.4 0 0113.5 2.9V9A1.4 1.4 0 0112.1 10.4H11" stroke="currentColor" strokeWidth="1.4" />
+            </svg>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ActionBar({
   card,
   onAction,
@@ -461,16 +513,12 @@ function ActionBar({
   let buttons: React.ReactNode = null;
   if (st === 'open') {
     buttons = <>
-      <button className="he-btn he-btn-primary" disabled={busy} onClick={() => onAction('heal')}>
-        {actionLabel('heal', 'Heal with Claude Code')}
-      </button>
+      <HealCommand cardId={card.id} verb="Heal with Claude Code" />
       {IgnoreSplit}
     </>;
   } else if (st === 'failed') {
     buttons = <>
-      <button className="he-btn he-btn-primary" disabled={busy} onClick={() => onAction('retry')}>
-        {actionLabel('retry', 'Retry')}
-      </button>
+      <HealCommand cardId={card.id} verb="Retry the heal" />
       {IgnoreSplit}
     </>;
   } else if (st === 'in_progress') {
@@ -540,8 +588,9 @@ function ActionBar({
         <div className="he-mcp-hint">
           <span className="he-mcp-ic">🤝</span>
           <span>
-            <b>Heal with Claude Code</b> sends a request to your local Claude Code (configured via MCP).
-            Watch this card for updates — typically 1–5 minutes.
+            Paste the command into your repo terminal — Claude Code (with the veralith MCP
+            configured) starts the heal, edits the code, and opens a PR. Watch this card for
+            updates — typically 1–5 minutes.
           </span>
         </div>
       )}

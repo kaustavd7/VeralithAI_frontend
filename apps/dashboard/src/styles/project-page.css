@@ -790,6 +790,14 @@
   padding: 14px 14px;
   min-width: 0;
 }
+/* Cell column may hold the failure pill + an "abstained" chip — wrap instead of
+   clipping when both don't fit the fixed track. */
+.te-col-cell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 .te-col-sev {
   padding: 0;
   align-self: stretch;
@@ -1511,6 +1519,25 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Honest-abstention chip — sits next to the cell pill; green = desired behaviour
+   (model correctly declined) so a `*_grounded` row doesn't read as a failure. */
+.te-abstain {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--cell-cg);
+  background: color-mix(in oklab, var(--cell-cg) 12%, var(--po-panel));
+  border: 1px solid color-mix(in oklab, var(--cell-cg) 32%, transparent);
 }
 
 .te-meter {
@@ -3398,6 +3425,65 @@ button.an-tv-leg:hover {
   color: var(--po-fg-3);
   border-color: var(--po-line);
   cursor: default;
+}
+
+/* Copy-paste heal command — replaces the old broken "Heal with Claude Code"
+   button. Full-width block so it takes its own row; the Ignore split wraps below. */
+.he-cmd {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.he-cmd-label {
+  font-size: 11.5px;
+  color: var(--po-fg-3);
+  letter-spacing: 0.01em;
+}
+/* GitHub "new repo" style: command in a box with a copy icon pinned to the
+   right edge — always visible, no scrolling needed to reach it. */
+.he-cmd-box {
+  position: relative;
+  background: var(--po-panel-2);
+  border: 1px solid var(--po-line);
+  border-radius: var(--po-radius-sm);
+}
+.he-cmd-code {
+  display: block;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--po-fg);
+  padding: 9px 44px 9px 11px;   /* right pad leaves room for the pinned copy button */
+  white-space: nowrap;
+  overflow-x: auto;
+}
+.he-cmd-copy {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--po-line);
+  background: var(--po-panel);
+  color: var(--po-fg-2);
+  cursor: pointer;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+.he-cmd-copy:hover {
+  color: var(--po-fg);
+  border-color: var(--po-line-strong);
+  background: color-mix(in oklab, var(--po-fg) 8%, var(--po-panel));
+}
+.he-cmd-copy.is-copied {
+  color: var(--cell-cg);
+  border-color: color-mix(in oklab, var(--cell-cg) 40%, transparent);
 }
 
 .he-spinner {
