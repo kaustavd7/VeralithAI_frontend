@@ -422,7 +422,7 @@ function ConfirmModal({
    Action bar
    ─────────────────────────────────────────────────────────── */
 
-type ActionKind = 'heal' | 'accept' | 'decline' | 'retry' | 'dismiss-fixed' | 'dismiss-ignore';
+type ActionKind = 'heal' | 'accept' | 'decline' | 'retry' | 'dismiss-fixed' | 'dismiss-ignore' | 'reopen';
 
 /* The copy-paste command that starts Claude Code and drives the whole heal via
    the veralith MCP (start_heal → claim → get_work_item → edit → PR →
@@ -590,7 +590,12 @@ function ActionBar({
     </>;
   } else if (st === 'manually_fixed' || st === 'wont_fix') {
     const m = STATUS_META[st] ?? { label: st, phrase: null, color: 'var(--po-grey)' };
-    buttons = <span className="he-terminal-note">{m.phrase} · no further action</span>;
+    buttons = <>
+      <span className="he-terminal-note">{m.phrase}</span>
+      <button className="he-btn he-btn-ghost" disabled={busy} onClick={() => onAction('reopen')}>
+        {actionLabel('reopen', 'Reopen')}
+      </button>
+    </>;
   } else if (st === 'superseded') {
     buttons = <span className="he-terminal-note">Replaced by a newer card</span>;
   }

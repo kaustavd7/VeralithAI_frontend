@@ -122,6 +122,11 @@ export const api = {
     });
   },
 
+  async renameProject(projectId: string, name: string): Promise<{ project: Project }> {
+    if (USE_MOCK) return { project: { id: projectId, name } as Project };
+    return request(`/v1/projects/${projectId}`, { method: 'PATCH', body: JSON.stringify({ name }) });
+  },
+
   async createApiKey(
     projectId: string,
     body: { name?: string } = {},
@@ -262,7 +267,7 @@ export const api = {
 
   async healAction(
     healId: string,
-    action: 'heal' | 'accept' | 'decline' | 'retry' | 'dismiss-fixed' | 'dismiss-ignore',
+    action: 'heal' | 'accept' | 'decline' | 'retry' | 'dismiss-fixed' | 'dismiss-ignore' | 'reopen',
   ): Promise<HealActionResponse> {
     if (USE_MOCK) return mockApi.healAction(healId, action);
     return request(`/v1/heals/${healId}/${action}`, { method: 'POST' });

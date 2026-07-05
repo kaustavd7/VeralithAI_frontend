@@ -623,7 +623,7 @@ export const mockApi = {
 
   async healAction(
     healId: string,
-    action: 'heal' | 'accept' | 'decline' | 'retry' | 'dismiss-fixed' | 'dismiss-ignore',
+    action: 'heal' | 'accept' | 'decline' | 'retry' | 'dismiss-fixed' | 'dismiss-ignore' | 'reopen',
   ): Promise<HealActionResponse> {
     await delay(150);
     ensureSeedHeals();
@@ -751,7 +751,7 @@ function toSummary(c: HealCardDetail): HealCardSummary {
 
 function transition(
   from: HealStatus,
-  action: 'heal' | 'accept' | 'decline' | 'retry' | 'dismiss-fixed' | 'dismiss-ignore',
+  action: 'heal' | 'accept' | 'decline' | 'retry' | 'dismiss-fixed' | 'dismiss-ignore' | 'reopen',
 ): HealStatus | null {
   switch (action) {
     case 'heal':
@@ -768,6 +768,8 @@ function transition(
         : null;
     case 'dismiss-ignore':
       return from === 'open' || from === 'failed' || from === 'pr_raised' ? 'wont_fix' : null;
+    case 'reopen':
+      return from === 'wont_fix' || from === 'manually_fixed' ? 'open' : null;
   }
 }
 

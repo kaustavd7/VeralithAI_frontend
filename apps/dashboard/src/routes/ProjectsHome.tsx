@@ -95,6 +95,15 @@ export default function ProjectsHome() {
   useEffect(() => writeIds(PIN_KEY, pinned), [pinned]);
   useEffect(() => writeIds(ORDER_KEY, order), [order]);
 
+  const renameMut = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => api.renameProject(id, name),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
+  });
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => api.deleteProject(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
+  });
+
   const projects = projectsQuery.data?.projects ?? [];
 
   // Reconcile the saved order with the live project list: keep saved positions,
@@ -203,6 +212,8 @@ export default function ProjectsHome() {
                   onPrefetch={() => prefetchProjectData(qc, p.slug ?? p.id, p.id)}
                   pinned={pinnedSet.has(p.id)}
                   onTogglePin={() => togglePin(p.id)}
+                  onRename={(name) => renameMut.mutate({ id: p.id, name })}
+                  onDelete={() => deleteMut.mutate(p.id)}
                   draggable={!search.trim()}
                   dragging={dragId === p.id}
                   onDragStart={() => setDragId(p.id)}
@@ -437,6 +448,8 @@ function ProjectCard({
   onPrefetch,
   pinned,
   onTogglePin,
+  onRename,
+  onDelete,
   draggable,
   dragging,
   onDragStart,
@@ -448,6 +461,8 @@ function ProjectCard({
   onPrefetch: () => void;
   pinned: boolean;
   onTogglePin: () => void;
+  onRename: (name: string) => void;
+  onDelete: () => void;
   draggable: boolean;
   dragging: boolean;
   onDragStart: () => void;
@@ -455,6 +470,27 @@ function ProjectCard({
   onDropCard: () => void;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [draft, setDraft] = useState(project.name);
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDoc(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+        setConfirmDel(false);
+      }
+    }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [menuOpen]);
+  function commitRename() {
+    const next = draft.trim();
+    if (next && next !== project.name) onRename(next);
+    setRenaming(false);
+  }
   // Warm this project's data on first intent (hover/focus/press) so the project
   // pages paint instantly. Guarded so we only kick off the prefetch once.
   const prefetchedRef = useRef(false);
@@ -536,8 +572,46 @@ function ProjectCard({
         >
           <PinIcon filled={pinned} />
         </button>
+        <div className="ph-card-menu-wrap" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="ph-card-menu-btn"
+            aria-label="Project options"
+            onClick={() => { setMenuOpen((o) => !o); setConfirmDel(false); }}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <circle cx="8" cy="3" r="1.3" /><circle cx="8" cy="8" r="1.3" /><circle cx="8" cy="13" r="1.3" />
+            </svg>
+          </button>
+          {menuOpen && (
+            <div className="ph-card-menu">
+              <button type="button" onClick={() => { setDraft(project.name); setRenaming(true); setMenuOpen(false); }}>Rename</button>
+              {confirmDel ? (
+                <button type="button" className="ph-card-menu-danger" onClick={() => { onDelete(); setMenuOpen(false); }}>Delete permanently?</button>
+              ) : (
+                <button type="button" className="ph-card-menu-danger" onClick={() => setConfirmDel(true)}>Delete project</button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-      <div className="ph-card-name">{name}</div>
+      {renaming ? (
+        <input
+          className="ph-card-name-input"
+          value={draft}
+          autoFocus
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commitRename}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') commitRename();
+            if (e.key === 'Escape') setRenaming(false);
+          }}
+        />
+      ) : (
+        <div className="ph-card-name">{name}</div>
+      )}
       <div className="ph-card-key">{keyHint || '—'}</div>
       <div className="ph-card-foot">
         {trace_count > 0 ? (
