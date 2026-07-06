@@ -1,0 +1,341 @@
+import { useState } from 'react';
+
+/* ─────────────────────────────────────────────────────────────
+   ConnectCards — the first-run onboarding block, shown wherever a
+   project has zero traces yet. Two stacked IDE-style cards:
+
+     Step 1 · Connect your SDK      → get traces flowing in
+     Step 2 · Connect your agent    → let a coding agent heal them
+
+   Self-contained (its own tiny tokenizer + code surface) so it can
+   drop into any empty state. The MCP snippets prefer the
+   ${VERALITH_API_KEY} env indirection so the key stays single-source
+   — the same var the SDK reads.
+   ─────────────────────────────────────────────────────────── */
+
+const MCP_URL = 'https://api.veralithai.com/mcp/http';
+
+// ── tiny syntax tokenizer ──────────────────────────────────────────────────
+type TokKind = 'cmt' | 'kw' | 'str' | 'fn' | 'num' | 'punct' | 'plain';
+type Tok = { t: string; k: TokKind };
+type CodeLine = Tok[];
+const tk = (t: string, k: TokKind = 'plain'): Tok => ({ t, k });
+
+const TOK_COLOR: Record<TokKind, string> = {
+  cmt: '#6b7689',
+  kw: '#c792ea',
+  str: '#9ad8a0',
+  fn: '#79b8ff',
+  num: '#f2a96b',
+  punct: '#8b94a3',
+  plain: '#cdd4df',
+};
+
+function plainCopy(lines: CodeLine[]): string {
+  return lines.map((line) => line.map((t) => t.t).join('')).join('\n');
+}
+
+// ── SDK (ingestion) snippets ───────────────────────────────────────────────
+type Lang = 'python' | 'node' | 'curl';
+
+function sdkFileName(lang: Lang): string {
+  if (lang === 'python') return 'rag_pipeline.py';
+  if (lang === 'node') return 'trace.js';
+  return 'send_trace.sh';
+}
+
+function sdkSnippet(lang: Lang, key: string): CodeLine[] {
+  if (lang === 'python') {
+    return [
+      [tk('# 1. install', 'cmt')],
+      [tk('pip', 'fn'), tk(' install veralith')],
+      [],
+      [tk('# 2. export your project key', 'cmt')],
+      [tk('export', 'kw'), tk(' VERALITH_API_KEY='), tk(`"${key}"`, 'str')],
+      [],
+      [tk('# 3. log one trace from your RAG pipeline', 'cmt')],
+      [tk('import', 'kw'), tk(' veralith', 'fn')],
+      [],
+      [tk('trace_id = veralith.'), tk('log', 'fn'), tk('(')],
+      [tk('    query'), tk('='), tk('"What is the Rule of 72?"', 'str'), tk(',')],
+      [tk('    context'), tk('=['), tk('"Divide 72 by the annual rate…"', 'str'), tk('],')],
+      [tk('    response'), tk('='), tk('"At 8%, money doubles in ~9 years."', 'str'), tk(',')],
+      [tk(')')],
+    ];
+  }
+  if (lang === 'node') {
+    return [
+      [tk('// No node SDK — POST a trace to the REST API.', 'cmt')],
+      [tk('await', 'kw'), tk(' '), tk('fetch', 'fn'), tk('('), tk('"https://api.veralithai.com/v1/traces"', 'str'), tk(', {')],
+      [tk('  method'), tk(': '), tk('"POST"', 'str'), tk(',')],
+      [tk('  headers'), tk(': {')],
+      [tk('    '), tk('"Authorization"', 'str'), tk(': '), tk(`"Bearer ${key}"`, 'str'), tk(',')],
+      [tk('    '), tk('"Content-Type"', 'str'), tk(': '), tk('"application/json"', 'str'), tk(',')],
+      [tk('  },')],
+      [tk('  body'), tk(': '), tk('JSON', 'fn'), tk('.'), tk('stringify', 'fn'), tk('({')],
+      [tk('    query'), tk(': '), tk('"What is the Rule of 72?"', 'str'), tk(',')],
+      [tk('    response'), tk(': '), tk('"At 8%, money doubles in ~9 years."', 'str'), tk(',')],
+      [tk('    retrieved_chunks'), tk(': ['), tk('"Divide 72 by the annual rate…"', 'str'), tk('],')],
+      [tk('  }),')],
+      [tk('});')],
+    ];
+  }
+  return [
+    [tk('# POST a trace to the REST API', 'cmt')],
+    [tk('curl', 'fn'), tk(' -X POST https://api.veralithai.com/v1/traces \\')],
+    [tk('  -H '), tk(`"Authorization: Bearer ${key}"`, 'str'), tk(' \\')],
+    [tk('  -H '), tk('"Content-Type: application/json"', 'str'), tk(' \\')],
+    [tk("  -d '{")],
+    [tk('    '), tk('"query"', 'str'), tk(': '), tk('"What is the Rule of 72?"', 'str'), tk(',')],
+    [tk('    '), tk('"response"', 'str'), tk(': '), tk('"At 8%, money doubles in ~9 years."', 'str'), tk(',')],
+    [tk('    '), tk('"retrieved_chunks"', 'str'), tk(': ['), tk('"Divide 72 by the annual rate…"', 'str'), tk(']')],
+    [tk("  }'")],
+  ];
+}
+
+// ── MCP (agent) snippets ───────────────────────────────────────────────────
+type McpClient = 'claude' | 'cursor' | 'codex';
+
+function mcpFileName(c: McpClient): string {
+  if (c === 'claude') return '.mcp.json';
+  if (c === 'cursor') return '.cursor/mcp.json';
+  return '~/.codex/config.toml';
+}
+
+function mcpSnippet(c: McpClient, key: string): CodeLine[] {
+  if (c === 'claude') {
+    return [
+      [tk('{')],
+      [tk('  '), tk('"mcpServers"', 'str'), tk(': {')],
+      [tk('    '), tk('"veralith"', 'str'), tk(': {')],
+      [tk('      '), tk('"type"', 'str'), tk(': '), tk('"http"', 'str'), tk(',')],
+      [tk('      '), tk('"url"', 'str'), tk(': '), tk(`"${MCP_URL}"`, 'str'), tk(',')],
+      [tk('      '), tk('"headers"', 'str'), tk(': { '), tk('"Authorization"', 'str'), tk(': '), tk('"Bearer ${VERALITH_API_KEY}"', 'str'), tk(' }')],
+      [tk('    }')],
+      [tk('  }')],
+      [tk('}')],
+    ];
+  }
+  if (c === 'cursor') {
+    return [
+      [tk('{')],
+      [tk('  '), tk('"mcpServers"', 'str'), tk(': {')],
+      [tk('    '), tk('"veralith"', 'str'), tk(': {')],
+      [tk('      '), tk('"type"', 'str'), tk(': '), tk('"streamableHttp"', 'str'), tk(',')],
+      [tk('      '), tk('"url"', 'str'), tk(': '), tk(`"${MCP_URL}"`, 'str'), tk(',')],
+      [tk('      '), tk('"headers"', 'str'), tk(': { '), tk('"Authorization"', 'str'), tk(': '), tk(`"Bearer ${key}"`, 'str'), tk(' }')],
+      [tk('    }')],
+      [tk('  }')],
+      [tk('}')],
+    ];
+  }
+  return [
+    [tk('[mcp_servers.veralith]', 'fn')],
+    [tk('url'), tk(' = '), tk(`"${MCP_URL}"`, 'str')],
+    [tk('bearer_token_env_var'), tk(' = '), tk('"VERALITH_API_KEY"', 'str')],
+    [],
+    [tk('# reads the same key env var as the SDK', 'cmt')],
+  ];
+}
+
+// ── shared rendering pieces ─────────────────────────────────────────────────
+function CodeBlock({ lines }: { lines: CodeLine[] }) {
+  return (
+    <pre
+      style={{
+        margin: 0,
+        padding: '14px 16px 16px',
+        background: 'transparent',
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+        fontSize: 12.5,
+        lineHeight: 1.7,
+        color: TOK_COLOR.plain,
+        overflowX: 'auto',
+        whiteSpace: 'pre',
+        tabSize: 2,
+      }}
+    >
+      <code>
+        {lines.map((line, i) => (
+          <span key={i} style={{ display: 'block', minHeight: '1.7em' }}>
+            {line.map((seg, j) => (
+              <span key={j} style={{ color: TOK_COLOR[seg.k] }}>{seg.t}</span>
+            ))}
+          </span>
+        ))}
+      </code>
+    </pre>
+  );
+}
+
+const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+
+function CopyBtn({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    } catch {
+      /* clipboard blocked — user can still select the text */
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      aria-label="Copy snippet"
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6, height: 26, padding: '0 10px',
+        fontFamily: MONO, fontSize: 11.5, color: copied ? 'var(--po-live)' : '#9aa3b2',
+        background: '#0d1117', border: '1px solid #1c2430', borderRadius: 6, cursor: 'pointer',
+      }}
+    >
+      {copied ? (
+        <>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2.5 6.5l2.3 2.3 4.7-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          copied
+        </>
+      ) : (
+        <>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <rect x="3.5" y="3.5" width="5.5" height="5.5" rx="1" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M5.5 3.5V2.5a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H9.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+          </svg>
+          copy
+        </>
+      )}
+    </button>
+  );
+}
+
+/* One IDE card: window chrome + tabs + code surface. Generic over its tab id. */
+function IdeCard<T extends string>({
+  title, sub, badge, tabs, active, onTab, fileName, lines, footer,
+}: {
+  title: string;
+  sub: string;
+  badge: string;
+  tabs: { id: T; label: string }[];
+  active: T;
+  onTab: (id: T) => void;
+  fileName: string;
+  lines: CodeLine[];
+  footer: React.ReactNode;
+}) {
+  return (
+    <div className="po-card po-conn po-conn-never" style={{ overflow: 'hidden', padding: 0 }}>
+      <div className="po-card-head" style={{ padding: 'var(--card-pad)', marginBottom: 0 }}>
+        <div>
+          <div className="po-card-title">{title}</div>
+          <div className="po-card-sub">{sub}</div>
+        </div>
+        <div className="po-conn-state">
+          <span className="po-dot po-dot-grey" />
+          <span className="po-conn-state-label">{badge}</span>
+        </div>
+      </div>
+
+      <div
+        style={{
+          margin: '0 var(--space-6) var(--space-4)',
+          borderRadius: 'var(--po-radius-sm)',
+          border: '1px solid #1c2430',
+          background: '#0d1117',
+          overflow: 'hidden',
+          boxShadow: '0 8px 28px rgba(0, 0, 0, 0.32)',
+        }}
+      >
+        {/* window chrome */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, height: 38, padding: '0 12px', background: '#11161f', borderBottom: '1px solid #1c2430' }}>
+          <span style={{ display: 'flex', gap: 7 }} aria-hidden="true">
+            <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#ff5f57' }} />
+            <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#febc2e' }} />
+            <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#28c840' }} />
+          </span>
+          <span style={{ fontFamily: MONO, fontSize: 12, color: '#8b94a3', padding: '4px 10px', borderRadius: 5, background: '#0d1117', border: '1px solid #1c2430' }}>
+            {fileName}
+          </span>
+          <span style={{ flex: 1 }} />
+          <CopyBtn text={plainCopy(lines)} />
+        </div>
+
+        {/* tabs */}
+        <div style={{ display: 'flex', gap: 2, padding: '0 8px', background: '#0f141c', borderBottom: '1px solid #1c2430' }}>
+          {tabs.map(({ id, label }) => {
+            const on = id === active;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onTab(id)}
+                style={{
+                  appearance: 'none', border: 'none', background: 'transparent', padding: '9px 12px 8px',
+                  fontFamily: MONO, fontSize: 12, color: on ? '#e6edf3' : '#6b7689',
+                  borderBottom: on ? '2px solid var(--po-live)' : '2px solid transparent',
+                  cursor: 'pointer', letterSpacing: 0.2,
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        <CodeBlock lines={lines} />
+      </div>
+
+      <div style={{ padding: '0 var(--space-6) var(--space-6)', fontSize: 12.5, color: 'var(--po-fg-3)', lineHeight: 1.65 }}>
+        {footer}
+      </div>
+    </div>
+  );
+}
+
+export function ConnectCards({ apiKey }: { apiKey: string | null }) {
+  const key = apiKey ?? 'vk_live_…';
+  const [lang, setLang] = useState<Lang>('python');
+  const [client, setClient] = useState<McpClient>('claude');
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      <IdeCard<Lang>
+        title="Step 1 · Connect your SDK"
+        sub="One line in your RAG pipeline starts the trace stream"
+        badge="Waiting for first trace"
+        tabs={[{ id: 'python', label: 'python' }, { id: 'node', label: 'node' }, { id: 'curl', label: 'curl' }]}
+        active={lang}
+        onTab={setLang}
+        fileName={sdkFileName(lang)}
+        lines={sdkSnippet(lang, key)}
+        footer={
+          <>
+            Run a few queries — failing ones become <b style={{ color: 'var(--po-fg-2)' }}>heal cards</b> automatically.
+            This page updates the moment your first trace lands.
+          </>
+        }
+      />
+      <IdeCard<McpClient>
+        title="Step 2 · Connect your coding agent"
+        sub="So your agent can read heal cards and open fix PRs (optional)"
+        badge="Optional"
+        tabs={[{ id: 'claude', label: 'Claude Code' }, { id: 'cursor', label: 'Cursor' }, { id: 'codex', label: 'Codex' }]}
+        active={client}
+        onTab={setClient}
+        fileName={mcpFileName(client)}
+        lines={mcpSnippet(client, key)}
+        footer={
+          <>
+            Reload your agent, then run <code className="po-mono">/mcp</code> to confirm{' '}
+            <b style={{ color: 'var(--po-fg-2)' }}>veralith</b> is connected.{' '}
+            <code className="po-mono">{'${VERALITH_API_KEY}'}</code> reads the same key as your SDK —
+            export it once and changing your project key updates both.
+          </>
+        }
+      />
+    </div>
+  );
+}

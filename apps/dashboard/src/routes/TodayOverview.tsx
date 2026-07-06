@@ -6,7 +6,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { HealthDonut } from '../components/charts/HealthDonut';
 import { ProfileBadges } from '../components/charts/ProfileBadges';
-import { useStats, useCategoryInsights, useInsightSummary } from '../hooks/useOverviewData';
+import { useStats, useCategoryInsights, useInsightSummary, useApiKeys } from '../hooks/useOverviewData';
+import { ConnectCards } from '../components/ConnectCards';
 import { api } from '../api/client';
 import type { CategoryInsight, FailureCell, StatsResponse } from '../api/types';
 import { LoadingState, ErrorState } from '../components/StateViews';
@@ -752,6 +753,10 @@ function TodayContent() {
     enabled: !!slug,
   });
 
+  // For the first-run Connect block (shown when the project has no traces yet).
+  const apiKeysQuery = useApiKeys(slug);
+  const keyPrefix = apiKeysQuery.data?.api_keys[0]?.prefix ?? null;
+
   const s = stats.data;
   const projectHeals = (healsQuery.data ?? []).filter((c) => !projectId || c.project_id === projectId);
   const healsCount = projectHeals.length;
@@ -796,6 +801,10 @@ function TodayContent() {
     ? (cells.complete_ungrounded ?? 0) + (cells.incomplete_ungrounded ?? 0) + (cells.extra_ungrounded ?? 0)
     : 0;
   const total = s?.total_traces ?? 0;
+  // First-run signal: the project has never received a trace (all-time + 7d +
+  // selected window all empty). Drives the Connect onboarding block. A project
+  // that's merely quiet *today* but has 7d history keeps the normal dashboard.
+  const hasAnyTraces = (project?.trace_count ?? 0) > 0 || ovTotal > 0 || total > 0;
   // Abstention-adjusted health: counting honest abstentions (correct "I don't
   // know" declines) as acceptable lifts the effective healthy rate, so a low raw
   // rate that's mostly abstentions reads as "actually fine".
@@ -940,9 +949,17 @@ function TodayContent() {
         )}
       </section>
 
+      {/* First-run: no traces ever → show the Connect onboarding instead of the
+          all-zero profile/overview grid. */}
+      {s && !hasAnyTraces && (
+        <section className="wf-profile-sec">
+          <ConnectCards apiKey={keyPrefix} />
+        </section>
+      )}
+
       {/* Profile + Overview only mount once stats are loaded, so the page shows
           a single loader (no second donut loader) during the initial load. */}
-      {s && (
+      {s && hasAnyTraces && (
       <>
       <section className="wf-profile-sec">
         <div className="wf-card wf-profile">
