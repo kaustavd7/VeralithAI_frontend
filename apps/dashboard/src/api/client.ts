@@ -7,6 +7,7 @@ import type {
   CalibrationResponse,
   CategoriesResponse,
   CellTimeseriesResponse,
+  ConnectionStatus,
   ErrorEnvelope,
   HealActionResponse,
   HealCardDetail,
@@ -141,6 +142,11 @@ export const api = {
   async listApiKeys(projectId: string): Promise<{ api_keys: ApiKey[] }> {
     if (USE_MOCK) return mockApi.listApiKeys(projectId);
     return request(`/v1/projects/${projectId}/api-keys`);
+  },
+
+  async getConnectionStatus(projectId: string): Promise<ConnectionStatus> {
+    if (USE_MOCK) return { sdk_connected: false, mcp_connected: false };
+    return request(`/v1/projects/${projectId}/connection`);
   },
 
   async getStats(

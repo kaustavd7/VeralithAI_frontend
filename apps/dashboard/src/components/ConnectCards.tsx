@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../api/client';
 
 /* ─────────────────────────────────────────────────────────────
    ConnectCards — the first-run onboarding block, shown wherever a
@@ -214,11 +216,13 @@ function CopyBtn({ text }: { text: string }) {
 
 /* One IDE card: window chrome + tabs + code surface. Generic over its tab id. */
 function IdeCard<T extends string>({
-  title, sub, badge, tabs, active, onTab, fileName, lines, footer,
+  title, sub, badge, connected, connectedLabel, tabs, active, onTab, fileName, lines, footer,
 }: {
   title: string;
   sub: string;
   badge: string;
+  connected: boolean;
+  connectedLabel: string;
   tabs: { id: T; label: string }[];
   active: T;
   onTab: (id: T) => void;
@@ -234,8 +238,20 @@ function IdeCard<T extends string>({
           <div className="po-card-sub">{sub}</div>
         </div>
         <div className="po-conn-state">
-          <span className="po-dot po-dot-grey" />
-          <span className="po-conn-state-label">{badge}</span>
+          {connected ? (
+            <>
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="8" cy="8" r="7" fill="var(--po-live)" />
+                <path d="M4.7 8.2l2.1 2.1 4.5-4.8" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="po-conn-state-label" style={{ color: 'var(--po-live)' }}>{connectedLabel}</span>
+            </>
+          ) : (
+            <>
+              <span className="po-dot po-dot-grey" />
+              <span className="po-conn-state-label">{badge}</span>
+            </>
+          )}
         </div>
       </div>
 
@@ -295,10 +311,21 @@ function IdeCard<T extends string>({
   );
 }
 
-export function ConnectCards({ apiKey }: { apiKey: string | null }) {
+export function ConnectCards({ apiKey, slug }: { apiKey: string | null; slug: string }) {
   const key = apiKey ?? 'vk_live_…';
   const [lang, setLang] = useState<Lang>('python');
   const [client, setClient] = useState<McpClient>('claude');
+
+  // Live wiring status — polls every 5s so each step flips to a green check the
+  // moment the SDK sends its first trace / the agent first authenticates.
+  const conn = useQuery({
+    queryKey: ['connection', slug],
+    queryFn: () => api.getConnectionStatus(slug),
+    enabled: !!slug,
+    refetchInterval: 5000,
+  });
+  const sdkOn = conn.data?.sdk_connected ?? false;
+  const mcpOn = conn.data?.mcp_connected ?? false;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
@@ -306,6 +333,8 @@ export function ConnectCards({ apiKey }: { apiKey: string | null }) {
         title="Step 1 · Connect your SDK"
         sub="One line in your RAG pipeline starts the trace stream"
         badge="Waiting for first trace"
+        connected={sdkOn}
+        connectedLabel="Receiving traces"
         tabs={[{ id: 'python', label: 'python' }, { id: 'node', label: 'node' }, { id: 'curl', label: 'curl' }]}
         active={lang}
         onTab={setLang}
@@ -322,6 +351,8 @@ export function ConnectCards({ apiKey }: { apiKey: string | null }) {
         title="Step 2 · Connect your coding agent"
         sub="So your agent can read heal cards and open fix PRs (optional)"
         badge="Optional"
+        connected={mcpOn}
+        connectedLabel="Agent connected"
         tabs={[{ id: 'claude', label: 'Claude Code' }, { id: 'cursor', label: 'Cursor' }, { id: 'codex', label: 'Codex' }]}
         active={client}
         onTab={setClient}

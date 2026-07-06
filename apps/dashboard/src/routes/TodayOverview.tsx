@@ -875,7 +875,7 @@ function TodayContent() {
             empty healthy-rate chart + KPI grid. */}
         {s && !hasAnyTraces && (
           <div style={{ marginBottom: 'var(--space-6)' }}>
-            <ConnectCards apiKey={keyPrefix} />
+            <ConnectCards apiKey={keyPrefix} slug={slug} />
           </div>
         )}
 

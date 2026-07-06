@@ -33,6 +33,13 @@ export interface ApiKeyWithSecret extends ApiKey {
   secret: string;
 }
 
+export interface ConnectionStatus {
+  sdk_connected: boolean;
+  sdk_last_at?: string | null;
+  mcp_connected: boolean;
+  mcp_last_at?: string | null;
+}
+
 export interface StatsTimeseriesPoint {
   bucket: string;
   count: number;
