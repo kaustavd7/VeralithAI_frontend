@@ -5,7 +5,7 @@ import { useTheme, type ThemeChoice } from '../../hooks/useTheme';
 
 type Props = { onClose: () => void };
 
-const DOCS_URL = 'https://veralithai.com/docs.html';
+const DOCS_URL = 'https://docs.veralithai.com';
 
 export function AccountMenu({ onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null);

@@ -5,7 +5,7 @@ export default {
     </span>
   ),
   project: {
-    link: 'https://app.veralithai.com',
+    link: 'https://github.com/SrijanShekhar21/VeralithAI',
   },
   docsRepositoryBase: 'https://github.com/kaustavd7/VeralithAI_frontend/tree/main/apps/docs',
   primaryHue: 155,
