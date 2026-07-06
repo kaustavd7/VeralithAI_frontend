@@ -1522,7 +1522,7 @@
   flex: none;
 }
 .te-q-text {
-  color: var(--po-fg);
+  color: var(--po-fg-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
