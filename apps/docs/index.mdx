@@ -1,0 +1,52 @@
+---
+title: Introduction
+description: Veralith evaluates every RAG answer for hallucination, tells you exactly how it failed, and opens the fix.
+---
+
+Veralith is an evaluation layer for retrieval-augmented (RAG) and memory-based AI systems. You send it each answer your system produced — the **query**, the **context** it retrieved, and the **response** it generated — and Veralith grades whether the answer was actually grounded in that context, classifies *how* it failed, and turns recurring failures into fixes your coding agent can open as pull requests.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="play" href="/getting-started/quickstart">
+    Install the SDK, add one line, and watch your first trace get diagnosed — in about five minutes.
+  </Card>
+  <Card title="Core concepts" icon="book-open" href="/getting-started/concepts">
+    Trace → evaluation → failure cell → heal. The mental model the whole product is built on.
+  </Card>
+  <Card title="Integration" icon="code" href="/integration/overview">
+    `log()`, the `@trace` decorator, the LangChain adapter, and recipes for messy codebases.
+  </Card>
+  <Card title="The dashboard" icon="chart-simple" href="/getting-started/concepts">
+    Every page — Overview, Trace Explorer, Analytics, Failure Cells, Heals — explained.
+  </Card>
+</CardGroup>
+
+## What Veralith checks
+
+For every answer, Veralith runs three judges and combines them into a single verdict:
+
+- **Sufficiency** — did the retrieved context actually contain what was needed to answer?
+- **Faithfulness** — did the response stick to that context, or did it fabricate (hallucinate) claims that aren't supported?
+- **Completeness** — did the response cover the question, leave parts out, or pad it with unrequested extras?
+
+Those three combine into one of **six failure cells** — a precise label for *how* an answer went wrong (for example, `complete_ungrounded` = a confident, fully-formed answer that's fabricated). See [How evaluation works](/getting-started/concepts).
+
+## The loop
+
+<Steps>
+  <Step title="Instrument">
+    Add one line to your RAG pipeline with the [SDK](/integration/overview). Each answer becomes a **trace**.
+  </Step>
+  <Step title="Evaluate">
+    Veralith grades the trace asynchronously and assigns a **failure cell**. Nothing is added to your request latency.
+  </Step>
+  <Step title="Diagnose">
+    Recurring failures of the same root cause cluster into a **heal card** with a concrete, reviewable fix.
+  </Step>
+  <Step title="Heal">
+    Connect a coding agent (Claude Code, Cursor, Codex) over [MCP](/getting-started/concepts) and let it open the fix as a pull request.
+  </Step>
+</Steps>
+
+<Note>
+Adding Veralith is low-risk by design: the SDK is **fail-safe** (it can never break your app), **fire-and-forget** (zero added latency), and a **no-op without an API key** (safe to ship to every environment). See [the SDK contract](/integration/overview#the-sdk-contract).
+</Note>

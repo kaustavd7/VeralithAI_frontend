@@ -1,0 +1,41 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Veralith",
+  "description": "Documentation for Veralith — evaluate, diagnose, and self-heal RAG hallucinations.",
+  "colors": {
+    "primary": "#059669",
+    "light": "#34d399",
+    "dark": "#10b981"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting started",
+        "pages": [
+          "index",
+          "getting-started/quickstart",
+          "getting-started/concepts"
+        ]
+      },
+      {
+        "group": "Integration",
+        "pages": [
+          "integration/overview"
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.veralithai.com"
+    }
+  },
+  "footer": {
+    "socials": {
+      "website": "https://veralithai.com"
+    }
+  }
+}

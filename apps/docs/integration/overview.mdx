@@ -1,0 +1,105 @@
+---
+title: Integration overview
+description: The three ways to send traces — log(), the @trace decorator, and the LangChain adapter — plus the guarantees every one of them makes.
+---
+
+Every integration surface does the same thing underneath: it assembles a **trace** — `(query, context, response)` — and sends it to Veralith, which grades it asynchronously. They differ only in **how they pull those three values out of your code**.
+
+## The SDK contract
+
+Adding Veralith to a production pipeline is low-risk by design. Every surface makes the same three guarantees:
+
+<CardGroup cols={3}>
+  <Card title="Fail-safe" icon="shield-check">
+    Any error inside Veralith is caught and warned — your RAG keeps serving. Instrumentation can't take down the thing it instruments.
+  </Card>
+  <Card title="Fire-and-forget" icon="bolt">
+    Calls return the instant the trace is queued; grading runs asynchronously. Zero added latency in your request path.
+  </Card>
+  <Card title="No-op without a key" icon="key">
+    With no `VERALITH_API_KEY` set, the SDK warns once and does nothing — safe to ship to every environment.
+  </Card>
+</CardGroup>
+
+The single deliberate exception to fail-safe is a hard **budget cap**, which raises `BudgetExceeded` — and even that is opt-out (`enforce_budget=False`). Evaluation is hosted-mode only, so `sync=True` is not supported.
+
+## Choose a surface
+
+<CardGroup cols={3}>
+  <Card title="log()" icon="code">
+    Explicit one-liner. Works with **any** stack or code shape. Most control.
+  </Card>
+  <Card title="@trace" icon="at">
+    Decorate a RAG function that returns `(response, context)`. Auto-measures latency.
+  </Card>
+  <Card title="LangChain" icon="link">
+    One `install()` call auto-traces `RetrievalQA` chains. Zero per-call code.
+  </Card>
+</CardGroup>
+
+### 1. `veralith.log(...)` — works with any code
+
+```python
+import veralith
+
+veralith.log(
+    query="What is the Rule of 72?",
+    context=chunks,              # list[str] | list[dict] | list[ContextChunk]
+    response=answer,
+    latency_ms=elapsed,          # optional — shown on the trace
+)
+```
+
+Use it anywhere the three values are in scope: any framework, class methods, notebooks, web handlers, or streaming (call it after you've assembled the final response). It's the universal fallback.
+
+### 2. `@veralith.trace` — for RAG functions
+
+Decorate the function that receives the query and returns the answer. The wrapped function still returns just `response` to callers, so your call sites don't change.
+
+```python
+import veralith
+
+@veralith.trace
+def rag(query):
+    chunks = retriever(query)
+    response = generator(query, chunks)
+    return response, chunks          # (response, context) tuple
+
+# If your function returns only a string, hand over context explicitly:
+@veralith.trace(query_arg="user_question")
+def rag(user_question):
+    ...
+    return veralith.TraceReturn(response=answer, context=chunks)
+```
+
+`async def` is supported. The query is taken from the first positional argument by default, or from the parameter you name with `query_arg=`.
+
+### 3. LangChain adapter — zero-code auto-tracing
+
+```python
+import veralith.adapters.langchain as adapter
+adapter.install()   # once, at startup
+# every RetrievalQA / RetrievalQAWithSourcesChain .invoke() now auto-logs
+```
+
+It patches those chains at the class level and extracts the query, answer, and `source_documents` automatically. If a version returns an unexpected shape it warns and passes the result through untouched — your chain never breaks.
+
+<Warning>
+The adapter only covers `RetrievalQA` and `RetrievalQAWithSourcesChain`. **LCEL / custom `Runnable` chains, LlamaIndex, and agents are not auto-traced** — use `log()` at the point where the answer is assembled.
+</Warning>
+
+## Which surface for which code shape
+
+The decorator needs a single function where the query is an argument and `(response, context)` is the return. If your code doesn't have that chokepoint — the common "messy codebase" case — use `log()`.
+
+| Your code | Use |
+| --- | --- |
+| Function returns `(response, chunks)` | `@veralith.trace` |
+| Function returns only a string | `@veralith.trace` + `TraceReturn` |
+| Class pipeline (retrieve + generate methods) | `@trace` on the entry method, or `log()` inside |
+| Web handler returning a dict/Response | `log()` before returning |
+| Streaming (yields tokens) | `log()` after the stream completes |
+| LangChain `RetrievalQA` | `adapter.install()` |
+| LangChain LCEL / LlamaIndex / agents | `log()` at assembly |
+
+> **The rule for any codebase:** find the single point where `query`, the retrieved `context`, and the final `response` all exist together, and put `log()` there. If they never coexist in one scope, thread one value to where the other two are.
