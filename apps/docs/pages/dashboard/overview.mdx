@@ -1,0 +1,43 @@
+---
+title: Project overview
+description: The Project overview page — healthy rate, KPIs, the trace health profile, and the diagnostics grid — explained field by field.
+---
+
+# Project overview
+
+**Project overview** (sidebar: *Project overview*, shortcut `g o`) is the command center for a project — the "how healthy is my RAG right now" page. Pick a window with the **Today / Yesterday / Last week** tabs at the top.
+
+Until your first trace arrives, this page shows the **Connect** steps instead (see [Connection status](/dashboard/connection-status) and [Quickstart](/getting-started/quickstart)).
+
+## Healthy rate
+
+The headline number: the share of **evaluated** traces in the window that were `complete_grounded` (fully answered and grounded). A badge reads **Healthy / Warning / Critical** based on the rate.
+
+- The denominator is **evaluated** traces, not total — traces still `evaluating` (or whose eval failed) aren't counted as unhealthy, just not-yet-graded. See [Healthy rate](/getting-started/concepts#healthy-rate).
+- If your system correctly **abstained** on some queries, an **abstention-adjusted** line shows the effective rate (honest "I don't know" answers counted as acceptable). See [honest abstention](/getting-started/concepts#honest-abstention).
+
+## KPI cards
+
+Four tiles, each with a 24-hour delta:
+
+| Card | What it counts |
+| --- | --- |
+| **New traces** | Traces ingested in the window. |
+| **Failures** | Ungrounded (hallucinated) traces — the sum of the three `*_ungrounded` cells. |
+| **Heals** | Heal cards for this project. |
+| **p95 latency** | 95th-percentile RAG latency, when you send `latency_ms` with your traces. |
+
+> **Note:** "New traces" counts *everything ingested*; the trace-health donut below counts *evaluated* traces. If they differ, the gap is traces still being evaluated.
+
+## Trace health profile
+
+A donut of the **six failure cells** for the window, with the healthy share in the center, plus **achievement badges** (heals resolved, streaks). Click a slice to jump to the [Trace explorer](/dashboard/trace-explorer) filtered to that cell.
+
+## The diagnostics grid
+
+Below the fold:
+
+- **RAG health** — a composite index of the three judges (**sufficiency · faithfulness · completeness**) with 7-day sparklines.
+- **Knowledge-gap topics** — failing-query clusters grouped by root cause, each tagged with its dominant failure cell. Click through to the matching traces.
+- **Potential improvement** — a projection of your healthy rate *if every open heal were resolved*, ranked by contributor.
+- **Ver-advice** — a short "what we'd do next" summary generated from your recent failures.

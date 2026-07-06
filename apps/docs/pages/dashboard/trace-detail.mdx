@@ -1,0 +1,28 @@
+---
+title: Trace detail
+description: A single trace end to end — query, retrieved context, response, the diagnosis with its failure cell and judge scores, and the re-evaluate / copy actions.
+---
+
+# Trace detail
+
+The **Trace detail** page opens one trace in full. Reach it by clicking any row in the [Trace explorer](/dashboard/trace-explorer).
+
+## Diagnosis
+
+If the trace is `evaluated`, the top of the page shows the **diagnosis**: the assigned **[failure cell](/getting-started/concepts#the-six-failure-cells)**, whether it was an **honest abstention**, and the judge scores. If it's still `evaluating`, the page updates itself once grading finishes — no refresh needed.
+
+## Query & Response
+
+The two panes show exactly what your system did:
+
+- **Query** — the user's question, annotated with the **sufficiency** score (did retrieval surface what was needed?).
+- **Response** — the generated answer, annotated with the **faithfulness** score (did it stay grounded, or hallucinate?).
+
+## Retrieved context
+
+The **retrieved chunks** you sent as `context`, in order — so you can see exactly what the model had to work with when it answered. This is where a **retrieval gap** (`incomplete_grounded`) or a **hallucination** (`*_ungrounded`) becomes obvious.
+
+## Actions
+
+- **Re-evaluate** — drop the current evaluation and re-run the judges (see [Trace explorer → Re-evaluate](/dashboard/trace-explorer#re-evaluate-a-trace)).
+- **Copy as Markdown** — copy the full trace (query, context, response, diagnosis) as Markdown, e.g. to paste into an issue or a chat with your coding agent.

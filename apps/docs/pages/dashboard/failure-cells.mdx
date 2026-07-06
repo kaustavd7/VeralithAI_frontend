@@ -1,0 +1,30 @@
+---
+title: Failure cells
+description: The 2×3 failure-cell taxonomy — completeness × faithfulness — over time, grouped by cell or by completeness.
+---
+
+# Failure cells
+
+**Failure cells** (sidebar: *Failure cells*, shortcut `g f`) visualizes the full **2 × 3 taxonomy** — completeness (`complete` / `incomplete` / `extra`) × faithfulness (`grounded` / `ungrounded`) — and how it moves over time.
+
+## The six cells
+
+| Cell | Plain name | Grounded? |
+| --- | --- | --- |
+| `complete · grounded` | Healthy | ✅ grounded |
+| `incomplete · grounded` | Retrieval gap | ✅ grounded |
+| `extra · grounded` | Over-answered | ✅ grounded |
+| `complete · ungrounded` | Hallucinated | ❌ ungrounded |
+| `extra · ungrounded` | Fabricated extras | ❌ ungrounded |
+| `incomplete · ungrounded` | Missing + made-up | ❌ ungrounded |
+
+Full definitions are on [Core concepts → the six failure cells](/getting-started/concepts#the-six-failure-cells).
+
+## Grouping
+
+Toggle how the cells are grouped:
+
+- **By cell** — all six, individually.
+- **By completeness** — collapse into `complete` / `incomplete` / `extra` to see the completeness axis on its own.
+
+Reading the split tells you *where to spend effort*: mostly `grounded` failures point at **retrieval** (the context is missing things); mostly `ungrounded` failures point at **generation/grounding** (the model is fabricating). That's the same distinction Veralith uses to route [heal cards](/dashboard/heals).

@@ -1,0 +1,27 @@
+---
+title: Connection status
+description: The SDK and MCP (agent) dots — what green means, how each is detected, and why the agent dot stays green after you disconnect.
+---
+
+# Connection status
+
+The project topbar shows a small **`● SDK · ● MCP`** chip, and the first-run screen shows a green check on each setup step. Both tell you which half of Veralith is wired up. Click the chip to open the setup steps.
+
+## The two dots
+
+- **SDK** — turns green once the project has **received at least one trace**. This is how you confirm your [`log()` / `@trace` / adapter](/integration/overview) integration is actually sending.
+- **MCP** — turns green once a **coding agent has authenticated** to Veralith over MCP (your `.mcp.json` / `claude mcp add` setup). This is how you confirm the [self-heal](/integration/overview) side is connected.
+
+## What "green" means for the agent dot
+
+<br />
+
+> **Important:** the MCP dot means *"an agent **has** connected"*, not *"an agent is connected **right now**"*.
+
+The dot is driven by a heartbeat that is stamped whenever an agent authenticates, and it is only ever **set** — never cleared. So once an agent connects once, the MCP dot **stays green**, even if you later disconnect the agent, delete `.mcp.json`, or revoke the key.
+
+This is inherent to how MCP-over-HTTP works: the transport is request/response, so there is **no persistent connection and no disconnect event** for the dashboard to observe. The most it can truthfully report is "an agent authenticated." The SDK dot works the same way — it means "we've received traces," not "traffic is flowing this second."
+
+## Verifying a live connection
+
+To confirm an agent is connected *now*, run `/mcp` inside your agent (Claude Code, Cursor, Codex) — it lists the connected `veralith` server and its tools. See [Integration](/integration/overview) to set it up.

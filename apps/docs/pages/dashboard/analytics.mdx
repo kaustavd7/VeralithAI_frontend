@@ -1,0 +1,18 @@
+---
+title: Analytics
+description: Trends over time — hallucination rate, trace volume, failure-cell mix and drift, judge scores, and latency percentiles.
+---
+
+# Analytics
+
+**Analytics** (sidebar: *Analytics*, shortcut `g a`) is the trends view — how your RAG quality is moving over time, versus the point-in-time snapshot on [Project overview](/dashboard/overview). Each panel respects a time-window override.
+
+## What the panels show
+
+- **Hallucination trend** — the ungrounded (fabrication) rate over time. The line you most want going down.
+- **Trace volume** — traces per bucket, with **grounded / ungrounded** toggles so you can see the mix, not just the total.
+- **Failure-cell mix & drift** — how the six cells shift over the window, so a newly-growing failure mode stands out early.
+- **Judge scores** — **sufficiency · faithfulness · completeness** trends (the same three that make up RAG health).
+- **Latency percentiles** — p50 / p95 RAG latency over time, when you send `latency_ms` with your traces.
+
+For the static, cell-by-cell taxonomy (rather than trends), see [Failure cells](/dashboard/failure-cells).

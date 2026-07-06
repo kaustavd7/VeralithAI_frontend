@@ -1,0 +1,31 @@
+---
+title: Trace explorer
+description: Browse, filter, and triage every trace — by failure cell, status, and sufficiency — and re-run a stuck or outdated evaluation.
+---
+
+# Trace explorer
+
+**Trace explorer** (sidebar: *Trace explorer*, shortcut `g t`) is the searchable table of every trace your SDK has sent. Use it to triage failures and open individual traces.
+
+## Filter by failure cell
+
+Chips across the top filter to any of the **six [failure cells](/getting-started/concepts#the-six-failure-cells)** — `complete · grounded`, `complete · ungrounded`, `incomplete · grounded`, `incomplete · ungrounded`, `extra · grounded`, `extra · ungrounded`. Combine chips to see, say, only hallucinations (the `ungrounded` cells).
+
+## Status
+
+Each trace is one of:
+
+- **`evaluating`** — the trace arrived; the judges haven't finished (this clears within seconds; see [Troubleshooting](/dashboard/trace-explorer#stuck-on-evaluating) if it doesn't).
+- **`evaluated`** — graded, with a failure cell assigned.
+
+## Sort & columns
+
+Sort by newest, or by lowest **sufficiency** / **faithfulness** to surface the worst answers first. Rows show the trace id, the query, its failure cell, sufficiency/faithfulness scores, latency, and age. Honest **abstentions** are marked distinctly — a correct "I don't know" is not a failure.
+
+## Re-evaluate a trace
+
+Open a trace and use **Re-evaluate** (also on the [Trace detail](/dashboard/trace-detail) page) to drop the existing evaluation and re-run the judges — useful after a stuck eval, or to re-grade with updated logic. The row returns to `evaluating` and updates on its own when grading finishes.
+
+### Stuck on "evaluating"?
+
+A trace reads `evaluating` whenever it has no evaluation yet. This is almost always temporary — a background evaluator picks up stranded traces automatically. It can persist if your **LLM provider credit is exhausted** (the eval can't run). Top up credit, then **Re-evaluate** the trace (or the backend re-sweeps stranded traces after a restart). See [Troubleshooting](/getting-started/quickstart) for more.

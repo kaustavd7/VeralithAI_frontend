@@ -1,0 +1,31 @@
+---
+title: Settings & API keys
+description: Create, view, and revoke API keys, get pre-filled connect snippets, and manage workspace settings.
+---
+
+# Settings & API keys
+
+Open **Workspace settings** from the sidebar (shortcut `g s`), or jump to a project's keys from its overview.
+
+## API keys
+
+Keys authenticate the SDK and the ingest endpoints. They're scoped **per project** and look like `vk_live_...`.
+
+- **Create** a key from the API Keys panel. The full secret is shown **once, at creation** — copy it then.
+- After creation it's stored **hashed**; the dashboard can't reprint it. If you lose it, create a new one.
+- **Revoke** a key to disable it immediately (requests using it get `401`). Revoked keys stay listed for audit.
+
+> **Warning:** a truncated key like `vk_live_Ok3…` shown in a snippet is only the key's **prefix** (an identifier), not the full secret. Use the key you copied at creation, or create-and-reveal a fresh one from the Connect screen.
+
+## Connect snippets
+
+On key creation (and on the first-run Connect screen), Veralith gives you ready-to-paste setup for each surface:
+
+- **SDK** — `pip install veralith`, the env var, and the `veralith.log(...)` line.
+- **Coding agent (MCP)** — a `claude mcp add` one-liner **and** a `.mcp.json` block for Claude Code, plus Cursor and Codex variants.
+
+See [Integration](/integration/overview) for what each does, and [Connection status](/dashboard/connection-status) to confirm they're wired up.
+
+## One key, one place
+
+Both the SDK and the MCP agent read the **same** `VERALITH_API_KEY`. If you set it once as an environment variable and reference `${VERALITH_API_KEY}` in your agent config, switching a project's key means changing it in a single place. (Note: your editor reads the *real* environment, not a `.env` file — export the variable so both the SDK and the agent pick it up.)

@@ -1,0 +1,50 @@
+---
+title: Heals
+description: The heal canvas — how failures cluster into heal cards, the card lifecycle and statuses, and the actions that drive a fix to a pull request.
+---
+
+# Heals
+
+**Heals** (sidebar: *Heals*, shortcut `g h`) is where recurring failures become fixes. When traces of the **same root cause** pile up, Veralith clusters them into a **heal card** — a single, reviewable unit describing the failure pattern and a concrete fix.
+
+## The canvas
+
+Heal cards live on a draggable canvas (like a board of sticky nodes). Cards flow to fill the width and you can rearrange them; your layout is saved per project.
+
+Each card shows:
+
+- A **failure-type pill** — the dominant [failure cell](/getting-started/concepts#the-six-failure-cells) in plain language (**Hallucinated**, **Retrieval gap**, …).
+- The **category** (the suggestion slug) and a one-sentence **failure description**.
+- A few **sample trace ids** and the **trace count**.
+- The **status**, last-activity time, and a **recurrence** badge if the failure category came back after a prior fix.
+
+## Card lifecycle
+
+```
+open → in_progress → pr_raised → resolved
+```
+
+| Status | Meaning |
+| --- | --- |
+| **open** | Awaiting a decision. |
+| **in_progress** | A coding agent is working the fix. |
+| **pr_raised** | A pull request is open for review. |
+| **resolved** | The PR was accepted — fixed. |
+| **wont_fix** | Dismissed as not worth fixing (terminal). |
+| **manually_fixed** | You fixed it yourself (terminal). |
+| **superseded** | Replaced by a newer card (terminal). |
+
+## Actions
+
+- **Start heal** — hand the card to your connected [coding agent](/dashboard/connection-status) to apply the fix.
+- **Accept / Decline** — on a `pr_raised` card, accept the PR (→ `resolved`) or send it back.
+- **Retry** — re-attempt a `failed` heal.
+- **Dismiss** — *"I fixed it manually"* (→ `manually_fixed`) or *"just ignore"* (→ `wont_fix`).
+- **Reopen** — bring a dismissed card back to `open` if you change your mind.
+- **Heal all / Accept all** — bulk-operate when several cards are open.
+
+## From card to pull request
+
+A heal card isn't just advice — a connected agent (Claude Code, Cursor, Codex) reads the open cards over **MCP**, applies the fix in your repo, and opens the PR. See [Self-heal](/dashboard/connection-status) to connect one.
+
+> **Why do I see two similar cards?** Occasionally two near-duplicate cards form for one root cause. Dismiss one (*"just ignore"*) to merge them by hand; Veralith continuously tightens its clustering to prevent it.

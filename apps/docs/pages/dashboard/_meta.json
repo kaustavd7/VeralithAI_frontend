@@ -1,0 +1,10 @@
+{
+  "overview": "Project overview",
+  "trace-explorer": "Trace explorer",
+  "trace-detail": "Trace detail",
+  "analytics": "Analytics",
+  "failure-cells": "Failure cells",
+  "heals": "Heals",
+  "connection-status": "Connection status",
+  "settings": "Settings & API keys"
+}
