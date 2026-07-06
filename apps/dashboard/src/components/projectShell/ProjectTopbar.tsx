@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useProjects } from '../../hooks/useProjects';
 import { api } from '../../api/client';
 import { AccountMenu } from './AccountMenu';
+import { ConnectionChip } from './ConnectionChip';
 import { BrandMark } from '../brand/Brand';
 
 type Props = {
@@ -172,6 +173,8 @@ export function ProjectTopbar({ workspace = 'workspace', project, onMenu }: Prop
             </div>
           )}
         </div>
+
+        <ConnectionChip slug={slug} />
         </>
         )}
       </div>

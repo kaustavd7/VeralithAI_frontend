@@ -156,6 +156,25 @@
   padding: 2px 8px; border-radius: 999px; margin-left: 4px;
 }
 
+/* Persistent SDK/MCP wiring indicator next to the project name. */
+.conn-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-left: 10px; padding: 3px 9px;
+  border: 1px solid var(--po-line); border-radius: 999px;
+  font-size: 11px; line-height: 1; color: var(--po-fg-3);
+  letter-spacing: 0.03em; cursor: default; user-select: none;
+}
+.conn-chip-l { font-weight: 600; }
+.conn-chip-sep { color: var(--po-fg-4); margin: 0 1px; }
+.conn-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--po-fg-4); flex: 0 0 auto;
+}
+.conn-dot.is-on {
+  background: var(--po-live);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--po-live) 22%, transparent);
+}
+
 .tb-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 .tb-icon-btn {
   width: 32px; height: 32px;
@@ -552,6 +571,7 @@
   .ph-search-pill,
   .tb-right .tb-icon-btn,
   .tb-tier,
+  .conn-chip,
   .tb-crumb-link { display: none; }
   /* drop the leading "workspace /" separator that preceded the hidden crumb */
   .tb-crumbs > .tb-crumb-sep:first-of-type { display: none; }
