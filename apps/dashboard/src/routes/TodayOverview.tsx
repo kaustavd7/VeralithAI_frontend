@@ -871,6 +871,14 @@ function TodayContent() {
           </div>
         </div>
 
+        {/* First-run: no traces ever → lead with the Connect steps, above the
+            empty healthy-rate chart + KPI grid. */}
+        {s && !hasAnyTraces && (
+          <div style={{ marginBottom: 'var(--space-6)' }}>
+            <ConnectCards apiKey={keyPrefix} />
+          </div>
+        )}
+
         {stats.isError ? (
           <ErrorState
             message={stats.error instanceof Error ? stats.error.message : 'Failed to load your overview.'}
@@ -948,14 +956,6 @@ function TodayContent() {
           </div>
         )}
       </section>
-
-      {/* First-run: no traces ever → show the Connect onboarding instead of the
-          all-zero profile/overview grid. */}
-      {s && !hasAnyTraces && (
-        <section className="wf-profile-sec">
-          <ConnectCards apiKey={keyPrefix} />
-        </section>
-      )}
 
       {/* Profile + Overview only mount once stats are loaded, so the page shows
           a single loader (no second donut loader) during the initial load. */}
