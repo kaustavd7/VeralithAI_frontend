@@ -449,6 +449,73 @@ function plainCopy(lines: CodeLine[]): string {
   return lines.map((line) => line.map((t) => t.t).join('')).join('\n');
 }
 
+/* ─────────────────────────────────────────────────────────────
+   MCP (agent) connect snippets — the SECOND half of onboarding.
+   Point a coding agent (Claude Code / Cursor / Codex) at the
+   hosted MCP server so it can read heal cards and open fix PRs.
+
+   We default to the `${VERALITH_API_KEY}` env indirection (and
+   Codex's `bearer_token_env_var`) so the key lives in ONE place —
+   the same var the SDK reads. Change the project key once and both
+   the SDK and the agent follow; no second edit in .mcp.json.
+   ─────────────────────────────────────────────────────────── */
+
+type McpClient = 'claude' | 'cursor' | 'codex';
+
+const MCP_URL = 'https://api.veralithai.com/mcp/http';
+
+/** Filename shown on the editor window-chrome tab, per MCP client. */
+function mcpFileNameFor(c: McpClient): string {
+  if (c === 'claude') return '.mcp.json';
+  if (c === 'cursor') return '.cursor/mcp.json';
+  return '~/.codex/config.toml';
+}
+
+function mcpSnippetLines(c: McpClient, key: string): CodeLine[] {
+  if (c === 'claude') {
+    return [
+      [tk('{')],
+      [tk('  '), tk('"mcpServers"', 'str'), tk(': {')],
+      [tk('    '), tk('"veralith"', 'str'), tk(': {')],
+      [tk('      '), tk('"type"', 'str'), tk(': '), tk('"http"', 'str'), tk(',')],
+      [tk('      '), tk('"url"', 'str'), tk(': '), tk(`"${MCP_URL}"`, 'str'), tk(',')],
+      [
+        tk('      '), tk('"headers"', 'str'), tk(': { '),
+        tk('"Authorization"', 'str'), tk(': '),
+        tk('"Bearer ${VERALITH_API_KEY}"', 'str'), tk(' }'),
+      ],
+      [tk('    }')],
+      [tk('  }')],
+      [tk('}')],
+    ];
+  }
+  if (c === 'cursor') {
+    return [
+      [tk('{')],
+      [tk('  '), tk('"mcpServers"', 'str'), tk(': {')],
+      [tk('    '), tk('"veralith"', 'str'), tk(': {')],
+      [tk('      '), tk('"type"', 'str'), tk(': '), tk('"streamableHttp"', 'str'), tk(',')],
+      [tk('      '), tk('"url"', 'str'), tk(': '), tk(`"${MCP_URL}"`, 'str'), tk(',')],
+      [
+        tk('      '), tk('"headers"', 'str'), tk(': { '),
+        tk('"Authorization"', 'str'), tk(': '),
+        tk(`"Bearer ${key}"`, 'str'), tk(' }'),
+      ],
+      [tk('    }')],
+      [tk('  }')],
+      [tk('}')],
+    ];
+  }
+  // codex — native env indirection via bearer_token_env_var
+  return [
+    [tk('[mcp_servers.veralith]', 'fn')],
+    [tk('url'), tk(' = '), tk(`"${MCP_URL}"`, 'str')],
+    [tk('bearer_token_env_var'), tk(' = '), tk('"VERALITH_API_KEY"', 'str')],
+    [],
+    [tk('# reads the same key env var as the SDK', 'cmt')],
+  ];
+}
+
 /* Token color map for the (intentionally fixed) dark code surface.
    These are code-editor syntax hues, not themeable surfaces, so they
    are deliberately hard-coded against the #0d1117 background. */
@@ -762,6 +829,185 @@ function ConnectionCard({
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Agent connect card — step 2 of onboarding, shown in the `never`
+   state beneath the SDK card. Same fixed-dark IDE surface; client
+   tabs for Claude Code / Cursor / Codex. The snippets prefer the
+   ${VERALITH_API_KEY} env indirection so the key stays single-source.
+   ─────────────────────────────────────────────────────────── */
+
+function AgentConnectCard({ apiKey }: { apiKey: string | null }) {
+  const [client, setClient] = useState<McpClient>('claude');
+  const [copied, setCopied] = useState(false);
+  const keyDisplay = apiKey ?? 'vk_live_…';
+
+  const clients: { id: McpClient; label: string }[] = [
+    { id: 'claude', label: 'Claude Code' },
+    { id: 'cursor', label: 'Cursor' },
+    { id: 'codex', label: 'Codex' },
+  ];
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(plainCopy(mcpSnippetLines(client, keyDisplay)));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return (
+    <div className="po-card po-conn po-conn-never" style={{ overflow: 'hidden', padding: 0, marginTop: 'var(--space-4)' }}>
+      <div className="po-card-head" style={{ padding: 'var(--card-pad)', marginBottom: 0 }}>
+        <div>
+          <div className="po-card-title">Connect your coding agent</div>
+          <div className="po-card-sub">So your agent can read heal cards and open fix PRs</div>
+        </div>
+        <div className="po-conn-state">
+          <span className="po-dot po-dot-grey" />
+          <span className="po-conn-state-label">Optional</span>
+        </div>
+      </div>
+
+      {/* ── IDE editor surface (fixed dark, not themeable) ───────────────── */}
+      <div
+        style={{
+          margin: '0 var(--space-6) var(--space-4)',
+          borderRadius: 'var(--po-radius-sm)',
+          border: '1px solid #1c2430',
+          background: '#0d1117',
+          overflow: 'hidden',
+          boxShadow: '0 8px 28px rgba(0, 0, 0, 0.32)',
+        }}
+      >
+        {/* window chrome: traffic-light dots + filename tab + copy */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            height: 38,
+            padding: '0 12px',
+            background: '#11161f',
+            borderBottom: '1px solid #1c2430',
+          }}
+        >
+          <span style={{ display: 'flex', gap: 7 }} aria-hidden="true">
+            <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#ff5f57' }} />
+            <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#febc2e' }} />
+            <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#28c840' }} />
+          </span>
+          <span
+            style={{
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+              fontSize: 12,
+              color: '#8b94a3',
+              padding: '4px 10px',
+              borderRadius: 5,
+              background: '#0d1117',
+              border: '1px solid #1c2430',
+            }}
+          >
+            {mcpFileNameFor(client)}
+          </span>
+          <span style={{ flex: 1 }} />
+          <button
+            type="button"
+            onClick={copy}
+            aria-label="Copy snippet"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              height: 26,
+              padding: '0 10px',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+              fontSize: 11.5,
+              color: copied ? 'var(--po-live)' : '#9aa3b2',
+              background: '#0d1117',
+              border: '1px solid #1c2430',
+              borderRadius: 6,
+              cursor: 'pointer',
+            }}
+          >
+            {copied ? (
+              <>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2.5 6.5l2.3 2.3 4.7-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                copied
+              </>
+            ) : (
+              <>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <rect x="3.5" y="3.5" width="5.5" height="5.5" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                  <path d="M5.5 3.5V2.5a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H9.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                </svg>
+                copy
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* client tabs */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 2,
+            padding: '0 8px',
+            background: '#0f141c',
+            borderBottom: '1px solid #1c2430',
+          }}
+        >
+          {clients.map(({ id, label }) => {
+            const active = id === client;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setClient(id)}
+                style={{
+                  appearance: 'none',
+                  border: 'none',
+                  background: 'transparent',
+                  padding: '9px 12px 8px',
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+                  fontSize: 12,
+                  color: active ? '#e6edf3' : '#6b7689',
+                  borderBottom: active ? '2px solid var(--po-live)' : '2px solid transparent',
+                  cursor: 'pointer',
+                  letterSpacing: 0.2,
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* the config, with subtle syntax coloring */}
+        <CodeBlock lines={mcpSnippetLines(client, keyDisplay)} />
+      </div>
+
+      {/* footnote: verify + single-source-of-truth note */}
+      <div
+        style={{
+          padding: '0 var(--space-6) var(--space-6)',
+          fontSize: 12.5,
+          color: 'var(--po-fg-3)',
+          lineHeight: 1.65,
+        }}
+      >
+        Reload your agent, then run <code className="po-mono">/mcp</code> to confirm{' '}
+        <b style={{ color: 'var(--po-fg-2)' }}>veralith</b> is connected.{' '}
+        <code className="po-mono">{'${VERALITH_API_KEY}'}</code> reads the same key as your SDK —
+        export it once and changing your project key updates both.
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
    Analytics CTA
    ─────────────────────────────────────────────────────────── */
 
@@ -866,6 +1112,8 @@ export default function ProjectOverview() {
           {state !== 'never' && <HealthyRateCard stats={stats.data} />}
           <ConnectionCard state={state} lastTrace={last} apiKey={keyPrefix} />
         </section>
+
+        {state === 'never' && <AgentConnectCard apiKey={keyPrefix} />}
 
         {state !== 'never' ? (
           <AnalyticsCta slug={slug} />
