@@ -3,7 +3,9 @@ title: Core concepts
 description: Trace, evaluation, the three judges, the six failure cells, healthy rate, honest abstention, and heal cards — the model the whole product runs on.
 ---
 
-Everything in Veralith is built on one pipeline: **trace → evaluation → failure cell → heal**. This page defines each term. (Deeper reference pages expand on each.)
+# Core concepts
+
+Everything in Veralith is built on one pipeline: **trace → evaluation → failure cell → heal**. This page defines each term.
 
 ## Trace
 
@@ -25,9 +27,7 @@ Veralith grades each trace with three independent judges:
 - **Faithfulness** — *Did the response stay grounded in that context, or did it assert claims the context doesn't support?* Unfaithful = **hallucination** (fabrication).
 - **Completeness** — *Did the response answer the whole question?* It can be **complete**, **incomplete** (missed part), or have **extra** (unrequested/unsupported additions).
 
-<Note>
-Faithfulness is grounding **to the provided context**, not truth in the world. If your context is outdated and the model repeats it faithfully, Veralith reads that as *grounded* — it flags fabrication and gaps, not stale sources.
-</Note>
+> **Note:** faithfulness is grounding **to the provided context**, not truth in the world. If your context is outdated and the model repeats it faithfully, Veralith reads that as *grounded* — it flags fabrication and gaps, not stale sources.
 
 ## The six failure cells
 
@@ -42,9 +42,7 @@ Completeness (`complete` / `incomplete` / `extra`) × faithfulness (`grounded` /
 | `extra_grounded` | **Over-answered** | Grounded, but padded with unrequested extras. |
 | `extra_ungrounded` | **Fabricated extras** | Added claims not supported by the context. |
 
-<Tip>
-Searching for **"hallucination"**? That's `complete_ungrounded` and `extra_ungrounded`. Searching **"retrieval gap"**? That's `incomplete_grounded`. The dashboard shows both the plain name and the cell id.
-</Tip>
+> **Tip:** searching for **"hallucination"**? That's `complete_ungrounded` and `extra_ungrounded`. Searching **"retrieval gap"**? That's `incomplete_grounded`. The dashboard shows both the plain name and the cell id.
 
 ## Healthy rate
 
@@ -60,7 +58,7 @@ When failures of the **same root cause** recur, Veralith clusters them into a **
 
 `open` → `in_progress` → `pr_raised` → `resolved`
 
-(plus terminal states `wont_fix`, `manually_fixed`, `superseded`). See [The dashboard → Heals](/getting-started/concepts).
+(plus terminal states `wont_fix`, `manually_fixed`, `superseded`).
 
 ## Self-heal over MCP
 

@@ -1,0 +1,54 @@
+---
+title: Quickstart
+description: Send your first trace and see it diagnosed on the dashboard in about five minutes.
+---
+
+# Quickstart
+
+By the end of this page you'll have Veralith grading real answers from your RAG pipeline.
+
+## 1. Create a project and API key
+
+Sign up at [app.veralithai.com](https://app.veralithai.com), create a project, and generate an API key. Keys look like `vk_live_...` and are shown **once** at creation — copy it then.
+
+> **Warning:** the full key is only displayed at creation and is stored hashed afterward. If you lose it, create a new one — the dashboard can't reprint it.
+
+## 2. Install and configure
+
+```bash
+pip install veralith
+export VERALITH_API_KEY=vk_live_your_key_here
+```
+
+The SDK reads `VERALITH_API_KEY` from the environment. If it isn't set, the SDK warns once and does nothing — so it's safe to add to code you ship everywhere.
+
+## 3. Add one line to your pipeline
+
+Wherever your pipeline has the **query**, the **retrieved context**, and the **final response** in scope, add a single call:
+
+```python
+import veralith
+
+def answer(query: str) -> str:
+    chunks = my_retriever(query)                 # your retrieval
+    response = my_generator(query, chunks)       # your generation
+    veralith.log(query=query, context=chunks, response=response)  # → Veralith
+    return response
+```
+
+`context` accepts a `list[str]`, a `list[dict]` (with a `text` or `page_content` field), or a `list` of `ContextChunk` — so it fits whatever shape your chunks are already in.
+
+> **Note:** `veralith.log(...)` returns immediately — it queues the evaluation and does not block your response. Your users never wait on Veralith.
+
+## 4. Watch it get diagnosed
+
+Run a few queries through your pipeline, then open the project on [the dashboard](https://app.veralithai.com):
+
+1. **Traces arrive** — each `log()` call appears as a **trace**, first as `evaluating`, then `evaluated` once the judges finish (seconds later).
+2. **Failures get a cell** — any answer that wasn't grounded is tagged with a [failure cell](/getting-started/concepts#the-six-failure-cells) — `complete_ungrounded`, `incomplete_grounded`, and so on.
+3. **Heal cards form** — when the same root cause recurs, Veralith opens a **heal card** with a concrete fix. Connect a coding agent to let it open the PR.
+
+## Next steps
+
+- [**Integration overview**](/integration/overview) — prefer a decorator or LangChain auto-tracing? See every integration surface and recipes for non-standard code.
+- [**Core concepts**](/getting-started/concepts) — what sufficiency, faithfulness, completeness, and the six failure cells actually mean.

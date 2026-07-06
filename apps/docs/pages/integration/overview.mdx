@@ -3,41 +3,23 @@ title: Integration overview
 description: The three ways to send traces — log(), the @trace decorator, and the LangChain adapter — plus the guarantees every one of them makes.
 ---
 
+# Integration overview
+
 Every integration surface does the same thing underneath: it assembles a **trace** — `(query, context, response)` — and sends it to Veralith, which grades it asynchronously. They differ only in **how they pull those three values out of your code**.
 
 ## The SDK contract
 
 Adding Veralith to a production pipeline is low-risk by design. Every surface makes the same three guarantees:
 
-<CardGroup cols={3}>
-  <Card title="Fail-safe" icon="shield-check">
-    Any error inside Veralith is caught and warned — your RAG keeps serving. Instrumentation can't take down the thing it instruments.
-  </Card>
-  <Card title="Fire-and-forget" icon="bolt">
-    Calls return the instant the trace is queued; grading runs asynchronously. Zero added latency in your request path.
-  </Card>
-  <Card title="No-op without a key" icon="key">
-    With no `VERALITH_API_KEY` set, the SDK warns once and does nothing — safe to ship to every environment.
-  </Card>
-</CardGroup>
+- **Fail-safe** — any error inside Veralith is caught and warned; your RAG keeps serving. Instrumentation can't take down the thing it instruments.
+- **Fire-and-forget** — calls return the instant the trace is queued; grading runs asynchronously. Zero added latency in your request path.
+- **No-op without a key** — with no `VERALITH_API_KEY` set, the SDK warns once and does nothing — safe to ship to every environment.
 
 The single deliberate exception to fail-safe is a hard **budget cap**, which raises `BudgetExceeded` — and even that is opt-out (`enforce_budget=False`). Evaluation is hosted-mode only, so `sync=True` is not supported.
 
-## Choose a surface
+## 1. `veralith.log(...)` — works with any code
 
-<CardGroup cols={3}>
-  <Card title="log()" icon="code">
-    Explicit one-liner. Works with **any** stack or code shape. Most control.
-  </Card>
-  <Card title="@trace" icon="at">
-    Decorate a RAG function that returns `(response, context)`. Auto-measures latency.
-  </Card>
-  <Card title="LangChain" icon="link">
-    One `install()` call auto-traces `RetrievalQA` chains. Zero per-call code.
-  </Card>
-</CardGroup>
-
-### 1. `veralith.log(...)` — works with any code
+The explicit one-liner. Works with **any** stack or code shape, and gives you the most control.
 
 ```python
 import veralith
@@ -52,7 +34,7 @@ veralith.log(
 
 Use it anywhere the three values are in scope: any framework, class methods, notebooks, web handlers, or streaming (call it after you've assembled the final response). It's the universal fallback.
 
-### 2. `@veralith.trace` — for RAG functions
+## 2. `@veralith.trace` — for RAG functions
 
 Decorate the function that receives the query and returns the answer. The wrapped function still returns just `response` to callers, so your call sites don't change.
 
@@ -72,9 +54,9 @@ def rag(user_question):
     return veralith.TraceReturn(response=answer, context=chunks)
 ```
 
-`async def` is supported. The query is taken from the first positional argument by default, or from the parameter you name with `query_arg=`.
+`async def` is supported. The query is taken from the first positional argument by default, or from the parameter you name with `query_arg=`. Latency is measured for you.
 
-### 3. LangChain adapter — zero-code auto-tracing
+## 3. LangChain adapter — zero-code auto-tracing
 
 ```python
 import veralith.adapters.langchain as adapter
@@ -84,9 +66,7 @@ adapter.install()   # once, at startup
 
 It patches those chains at the class level and extracts the query, answer, and `source_documents` automatically. If a version returns an unexpected shape it warns and passes the result through untouched — your chain never breaks.
 
-<Warning>
-The adapter only covers `RetrievalQA` and `RetrievalQAWithSourcesChain`. **LCEL / custom `Runnable` chains, LlamaIndex, and agents are not auto-traced** — use `log()` at the point where the answer is assembled.
-</Warning>
+> **Warning:** the adapter only covers `RetrievalQA` and `RetrievalQAWithSourcesChain`. **LCEL / custom `Runnable` chains, LlamaIndex, and agents are not auto-traced** — use `log()` at the point where the answer is assembled.
 
 ## Which surface for which code shape
 
