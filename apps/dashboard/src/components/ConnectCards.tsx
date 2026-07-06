@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 // po-card / po-conn styling — imported here so the cards render correctly
 // wherever they're used (onboarding overview AND the global Workbench drawer).
@@ -332,8 +332,63 @@ function IdeCard<T extends string>({
   );
 }
 
+/* Explains the "prefilled key is incomplete" situation and lets the user
+   reveal a real, full key inline (shown once). */
+function KeyBanner({
+  apiKey, revealed, onCreate, creating, error,
+}: {
+  apiKey: string | null;
+  revealed: string | null;
+  onCreate: () => void;
+  creating: boolean;
+  error: boolean;
+}) {
+  const base: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    gap: 12, flexWrap: 'wrap', padding: '9px 13px',
+    borderRadius: 'var(--po-radius-sm)', fontSize: 12.5, lineHeight: 1.5,
+  };
+  if (revealed) {
+    return (
+      <div style={{ ...base, border: '1px solid color-mix(in oklab, var(--po-live) 45%, transparent)', background: 'color-mix(in oklab, var(--po-live) 8%, transparent)', color: 'var(--po-fg-2)' }}>
+        <span>
+          <b style={{ color: 'var(--po-live)' }}>New key created and prefilled below.</b>{' '}
+          It's shown only once — copy a snippet now; you won't see the full key again.
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div style={{ ...base, border: '1px solid var(--po-line)', background: 'var(--po-panel-2)', color: 'var(--po-fg-3)' }}>
+      <span>
+        Snippets need your <b style={{ color: 'var(--po-fg-2)' }}>full</b> API key, shown only once at creation
+        {apiKey ? <> (this project's key starts <code className="po-mono">{apiKey}…</code>)</> : null}. Paste yours into the
+        snippet, or reveal a fresh one:
+        {error ? <span style={{ color: 'var(--po-bad)' }}> · couldn't create — try again.</span> : null}
+      </span>
+      <button type="button" className="po-btn po-btn-sm" onClick={onCreate} disabled={creating}>
+        {creating ? 'Creating…' : 'Create & reveal a key'}
+      </button>
+    </div>
+  );
+}
+
 export function ConnectCards({ apiKey, slug }: { apiKey: string | null; slug: string }) {
-  const key = apiKey ?? 'vk_live_…';
+  const qc = useQueryClient();
+  // The full secret is only ever shown once, at creation. If the user reveals a
+  // fresh key here we hold it and prefill the snippets with the REAL key;
+  // otherwise we show a clear placeholder (never a truncated real prefix, which
+  // looks broken).
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
+  const createKey = useMutation({
+    mutationFn: () => api.createApiKey(slug, { name: 'connect' }),
+    onSuccess: (res) => {
+      setRevealedKey(res.api_key.secret);
+      qc.invalidateQueries({ queryKey: ['api-keys'] });
+    },
+  });
+  const key = revealedKey ?? 'vk_live_YOUR_KEY';
+
   const [lang, setLang] = useState<Lang>('python');
   const [client, setClient] = useState<McpClient>('claude');
   // Claude Code offers two equivalent setups: a `claude mcp add` one-liner, or
@@ -379,7 +434,22 @@ export function ConnectCards({ apiKey, slug }: { apiKey: string | null; slug: st
   const mcpOn = conn.data?.mcp_connected ?? false;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+      <KeyBanner
+        apiKey={apiKey}
+        revealed={revealedKey}
+        onCreate={() => createKey.mutate()}
+        creating={createKey.isPending}
+        error={createKey.isError}
+      />
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+          gap: 'var(--space-4)',
+          alignItems: 'start',
+        }}
+      >
       <IdeCard<Lang>
         title="Step 1 · Connect your SDK"
         sub="One line in your RAG pipeline starts the trace stream"
@@ -421,6 +491,7 @@ export function ConnectCards({ apiKey, slug }: { apiKey: string | null; slug: st
           </>
         }
       />
+      </div>
     </div>
   );
 }

@@ -134,7 +134,7 @@ function WbIntegration({ slug, projectId, onTab, onManageKeys }: { slug: string;
             ) : activeKeys.length > 0 ? (
               <>This project has <b>{activeKeys.length}</b> active API key{activeKeys.length === 1 ? '' : 's'}. Keys are shown only once at creation — rotate or revoke them in Settings.</>
             ) : (
-              <>No API key on this project yet — create one in onboarding or Settings. It's shown <b>once</b> at creation and can't be displayed again.</>
+              <>No API key on this project yet — create one in Settings. It's shown <b>once</b> at creation and can't be displayed again.</>
             )}
           </div>
         </div>
