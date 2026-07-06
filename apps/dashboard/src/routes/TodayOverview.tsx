@@ -809,8 +809,12 @@ function TodayContent() {
   // know" declines) as acceptable lifts the effective healthy rate, so a low raw
   // rate that's mostly abstentions reads as "actually fine".
   const abstained = s?.abstained_count ?? 0;
-  const adjustedPct = total > 0 ? Math.min(100, healthyPct + (abstained / total) * 100) : 0;
-  const showAdjusted = abstained > 0 && total > 0;
+  // Evaluated = graded traces (sum of by_cell). Use it as the denominator so the
+  // abstention adjustment matches healthy_rate's denominator (both over graded
+  // traces, not total — un-evaluated traces aren't part of either rate).
+  const evaluated = cells ? Object.values(cells).reduce((a, n) => a + (n ?? 0), 0) : 0;
+  const adjustedPct = evaluated > 0 ? Math.min(100, healthyPct + (abstained / evaluated) * 100) : 0;
+  const showAdjusted = abstained > 0 && evaluated > 0;
   const chartValues = (s?.timeseries ?? []).map((b) => {
     const t = b.ok + b.failed;
     return t > 0 ? b.ok / t : s?.healthy_rate ?? 0;
