@@ -1,0 +1,59 @@
+---
+title: Context formats
+description: The three shapes the context argument accepts — list of strings, list of dicts, or list of ContextChunk — and how each is normalized.
+---
+
+# Context formats
+
+Every surface (`log()`, `@trace`, the adapter) accepts the `context` argument in **three shapes**, so it fits whatever your pipeline already holds. All three normalize to the same internal `ContextChunk` list.
+
+## 1. List of strings
+
+The simplest form — just the chunk texts, in retrieval order:
+
+```python
+context = [
+    "Divide 72 by the annual rate to estimate doubling time.",
+    "At 8%, money doubles in roughly 9 years.",
+]
+```
+
+Each string becomes a chunk with `rank` set to its position (0 = top).
+
+## 2. List of dicts
+
+Use dicts when you have ranking, source, or score metadata:
+
+```python
+context = [
+    {"text": "Divide 72 by the annual rate…", "rank": 0, "source": "finance_101.md", "score": 0.91},
+    {"text": "At 8%, money doubles in ~9 years.", "rank": 1, "source": "finance_101.md", "score": 0.87},
+]
+```
+
+| Key | Required | Meaning |
+| --- | --- | --- |
+| `text` | yes | The chunk content. |
+| `rank` | no | Position, 0 = top. Defaults to the item's index. |
+| `source` | no | Filename / document id, if you have it. |
+| `score` | no | Similarity score, if you have it. |
+
+> **Note:** the field is **`text`**. If your chunks are LangChain `Document` objects (which use `page_content`), map them first — e.g. `[d.page_content for d in docs]` — or use the [LangChain adapter](/integration/langchain), which reads `page_content` for you.
+
+## 3. List of ContextChunk
+
+The typed form, if you're already constructing them:
+
+```python
+from veralith import ContextChunk
+
+context = [
+    ContextChunk(text="Divide 72 by the annual rate…", rank=0, source="finance_101.md", score=0.91),
+]
+```
+
+`ContextChunk` fields: `text: str` (required), `rank: int` (0 = top), `source: str | None`, `score: float | None`.
+
+## Why source and score help
+
+They're optional, but sending them makes diagnoses richer: the dashboard can show *which* document a fabricated claim ignored, and low-scoring chunks that still got used are a common retrieval smell.

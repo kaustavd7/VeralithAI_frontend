@@ -1,0 +1,46 @@
+---
+title: Offline evaluation (CI)
+description: Grade a trace locally with veralith.evaluate() — no account, no network to Veralith — for tests and CI gates.
+---
+
+# Offline evaluation (CI)
+
+`veralith.evaluate()` runs the same judges as the hosted backend, but **entirely locally** — no account, no dashboard, no network call to Veralith. It grades against your **own** `OPENAI_API_KEY` and returns the full result object. Ideal for unit tests and CI quality gates.
+
+```python
+import veralith
+
+result = veralith.evaluate(
+    query="What is the Rule of 72?",
+    context=["Divide 72 by the annual rate to estimate doubling time."],
+    response="At 8%, money doubles in about 9 years.",
+)
+
+print(result.diagnosis.failure_cell)          # e.g. FailureCell.complete_grounded
+print(result.diagnosis.sufficiency_fraction)  # 0..1
+print(result.diagnosis.faithfulness_fraction) # 0..1
+```
+
+## `log()` vs `evaluate()`
+
+| | `veralith.log()` | `veralith.evaluate()` |
+| --- | --- | --- |
+| Where it runs | hosted backend (async) | your machine (inline) |
+| Needs | `VERALITH_API_KEY` | `OPENAI_API_KEY` |
+| Returns | `trace_id` immediately | the full `EvaluationResult` |
+| Appears on dashboard | yes | no |
+| Use for | production monitoring | tests, CI gates, experiments |
+
+## Configuration
+
+Offline evaluation reads `OPENAI_API_KEY` and (optionally) `VERALITH_JUDGE_MODEL` / `VERALITH_DECOMPOSER_MODEL`. See [Configuration](/integration/configuration). Cost is roughly **$0.005 per trace** against your OpenAI key.
+
+## In a CI gate
+
+```python
+def test_rag_stays_grounded():
+    result = veralith.evaluate(query=Q, context=CHUNKS, response=answer(Q))
+    assert result.diagnosis.faithfulness_fraction >= 0.9, "answer drifted from context"
+```
+
+Fail the build when faithfulness or sufficiency drops below your bar — catch a hallucination regression before it ships.

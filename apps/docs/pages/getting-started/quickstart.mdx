@@ -36,7 +36,7 @@ def answer(query: str) -> str:
     return response
 ```
 
-`context` accepts a `list[str]`, a `list[dict]` (with a `text` or `page_content` field), or a `list` of `ContextChunk` — so it fits whatever shape your chunks are already in.
+`context` accepts a `list[str]`, a `list[dict]` (each with a `text` field), or a `list` of `ContextChunk` — so it fits whatever shape your chunks are already in. See [Context formats](/integration/context-formats).
 
 > **Note:** `veralith.log(...)` returns immediately — it queues the evaluation and does not block your response. Your users never wait on Veralith.
 

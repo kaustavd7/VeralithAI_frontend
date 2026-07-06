@@ -1,0 +1,40 @@
+---
+title: Configuration
+description: Every environment variable the SDK reads — for hosted log() and for offline evaluate().
+---
+
+# Configuration
+
+The SDK is configured through environment variables. Only `VERALITH_API_KEY` is needed for the common case ([`log()`](/integration/log)); the rest have sensible defaults.
+
+## Hosted mode (`log()`)
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `VERALITH_API_KEY` | — | **Required.** Your project key (`vk_live_...`). Without it the SDK warns once and does nothing. |
+| `VERALITH_API_URL` | `https://api.veralithai.com` | Override for staging or self-hosting. |
+
+## Offline mode (`evaluate()`)
+
+Only used by [offline `evaluate()`](/integration/evaluate-offline) — the hosted backend uses its own keys and models.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | — | Required for offline evaluation. |
+| `VERALITH_JUDGE_MODEL` | `gpt-4o` | Model for the sufficiency / faithfulness / completeness judges. |
+| `VERALITH_DECOMPOSER_MODEL` | `gpt-4o-mini` | Model that decomposes the query and response into sub-claims. |
+| `VERALITH_EMBED_MODEL` | `text-embedding-3-small` | Embedding model used during evaluation. |
+
+## Budget guard
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `VERALITH_PER_TRACE_BUDGET_USD` | `0.50` | Hard per-trace spend cap. Exceeding it raises `BudgetExceeded`. |
+
+The budget cap is the **one** exception to the SDK's fail-safe rule — it raises by design so a runaway trace can't quietly burn spend. Opt out per call with `enforce_budget=False`.
+
+> **Tip:** the SDK reads the **real process environment**, and also loads a local `.env` if present. Your coding agent's MCP config, however, reads only the real environment — so if you reference `${VERALITH_API_KEY}` there, export the variable (don't rely on `.env`) so both the SDK and the agent see the same key. See [Settings & API keys](/dashboard/settings#one-key-one-place).
+
+## Billing
+
+Hosted evaluations are billed against your project's monthly trace quota. Offline `evaluate()` runs on your own `OPENAI_API_KEY` at roughly **$0.005 per trace**.

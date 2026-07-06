@@ -1,0 +1,140 @@
+---
+title: Recipes by code shape
+description: How to instrument any RAG — clean functions, classes, web handlers, streaming, split retriever/generator, LangChain LCEL, LlamaIndex, and agents.
+---
+
+# Recipes by code shape
+
+Integration comes down to one rule. Everything below is an application of it.
+
+> **The rule:** find the single point in your code where `query`, the retrieved `context`, and the final `response` all exist in the same scope, and call `veralith.log()` there. If they never coexist in one scope, thread one value to where the other two are. The [`@trace`](/integration/trace) decorator is just sugar for the common case where that point is a function's boundary.
+
+## Clean function → `@trace`
+
+If a function takes the query and returns `(response, context)`:
+
+```python
+@veralith.trace
+def answer(query):
+    chunks = retriever(query)
+    response = generator(query, chunks)
+    return response, chunks
+```
+
+## Response-only function → `TraceReturn`
+
+If the function returns just a string, hand over context explicitly:
+
+```python
+@veralith.trace
+def answer(query):
+    chunks = retriever(query)
+    response = generator(query, chunks)
+    return veralith.TraceReturn(response=response, context=chunks)
+```
+
+## Class / pipeline object
+
+Decorate the entry method (name the query arg if it isn't first), or call `log()` inside it:
+
+```python
+class RAG:
+    @veralith.trace(query_arg="q")
+    def ask(self, q):
+        chunks = self.retrieve(q)
+        answer = self.generate(q, chunks)
+        return answer, chunks
+
+    # or, without the decorator:
+    def ask(self, q):
+        chunks = self.retrieve(q)
+        answer = self.generate(q, chunks)
+        veralith.log(query=q, context=chunks, response=answer)
+        return answer
+```
+
+## Web handler (FastAPI / Flask)
+
+Handlers usually return a dict/Response, not a tuple — so use `log()` before returning:
+
+```python
+@app.post("/chat")
+def chat(req: ChatRequest):
+    chunks = retriever(req.question)
+    answer = generator(req.question, chunks)
+    veralith.log(query=req.question, context=chunks, response=answer)
+    return {"answer": answer}
+```
+
+## Streaming responses
+
+You don't have the full response until the stream ends — accumulate tokens, then log once:
+
+```python
+def stream_answer(query):
+    chunks = retriever(query)
+    parts = []
+    for token in generator_stream(query, chunks):
+        parts.append(token)
+        yield token
+    veralith.log(query=query, context=chunks, response="".join(parts))
+```
+
+## Split retriever and generator (the "messy" case)
+
+When retrieval and generation live in different functions and never meet at a return, thread the chunks to where the answer is assembled:
+
+```python
+def handle(query):
+    chunks = retrieve(query)          # module A
+    answer = generate(query, chunks)  # module B
+    # both are in scope here — this is the chokepoint:
+    veralith.log(query=query, context=chunks, response=answer)
+    return answer
+```
+
+If the layers are too decoupled to pass `chunks` directly, stash them on a request-scoped object or a `contextvar` and read them at the log site.
+
+## LangChain LCEL / custom Runnable
+
+The [adapter](/integration/langchain) does **not** cover LCEL (`prompt | llm | ...`) or custom `Runnable`s. Capture the retrieved docs and log at the end:
+
+```python
+docs = retriever.invoke(query)
+answer = chain.invoke({"question": query, "context": docs})
+veralith.log(
+    query=query,
+    context=[d.page_content for d in docs],   # Documents → list[str]
+    response=answer,
+)
+```
+
+## LlamaIndex
+
+Log the response plus its source nodes:
+
+```python
+resp = query_engine.query(query)
+veralith.log(
+    query=query,
+    context=[n.get_content() for n in resp.source_nodes],
+    response=str(resp),
+)
+```
+
+## Agents / multi-step
+
+Decide what "context" and "response" mean for the run — usually the memories/documents the agent actually used and its final answer — and `log()` once at the end of the run.
+
+## Quick reference
+
+| Your code | Use |
+| --- | --- |
+| Function returns `(response, chunks)` | [`@veralith.trace`](/integration/trace) |
+| Function returns only a string | `@veralith.trace` + `TraceReturn` |
+| Class pipeline | `@trace` on the entry method, or `log()` inside |
+| Web handler returning a dict/Response | `log()` before returning |
+| Streaming | `log()` after the stream completes |
+| Split retriever/generator | `log()` at the chokepoint (thread `context`) |
+| LangChain `RetrievalQA` | [`adapter.install()`](/integration/langchain) |
+| LangChain LCEL / LlamaIndex / agents | `log()` at assembly |

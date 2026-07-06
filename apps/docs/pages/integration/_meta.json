@@ -1,3 +1,10 @@
 {
-  "overview": "Overview"
+  "overview": "Overview",
+  "log": "veralith.log()",
+  "trace": "@veralith.trace",
+  "langchain": "LangChain adapter",
+  "recipes": "Recipes by code shape",
+  "context-formats": "Context formats",
+  "evaluate-offline": "Offline evaluation (CI)",
+  "configuration": "Configuration"
 }

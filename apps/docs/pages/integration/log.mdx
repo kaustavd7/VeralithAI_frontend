@@ -1,0 +1,50 @@
+---
+title: veralith.log()
+description: The explicit one-liner — send a trace from anywhere the query, context, and response are in scope. Full signature and return value.
+---
+
+# `veralith.log()`
+
+The explicit way to send a trace. It works with **any** stack or code shape, because you hand it the three values directly.
+
+```python
+import veralith
+
+trace_id = veralith.log(
+    query="What is the Rule of 72?",
+    context=chunks,
+    response=answer,
+    latency_ms=elapsed,   # optional
+)
+```
+
+## Signature
+
+```python
+veralith.log(
+    query: str,
+    context: list[str] | list[dict] | list[ContextChunk],
+    response: str,
+    *,
+    latency_ms: float | None = None,
+) -> int  # trace_id
+```
+
+| Parameter | Required | Description |
+| --- | --- | --- |
+| `query` | yes | The user's question. Must be a non-empty string. |
+| `context` | yes | The retrieved chunks. See [Context formats](/integration/context-formats) for the three accepted shapes. |
+| `response` | yes | The generated answer, as a string. |
+| `latency_ms` | no | Your RAG pipeline's response time in milliseconds. Shown on the dashboard as RAG latency and feeds the p95 KPI. |
+
+Returns the `trace_id` immediately — the evaluation runs asynchronously.
+
+## Guarantees
+
+`log()` follows the [SDK contract](/integration/overview#the-sdk-contract): it's **fail-safe** (errors are caught and warned, never raised into your app), **fire-and-forget** (returns as soon as the trace is queued — no added latency), and a **no-op** if `VERALITH_API_KEY` isn't set.
+
+> **Note:** evaluation is hosted-mode only, so the `sync=True` option is not supported against the hosted backend. To grade a trace inline (no account, offline), use [`veralith.evaluate()`](/integration/evaluate-offline) instead.
+
+## Where to put it
+
+Anywhere `query`, `context`, and `response` all exist in the same scope — the end of a RAG function, inside a web handler, after a stream finishes, in a notebook. If your code doesn't have such a single point, see [Recipes by code shape](/integration/recipes).

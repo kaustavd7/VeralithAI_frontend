@@ -1,0 +1,40 @@
+---
+title: LangChain adapter
+description: One install() call auto-traces RetrievalQA chains — what it patches, what it extracts, and the LCEL blind spot.
+---
+
+# LangChain adapter
+
+Auto-trace LangChain retrieval chains with **no per-call code** — one `install()` at startup.
+
+```python
+import veralith.adapters.langchain as adapter
+adapter.install()
+
+# every RetrievalQA / RetrievalQAWithSourcesChain .invoke() now auto-logs
+```
+
+## What it patches
+
+The adapter wraps two chains at the **class level**, so all instances trace:
+
+- `RetrievalQA.invoke`
+- `RetrievalQAWithSourcesChain.invoke`
+
+`install()` is idempotent; `uninstall()` restores the originals (handy in tests).
+
+## What it extracts
+
+From each `.invoke()` call it pulls a full trace:
+
+- **Query** — from the input dict (`query` / `question` / `input`) or a bare string.
+- **Response** — from the result (`result` / `answer` / `output_text` / `output`).
+- **Context** — from `source_documents` (falling back to `context` / `sources`), reading each document's `page_content` and its `metadata.source` / `metadata.score`.
+
+If a LangChain version returns a shape it can't parse, it **warns and passes the result through untouched** — your chain never breaks.
+
+## The LCEL blind spot
+
+> **Warning:** the adapter only covers `RetrievalQA` and `RetrievalQAWithSourcesChain`. Chains built with **LCEL** (the `prompt | llm | ...` pipe syntax) or custom `Runnable`s, as well as **LlamaIndex** and **agent** frameworks, are **not** auto-traced.
+
+For those, call [`veralith.log()`](/integration/log) at the point where you have the query, the retrieved documents, and the final answer — see [Recipes by code shape](/integration/recipes#langchain-lcel-custom-runnable).

@@ -1,0 +1,48 @@
+---
+title: "@veralith.trace"
+description: Decorate a RAG function to trace it with zero code reshape — supported return shapes, query extraction, and async.
+---
+
+# `@veralith.trace`
+
+Decorate the function that receives the query and produces the answer, and Veralith traces every call automatically. The wrapped function still returns just the `response` to callers, so **your call sites never change**.
+
+## Supported shapes
+
+```python
+import veralith
+
+# 1. Return a (response, context) tuple
+@veralith.trace
+def rag(query):
+    chunks = retriever(query)
+    response = generator(query, chunks)
+    return response, chunks
+
+# 2. Return only the response — hand over context with TraceReturn
+@veralith.trace(query_arg="user_question")
+def rag(user_question):
+    chunks = retriever(user_question)
+    answer = generator(user_question, chunks)
+    return veralith.TraceReturn(response=answer, context=chunks)
+
+# 3. async is supported
+@veralith.trace
+async def rag(query):
+    ...
+    return response, chunks
+```
+
+## How it extracts the trace
+
+- **Query** — the **first positional argument** by default. If the query is a different parameter, name it: `@veralith.trace(query_arg="user_question")`.
+- **Response + context** — from the return value: either a `(response, context)` **tuple**, or a `veralith.TraceReturn(response=..., context=...)` when your function naturally returns only a string.
+- **Latency** — measured for you (the wall-clock time of the decorated call). No need to pass `latency_ms`.
+
+`context` accepts the same [three shapes](/integration/context-formats) as `log()`.
+
+## When it fits (and when to use `log()` instead)
+
+The decorator needs a **single function** where the query is an argument and `(response, context)` is available at `return`. If your retrieval and generation live in different places and never meet in one return, use [`veralith.log()`](/integration/log) at the point they do — see [Recipes by code shape](/integration/recipes).
+
+> **Note:** like every surface, `@trace` is [fail-safe](/integration/overview#the-sdk-contract) — if anything inside Veralith errors, your function still returns its normal result.
