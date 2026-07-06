@@ -10,6 +10,7 @@ import { traceDetailPath, healsPath } from '../lib/nav';
 import '../styles/project-shell.css';
 import '../styles/project-page.css';
 import type {
+  FailureCell,
   HealCardDetail,
   HealCardSummary,
   HealStatus,
@@ -41,6 +42,25 @@ const STATUS_META: Record<HealStatus, StatusMeta> = {
 
 const TERMINAL: HealStatus[] = ['resolved', 'manually_fixed', 'wont_fix', 'superseded'];
 
+/* Human failure label + short code (→ --cell-<code> color) for a card's dominant
+   failure cell. Turns an opaque slug into "what actually went wrong". */
+const CELL_LABEL: Record<FailureCell, string> = {
+  complete_grounded: 'Grounded',
+  complete_ungrounded: 'Hallucinated',
+  incomplete_grounded: 'Retrieval gap',
+  incomplete_ungrounded: 'Missing + made-up',
+  extra_grounded: 'Over-answered',
+  extra_ungrounded: 'Fabricated extras',
+};
+const CELL_SHORT: Record<FailureCell, string> = {
+  complete_grounded: 'cg',
+  complete_ungrounded: 'cu',
+  incomplete_grounded: 'ig',
+  incomplete_ungrounded: 'iu',
+  extra_grounded: 'eg',
+  extra_ungrounded: 'eu',
+};
+
 /* ─────────────────────────────────────────────────────────────
    Status buckets — used only to seed the canvas auto-layout (one cluster
    column per lifecycle phase, left → right). Cards stay free-movable after.
@@ -62,11 +82,11 @@ const BUCKETS: BucketDef[] = [
 
 type Pos = { x: number; y: number; w?: number; h?: number };
 
-const MIN_NODE_W = 180;
-const MIN_NODE_H = 96;
+const MIN_NODE_W = 220;
+const MIN_NODE_H = 150;
 
-const NODE_W = 232;
-const ROW_H = 132;
+const NODE_W = 300;
+const ROW_H = 214;
 const COL_GAP = 40;
 const PAD = 14;
 
@@ -251,10 +271,31 @@ function HealNode({
       <div className="he-node-top">
         <span className="he-node-ic"><HealGlyph /></span>
         <div className="he-node-headings">
-          <div className="he-node-title">{card.title}</div>
-          <div className="he-node-sub">{card.suggestion_slug}</div>
+          <div className="he-node-tags">
+            {card.failure_cell && (
+              <span className="he-node-cell" style={{ '--cell': `var(--cell-${CELL_SHORT[card.failure_cell]})` } as React.CSSProperties}>
+                {CELL_LABEL[card.failure_cell]}
+              </span>
+            )}
+            {card.is_recurrence && <span className="he-node-recur" title="This failure category came back">↻ recurred</span>}
+          </div>
+          <div className="he-node-sub" title={card.suggestion_slug}>{card.suggestion_slug}</div>
         </div>
       </div>
+
+      <div className="he-node-title">{card.title}</div>
+
+      {card.sample_trace_ids && card.sample_trace_ids.length > 0 && (
+        <div className="he-node-tracechips">
+          {card.sample_trace_ids.slice(0, 3).map((id) => (
+            <span key={id} className="he-node-tracechip" title={id}>{shortId(id)}</span>
+          ))}
+          {card.n_traces > card.sample_trace_ids.slice(0, 3).length && (
+            <span className="he-node-tracechip is-more">+{card.n_traces - card.sample_trace_ids.slice(0, 3).length} more</span>
+          )}
+        </div>
+      )}
+
       <div className="he-node-foot">
         <span className="he-node-status">
           <span className={'he-node-dot' + (m.pulse ? ' is-pulse' : '')} />
@@ -262,7 +303,7 @@ function HealNode({
         </span>
         <span className="he-node-meta">
           {card.pr_url && <span className="he-node-pr">PR</span>}
-          <span className="he-node-traces"><TracesIcon />{card.n_traces}</span>
+          <span className="he-node-traces"><TracesIcon />{card.n_traces} {card.n_traces === 1 ? 'trace' : 'traces'}</span>
           <span className="he-node-time">{relativeTime(card.last_trace_at)}</span>
         </span>
       </div>

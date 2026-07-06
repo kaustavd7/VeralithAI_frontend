@@ -1198,11 +1198,12 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 232px;
+  width: 300px;
+  min-height: 150px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px 13px 11px;
+  gap: 10px;
+  padding: 13px 14px 12px;
   border: 1px solid var(--po-line);
   border-radius: 12px;
   background: var(--po-panel);
@@ -1266,31 +1267,60 @@
   background: color-mix(in oklab, var(--c) 16%, transparent);
   border: 1px solid color-mix(in oklab, var(--c) 30%, transparent);
 }
-.he-node-headings { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.he-node-headings { min-width: 0; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.he-node-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+/* failure-type pill — colored by the dominant cell */
+.he-node-cell {
+  display: inline-flex; align-items: center;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
+  padding: 2px 8px; border-radius: 999px;
+  color: var(--cell);
+  background: color-mix(in oklab, var(--cell) 15%, transparent);
+  border: 1px solid color-mix(in oklab, var(--cell) 35%, transparent);
+  white-space: nowrap;
+}
+.he-node-recur {
+  font-size: 10px; font-weight: 600; color: var(--po-fg-4);
+  white-space: nowrap;
+}
 .he-node-title {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.38;
   color: var(--po-fg);
   display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 .he-node-sub {
   font-size: 11px;
   color: var(--po-fg-4);
+  font-family: var(--font-mono, ui-monospace, monospace);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
 }
+/* representative trace-id chips */
+.he-node-tracechips { display: flex; flex-wrap: wrap; gap: 5px; }
+.he-node-tracechip {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10.5px; color: var(--po-fg-3);
+  padding: 2px 7px; border-radius: 6px;
+  background: var(--po-panel-2);
+  border: 1px solid var(--po-line);
+}
+.he-node-tracechip.is-more { color: var(--po-fg-4); background: transparent; }
 .he-node-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-top: auto;
+  padding-top: 2px;
   font-size: 11px;
   color: var(--po-fg-4);
 }

@@ -364,6 +364,12 @@ export interface HealCardSummary {
   title: string;
   suggestion_slug: string;
   n_traces: number;
+  // Dominant failure cell across the card's traces (backend: mode of evals).
+  failure_cell?: FailureCell | null;
+  // Up to 3 representative trace ids (newest first) for the list card.
+  sample_trace_ids?: string[];
+  // True when this card reopened a previously-closed failure category.
+  is_recurrence?: boolean;
   pr_url: string | null;
   failure_reason: string | null;
   last_trace_at: string;

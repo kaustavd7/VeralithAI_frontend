@@ -734,6 +734,12 @@ function toSummary(c: HealCardDetail): HealCardSummary {
     created_at,
     updated_at,
   } = c;
+  // Derive the new list fields from the detail's evidence for mock parity.
+  const cells = (c.evidence_traces ?? []).map((t) => t.failure_cell).filter(Boolean);
+  const counts = new Map<string, number>();
+  for (const cell of cells) counts.set(cell!, (counts.get(cell!) ?? 0) + 1);
+  const dominant = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const sample_trace_ids = (c.evidence_traces ?? []).slice(0, 3).map((t) => t.id);
   return {
     id,
     project_id,
@@ -741,6 +747,8 @@ function toSummary(c: HealCardDetail): HealCardSummary {
     title,
     suggestion_slug,
     n_traces,
+    failure_cell: dominant as HealCardSummary['failure_cell'],
+    sample_trace_ids,
     pr_url,
     failure_reason,
     last_trace_at,
