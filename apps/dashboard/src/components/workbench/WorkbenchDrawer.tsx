@@ -91,11 +91,11 @@ function WbHeader({
 
 /* ── Integration — API keys + SDK quick-start + developer resources ─── */
 
-const RESOURCES: [string, string][] = [
-  ['Developer quick start', 'Send your first trace in 5 min'],
-  ['Documentation', 'SDK, judges, failure cells'],
-  ['API reference', 'Endpoints + schema'],
-  ['Code samples', 'RAG, agents, batch eval'],
+const RESOURCES: [string, string, string][] = [
+  ['Developer quick start', 'Send your first trace in 5 min', 'https://docs.veralithai.com/getting-started/quickstart'],
+  ['Documentation', 'SDK, judges, failure cells', 'https://docs.veralithai.com'],
+  ['API reference', 'Endpoints + schema', 'https://docs.veralithai.com/reference/rest-api'],
+  ['Code samples', 'RAG, agents, batch eval', 'https://docs.veralithai.com/integration/recipes'],
 ];
 
 function WbIntegration({ slug, projectId, onTab, onManageKeys }: { slug: string; projectId: string; onTab: (t: WbTab) => void; onManageKeys: () => void }) {
@@ -153,8 +153,8 @@ function WbIntegration({ slug, projectId, onTab, onManageKeys }: { slug: string;
         <div className="wb-testing-sep" />
         <div className="wb-testing-head"><span>Developer resources</span></div>
         <div className="wb-res-links">
-          {RESOURCES.map(([t, d]) => (
-            <a className="wb-res-link2" key={t}>
+          {RESOURCES.map(([t, d, url]) => (
+            <a className="wb-res-link2" key={t} href={url} target="_blank" rel="noreferrer">
               <span className="wb-res-link2-l">{t}<span className="wb-res-link2-d">{d}</span></span>
               <span className="wb-res-ext">↗</span>
             </a>

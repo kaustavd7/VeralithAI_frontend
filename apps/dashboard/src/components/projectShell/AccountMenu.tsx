@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, type ReactNode, type SVGProps } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme, type ThemeChoice } from '../../hooks/useTheme';
@@ -6,6 +6,25 @@ import { useTheme, type ThemeChoice } from '../../hooks/useTheme';
 type Props = { onClose: () => void };
 
 const DOCS_URL = 'https://docs.veralithai.com';
+
+/* ── Icons (consistent 24-grid, 1.7 stroke, rounded) ───────────────────────── */
+const ic = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' } satisfies SVGProps<SVGSVGElement>;
+
+const SettingsIcon = () => (
+  <svg className="am-ic" {...ic}><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h6M14 18h6" /><circle cx="16" cy="6" r="2" /><circle cx="8" cy="12" r="2" /><circle cx="12" cy="18" r="2" /></svg>
+);
+const KeyIcon = () => (
+  <svg className="am-ic" {...ic}><circle cx="8" cy="15" r="4" /><path d="m10.8 12.2 8.2-8.2M17 6l2 2M15 8l1.5 1.5" /></svg>
+);
+const DocIcon = () => (
+  <svg className="am-ic" {...ic}><path d="M4 4a2 2 0 0 1 2-2h6l4 4v14a0 0 0 0 1 0 0 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" /><path d="M12 2v4a2 2 0 0 0 2 2h4M8 13h6M8 17h4" /></svg>
+);
+const MoonIcon = () => (<svg className="am-seg-ic" {...ic}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>);
+const SunIcon = () => (<svg className="am-seg-ic" {...ic}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4" /></svg>);
+const MonitorIcon = () => (<svg className="am-seg-ic" {...ic}><rect x="2.5" y="4" width="19" height="12" rx="2" /><path d="M8.5 20h7M12 16v4" /></svg>);
+const GlobeIcon = () => (<svg className="am-ic" {...ic}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z" /></svg>);
+const LogOutIcon = () => (<svg className="am-ic" {...ic}><path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9" /></svg>);
+const ExtIcon = () => (<svg className="am-ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" /></svg>);
 
 export function AccountMenu({ onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null);
@@ -64,10 +83,10 @@ export function AccountMenu({ onClose }: Props) {
     };
   }, [onClose]);
 
-  const themes: { id: ThemeChoice; label: string }[] = [
-    { id: 'dark', label: 'Dark' },
-    { id: 'light', label: 'Light' },
-    { id: 'system', label: 'System' },
+  const themes: { id: ThemeChoice; label: string; icon: ReactNode }[] = [
+    { id: 'dark', label: 'Dark', icon: <MoonIcon /> },
+    { id: 'light', label: 'Light', icon: <SunIcon /> },
+    { id: 'system', label: 'System', icon: <MonitorIcon /> },
   ];
 
   async function onLogout() {
@@ -97,115 +116,53 @@ export function AccountMenu({ onClose }: Props) {
         </div>
       </div>
 
-      <div className="am-sep" />
-
       <div className="am-group">
-        <button
-          className="am-item"
-          role="menuitem"
-          type="button"
-          onClick={goSettings}
-        >
-          <svg className="am-ic" width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
-            <path
-              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+        <button className="am-item" role="menuitem" type="button" onClick={goSettings}>
+          <SettingsIcon />
           <span className="am-item-label">Settings</span>
         </button>
-        <button
-          className="am-item"
-          role="menuitem"
-          type="button"
-          onClick={goApiKeys}
-        >
-          <svg className="am-ic" width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <circle cx="5" cy="8" r="3" stroke="currentColor" strokeWidth="1.3" />
-            <path d="M8 8h6 M11 8v2 M13 8v1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-          </svg>
+        <button className="am-item" role="menuitem" type="button" onClick={goApiKeys}>
+          <KeyIcon />
           <span className="am-item-label">API keys</span>
         </button>
-        <a
-          className="am-item"
-          role="menuitem"
-          href={DOCS_URL}
-          target="_blank"
-          rel="noreferrer"
-          onClick={onClose}
-        >
-          <svg className="am-ic" width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <path d="M3 3h7l3 3v7H3z" stroke="currentColor" strokeWidth="1.3" fill="none" />
-            <path d="M10 3v3h3" stroke="currentColor" strokeWidth="1.3" />
-          </svg>
+        <a className="am-item" role="menuitem" href={DOCS_URL} target="_blank" rel="noreferrer" onClick={onClose}>
+          <DocIcon />
           <span className="am-item-label">Documentation</span>
-          <svg className="am-ext" width="11" height="11" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M6 3h7v7 M13 3 7 9 M11 9v3.5a.5.5 0 0 1-.5.5H3.5a.5.5 0 0 1-.5-.5V5.5a.5.5 0 0 1 .5-.5H7"
-              stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <ExtIcon />
         </a>
       </div>
 
       <div className="am-sep" />
 
-      <div className="am-section">
-        <div className="am-section-row">
-          <span className="am-section-label">Theme</span>
-          <div className="am-seg" role="radiogroup" aria-label="Theme">
-            {themes.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                className={'am-seg-btn' + (theme === t.id ? ' is-active' : '')}
-                role="radio"
-                aria-checked={theme === t.id}
-                onClick={() => setTheme(t.id)}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+      <div className="am-section-row">
+        <span className="am-section-label">Theme</span>
+        <div className="am-seg" role="radiogroup" aria-label="Theme">
+          {themes.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className={'am-seg-btn' + (theme === t.id ? ' is-active' : '')}
+              role="radio"
+              aria-checked={theme === t.id}
+              aria-label={t.label}
+              title={t.label}
+              onClick={() => setTheme(t.id)}
+            >
+              {t.icon}
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="am-sep" />
 
-      <div className="am-group">
-        <div className="am-item am-tz is-static" role="menuitem" aria-disabled="true">
-          <svg className="am-ic" width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" />
-            <path
-              d="M2 8h12 M8 2c1.6 2 1.6 10 0 12 M8 2c-1.6 2-1.6 10 0 12"
-              stroke="currentColor"
-              strokeWidth="1.2"
-              fill="none"
-            />
-          </svg>
-          <div className="am-tz-body">
-            <div className="am-item-label">Timezone</div>
-            <div className="am-tz-sub">Auto · {tz}</div>
-          </div>
+      <div className="am-foot">
+        <div className="am-tz" title={`Timezone: ${tz}`}>
+          <GlobeIcon />
+          <span className="am-tz-text">Auto · {tz}</span>
         </div>
-      </div>
-
-      <div className="am-sep" />
-
-      <div className="am-group">
         <button className="am-item am-logout" role="menuitem" type="button" onClick={onLogout}>
-          <svg className="am-ic" width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <path
-              d="M9 3H4a1 1 0 00-1 1v8a1 1 0 001 1h5 M11 5l3 3-3 3 M6.5 8h7.5"
-              stroke="currentColor"
-              strokeWidth="1.3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          </svg>
+          <LogOutIcon />
           <span className="am-item-label">Log out</span>
         </button>
       </div>
