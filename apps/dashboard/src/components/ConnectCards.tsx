@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
+// po-card / po-conn styling — imported here so the cards render correctly
+// wherever they're used (onboarding overview AND the global Workbench drawer).
+import '../styles/project-page.css';
 
 /* ─────────────────────────────────────────────────────────────
    ConnectCards — the first-run onboarding block, shown wherever a
@@ -112,7 +115,7 @@ function mcpSnippet(c: McpClient, key: string): CodeLine[] {
       [tk('    '), tk('"veralith"', 'str'), tk(': {')],
       [tk('      '), tk('"type"', 'str'), tk(': '), tk('"http"', 'str'), tk(',')],
       [tk('      '), tk('"url"', 'str'), tk(': '), tk(`"${MCP_URL}"`, 'str'), tk(',')],
-      [tk('      '), tk('"headers"', 'str'), tk(': { '), tk('"Authorization"', 'str'), tk(': '), tk('"Bearer ${VERALITH_API_KEY}"', 'str'), tk(' }')],
+      [tk('      '), tk('"headers"', 'str'), tk(': { '), tk('"Authorization"', 'str'), tk(': '), tk(`"Bearer ${key}"`, 'str'), tk(' }')],
       [tk('    }')],
       [tk('  }')],
       [tk('}')],
@@ -137,6 +140,17 @@ function mcpSnippet(c: McpClient, key: string): CodeLine[] {
     [tk('bearer_token_env_var'), tk(' = '), tk('"VERALITH_API_KEY"', 'str')],
     [],
     [tk('# reads the same key env var as the SDK', 'cmt')],
+  ];
+}
+
+/** Claude Code's `claude mcp add` one-liner — the no-file alternative to editing
+    .mcp.json. Key is baked in (prefilled) for copy-paste-run. */
+function claudeCliSnippet(key: string): CodeLine[] {
+  return [
+    [tk('# one command — registers the veralith MCP server', 'cmt')],
+    [tk('claude', 'fn'), tk(' mcp add --transport http veralith \\')],
+    [tk('  '), tk(`${MCP_URL} \\`)],
+    [tk('  --header '), tk(`"Authorization: Bearer ${key}"`, 'str')],
   ];
 }
 
@@ -216,7 +230,7 @@ function CopyBtn({ text }: { text: string }) {
 
 /* One IDE card: window chrome + tabs + code surface. Generic over its tab id. */
 function IdeCard<T extends string>({
-  title, sub, badge, connected, connectedLabel, tabs, active, onTab, fileName, lines, footer,
+  title, sub, badge, connected, connectedLabel, tabs, active, onTab, fileName, lines, footer, rightSlot,
 }: {
   title: string;
   sub: string;
@@ -229,6 +243,7 @@ function IdeCard<T extends string>({
   fileName: string;
   lines: CodeLine[];
   footer: React.ReactNode;
+  rightSlot?: React.ReactNode;
 }) {
   return (
     <div className="po-card po-conn po-conn-never" style={{ overflow: 'hidden', padding: 0 }}>
@@ -280,7 +295,7 @@ function IdeCard<T extends string>({
         </div>
 
         {/* tabs */}
-        <div style={{ display: 'flex', gap: 2, padding: '0 8px', background: '#0f141c', borderBottom: '1px solid #1c2430' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '0 8px', background: '#0f141c', borderBottom: '1px solid #1c2430' }}>
           {tabs.map(({ id, label }) => {
             const on = id === active;
             return (
@@ -299,6 +314,12 @@ function IdeCard<T extends string>({
               </button>
             );
           })}
+          {rightSlot && (
+            <>
+              <span style={{ flex: 1 }} />
+              {rightSlot}
+            </>
+          )}
         </div>
 
         <CodeBlock lines={lines} />
@@ -315,6 +336,36 @@ export function ConnectCards({ apiKey, slug }: { apiKey: string | null; slug: st
   const key = apiKey ?? 'vk_live_…';
   const [lang, setLang] = useState<Lang>('python');
   const [client, setClient] = useState<McpClient>('claude');
+  // Claude Code offers two equivalent setups: a `claude mcp add` one-liner, or
+  // an .mcp.json file. Show both (toggle), prefilled.
+  const [claudeMode, setClaudeMode] = useState<'cli' | 'file'>('cli');
+
+  const isClaude = client === 'claude';
+  const mcpFile = isClaude ? (claudeMode === 'cli' ? 'terminal' : '.mcp.json') : mcpFileName(client);
+  const mcpLines = isClaude
+    ? (claudeMode === 'cli' ? claudeCliSnippet(key) : mcpSnippet('claude', key))
+    : mcpSnippet(client, key);
+  const claudeToggle = isClaude ? (
+    <div style={{ display: 'inline-flex', gap: 2, alignItems: 'center', paddingBottom: 4 }}>
+      {(['cli', 'file'] as const).map((m) => {
+        const on = m === claudeMode;
+        return (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setClaudeMode(m)}
+            style={{
+              appearance: 'none', border: '1px solid ' + (on ? '#2b3542' : 'transparent'),
+              background: on ? '#1c2430' : 'transparent', color: on ? '#e6edf3' : '#6b7689',
+              fontFamily: MONO, fontSize: 11, padding: '3px 8px', borderRadius: 5, cursor: 'pointer',
+            }}
+          >
+            {m === 'cli' ? 'CLI' : '.mcp.json'}
+          </button>
+        );
+      })}
+    </div>
+  ) : undefined;
 
   // Live wiring status — polls every 5s so each step flips to a green check the
   // moment the SDK sends its first trace / the agent first authenticates.
@@ -356,14 +407,17 @@ export function ConnectCards({ apiKey, slug }: { apiKey: string | null; slug: st
         tabs={[{ id: 'claude', label: 'Claude Code' }, { id: 'cursor', label: 'Cursor' }, { id: 'codex', label: 'Codex' }]}
         active={client}
         onTab={setClient}
-        fileName={mcpFileName(client)}
-        lines={mcpSnippet(client, key)}
+        fileName={mcpFile}
+        lines={mcpLines}
+        rightSlot={claudeToggle}
         footer={
           <>
-            Reload your agent, then run <code className="po-mono">/mcp</code> to confirm{' '}
-            <b style={{ color: 'var(--po-fg-2)' }}>veralith</b> is connected.{' '}
-            <code className="po-mono">{'${VERALITH_API_KEY}'}</code> reads the same key as your SDK —
-            export it once and changing your project key updates both.
+            {isClaude && claudeMode === 'cli' ? (
+              <>Run it in your project, then <code className="po-mono">/mcp</code> should list <b style={{ color: 'var(--po-fg-2)' }}>veralith</b>.</>
+            ) : (
+              <>Save the file, reload your agent, then run <code className="po-mono">/mcp</code> to confirm <b style={{ color: 'var(--po-fg-2)' }}>veralith</b> is connected.</>
+            )}{' '}
+            The key is prefilled above.
           </>
         }
       />

@@ -8,6 +8,8 @@ import { supabase } from '../../lib/supabase';
 import { useProjects } from '../../hooks/useProjects';
 import { useApiKeys, useStats, useSystemHealth } from '../../hooks/useOverviewData';
 import { useEventLog } from '../../lib/eventLog';
+import { onOpenWorkbench } from '../../lib/workbench';
+import { ConnectCards } from '../ConnectCards';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_API === 'true';
 const FETCH_BASE = import.meta.env.VITE_API_URL ?? '';
@@ -89,38 +91,6 @@ function WbHeader({
 
 /* ── Integration — API keys + SDK quick-start + developer resources ─── */
 
-type SnipKind = 'comment' | 'plain' | 'kw';
-const SNIPPETS: Record<string, [string, SnipKind][]> = {
-  python: [
-    ['# 1 · install', 'comment'],
-    ['pip install veralith', 'plain'],
-    ['', 'plain'],
-    ['# 2 · init with your secret key', 'comment'],
-    ['from veralith import Veralith', 'kw'],
-    ['v = Veralith(api_key="sk_live_…")', 'plain'],
-    ['', 'plain'],
-    ['# 3 · log your first trace', 'comment'],
-    ['v.log(query=q, answer=a, chunks=docs)', 'plain'],
-  ],
-  node: [
-    ['// 1 · install', 'comment'],
-    ['npm install veralith', 'plain'],
-    ['', 'plain'],
-    ['// 2 · init with your secret key', 'comment'],
-    ['import { Veralith } from "veralith";', 'kw'],
-    ['const v = new Veralith("sk_live_…");', 'plain'],
-    ['', 'plain'],
-    ['// 3 · log your first trace', 'comment'],
-    ['await v.log({ query, answer, chunks });', 'plain'],
-  ],
-  curl: [
-    ['# log a trace over HTTP', 'comment'],
-    ['curl https://api.veralithai.com/v1/traces \\', 'plain'],
-    ['  -H "Authorization: Bearer sk_live_…" \\', 'plain'],
-    ['  -d query="…" -d answer="…" \\', 'plain'],
-    ['  -d chunks[]="…"', 'plain'],
-  ],
-};
 const RESOURCES: [string, string][] = [
   ['Developer quick start', 'Send your first trace in 5 min'],
   ['Documentation', 'SDK, judges, failure cells'],
@@ -129,12 +99,12 @@ const RESOURCES: [string, string][] = [
 ];
 
 function WbIntegration({ slug, projectId, onTab, onManageKeys }: { slug: string; projectId: string; onTab: (t: WbTab) => void; onManageKeys: () => void }) {
-  const [lang, setLang] = useState<'python' | 'node' | 'curl'>('python');
   const stats = useStats(slug, {}, { refetchInterval: 30_000 });
   const conn = stats.data?.connection_state;
   const sdkV = stats.data?.sdk_version;
   const apiKeys = useApiKeys(projectId);
   const activeKeys = (apiKeys.data?.api_keys ?? []).filter((k) => !k.revoked_at);
+  const keyPrefix = activeKeys[0]?.prefix ?? apiKeys.data?.api_keys?.[0]?.prefix ?? null;
   const statusEl =
     conn === 'live' ? (
       <span className="wf-mlabel"><span className="po-dot po-dot-live" /> receiving traces · live</span>
@@ -149,7 +119,7 @@ function WbIntegration({ slug, projectId, onTab, onManageKeys }: { slug: string;
     <div className="wb-body wb-overview">
       <div className="wb-ov-main">
         <div className="wb-ov-head">
-          <span className="wb-ov-title">Your integration</span>
+          <span className="wb-ov-title">Connect your project</span>
           {statusEl}
         </div>
 
@@ -169,21 +139,9 @@ function WbIntegration({ slug, projectId, onTab, onManageKeys }: { slug: string;
           </div>
         </div>
 
-        <div className="wb-int-block">
-          <div className="wb-int-block-head">
-            <span className="wb-int-block-t">Quick start</span>
-            <div className="wb-seg">
-              {(['python', 'node', 'curl'] as const).map((l) => (
-                <button key={l} type="button" className={'wb-seg-b' + (l === lang ? ' is-active' : '')} onClick={() => setLang(l)}>{l}</button>
-              ))}
-            </div>
-          </div>
-          <pre className="wb-snippet po-mono">
-            {SNIPPETS[lang].map((ln, i) => (
-              <div key={i} className={'wb-snip-' + ln[1]}>{ln[0] || ' '}</div>
-            ))}
-          </pre>
-        </div>
+        {/* The two setup steps - SDK (traces in) + coding agent (MCP). Live green
+            checks; Claude Code shows both the CLI and the .mcp.json, prefilled. */}
+        <ConnectCards apiKey={keyPrefix} slug={slug} />
       </div>
 
       <aside className="wb-testing">
@@ -979,6 +937,15 @@ export function WorkbenchDrawer({ defaultTab = 'Integration' }: { defaultTab?: W
     const vh = typeof window !== 'undefined' ? window.innerHeight : 900;
     return Math.max(WB_MIN_H, Math.min(saved > 0 ? saved : WB_DEFAULT_H, vh - WB_TOP_GAP));
   });
+
+  // Open on demand from elsewhere in the app (e.g. the topbar connection chip),
+  // landing on the requested tab.
+  useEffect(() => {
+    return onOpenWorkbench((tab) => {
+      setActive(tab);
+      setOpen(true);
+    });
+  }, []);
 
   // While the panel is open, lock the page scroll behind it so the wheel
   // scrolls the panel's content, not the page.
