@@ -62,21 +62,6 @@ const CELL_SHORT: Record<FailureCell, string> = {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   Status buckets — used only to seed the canvas auto-layout (one cluster
-   column per lifecycle phase, left → right). Cards stay free-movable after.
-   ─────────────────────────────────────────────────────────── */
-
-type BucketDef = { id: string; statuses: HealStatus[] };
-
-const BUCKETS: BucketDef[] = [
-  { id: 'open',        statuses: ['open'] },
-  { id: 'in_progress', statuses: ['in_progress'] },
-  { id: 'pr_raised',   statuses: ['pr_raised'] },
-  { id: 'failed',      statuses: ['failed'] },
-  { id: 'done',        statuses: ['resolved', 'manually_fixed', 'wont_fix', 'superseded'] },
-];
-
-/* ─────────────────────────────────────────────────────────────
    Canvas geometry + per-project layout persistence
    ─────────────────────────────────────────────────────────── */
 
@@ -90,23 +75,25 @@ const ROW_H = 214;
 const COL_GAP = 40;
 const PAD = 14;
 
-/* Cluster cards by status into left→right columns (newest first within each).
-   Empty buckets are skipped so populated columns sit adjacent — otherwise a
-   resolved card lands in the far-right "done" column with big empty gaps before
-   it. Each populated bucket just takes the next column over. */
-function autoLayout(cards: HealCardSummary[]): Record<string, Pos> {
+/* Seed layout: flow cards row-major to FILL the canvas width, wrapping to the
+   next row — so a screen of open cards forms a grid instead of one tall column.
+   Cards are ordered by lifecycle phase (open first) then most-recent, so related
+   cards still cluster. `cols` is derived from the measured canvas width. */
+const _STATUS_ORDER: HealStatus[] = [
+  'open', 'in_progress', 'pr_raised', 'failed',
+  'resolved', 'manually_fixed', 'wont_fix', 'superseded',
+];
+function autoLayout(cards: HealCardSummary[], cols: number): Record<string, Pos> {
   const res: Record<string, Pos> = {};
-  let col = 0;
-  BUCKETS.forEach((bucket) => {
-    const inBucket = cards
-      .filter((c) => bucket.statuses.includes(c.status))
-      .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-    if (inBucket.length === 0) return; // skip empty column — no dead gap
-    const x = PAD + col * (NODE_W + COL_GAP);
-    inBucket.forEach((c, ri) => {
-      res[c.id] = { x, y: PAD + ri * ROW_H };
-    });
-    col += 1;
+  const n = Math.max(1, cols);
+  const sorted = [...cards].sort((a, b) => {
+    const d = _STATUS_ORDER.indexOf(a.status) - _STATUS_ORDER.indexOf(b.status);
+    return d !== 0 ? d : b.updated_at.localeCompare(a.updated_at);
+  });
+  sorted.forEach((c, i) => {
+    const col = i % n;
+    const row = Math.floor(i / n);
+    res[c.id] = { x: PAD + col * (NODE_W + COL_GAP), y: PAD + row * ROW_H };
   });
   return res;
 }
@@ -1154,6 +1141,20 @@ export default function Heals() {
   const dragRef = useRef<{ id: string; sx: number; sy: number; ox: number; oy: number; ow?: number; oh?: number; moved: boolean } | null>(null);
   const isMobile = useIsMobile();
 
+  // Measure the canvas viewport so the seed layout can flow cards into as many
+  // columns as fit (fills width first, then wraps down).
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [canvasW, setCanvasW] = useState(0);
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setCanvasW(el.clientWidth));
+    ro.observe(el);
+    setCanvasW(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+  const cols = Math.max(1, Math.floor((canvasW - PAD * 2 + COL_GAP) / (NODE_W + COL_GAP)));
+
   // GET /v1/heals is global across the user's projects; we fetch everything and
   // scope to the active project client-side. Polling: 12s.
   const listQuery = useQuery({
@@ -1186,7 +1187,7 @@ export default function Heals() {
 
   // Auto-layout (clustered by status) — the fallback position for any card the
   // user hasn't explicitly moved.
-  const fallback = useMemo(() => autoLayout(cards), [cards]);
+  const fallback = useMemo(() => autoLayout(cards, cols), [cards, cols]);
   const posOf = (id: string): Pos => positions[id] ?? fallback[id] ?? { x: PAD, y: PAD };
 
   // Flash a card when its status changes during a poll.
@@ -1394,7 +1395,7 @@ export default function Heals() {
             </div>
           </div>
         ) : (
-          <div className="he-canvas">
+          <div className="he-canvas" ref={canvasRef}>
             <div
               className={'he-canvas-inner' + (isEmpty || noMatches ? ' he-canvas-inner-center' : '')}
               style={isEmpty || noMatches ? undefined : { minWidth: bounds.w, minHeight: bounds.h }}
