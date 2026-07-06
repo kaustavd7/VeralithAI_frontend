@@ -2,5 +2,7 @@
   "index": "Introduction",
   "getting-started": "Getting started",
   "integration": "Integration",
-  "dashboard": "The dashboard"
+  "dashboard": "The dashboard",
+  "self-heal": "Self-heal (MCP)",
+  "reference": "Reference"
 }

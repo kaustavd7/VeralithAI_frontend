@@ -1,0 +1,26 @@
+---
+title: Repo context
+description: How your agent teaches Veralith about your repository during a heal, so future fixes are architecture-aware.
+---
+
+# Repo context
+
+Veralith never sees your codebase — but during a heal, your **agent is inside it**. Repo context captures what the agent learns and feeds it back into future diagnoses, so recommendations get smarter over time without you doing anything extra.
+
+## How it works
+
+While working a heal, the agent calls [`save_repo_context`](/self-heal/mcp-tools#save_repo_context) with three fields:
+
+- **summary** — one line on what the app/repo is.
+- **architecture** — the stack, RAG pipeline, data sources, key files, and constraints.
+- **recommendations** — repo-specific guidance for future fixes.
+
+Veralith stores one repo-context record per project and injects it into the suggester's prompt when it writes the next heal card.
+
+## Why it matters
+
+A concrete example: if the agent notes *"the corpus is a static snapshot, so live-data queries are genuinely out of scope"*, then the next time a live-data question fails, Veralith's recommendation is *"name the gap deterministically / abstain"* rather than *"improve retrieval"* — because it now knows retrieval can't fix an out-of-scope question. The insight the agent gave once becomes an automatic part of every future diagnosis for that project.
+
+## You don't do anything
+
+Repo context is captured by the agent as part of the heal flow — there's no separate step for you. Each heal refreshes it, so it stays current as your codebase evolves.

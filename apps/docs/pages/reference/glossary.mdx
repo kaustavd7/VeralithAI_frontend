@@ -1,0 +1,68 @@
+---
+title: Glossary
+description: Every Veralith term in one place, with the everyday words you'd search for — hallucination, retrieval gap, green dot, stuck evaluating, and more.
+---
+
+# Glossary
+
+Every term used across Veralith, with the plain words you might search for.
+
+## Abstention (honest abstention)
+When the model correctly **declines** because the context doesn't contain the answer ("I don't know"). Counted as acceptable, not a failure. See [Core concepts](/getting-started/concepts#honest-abstention).
+
+## API key (`vk_live_...`)
+Authenticates the SDK, the REST API, and your MCP agent. Scoped per project; shown once at creation. See [Settings & API keys](/dashboard/settings).
+
+## Completeness
+One of the three judges: did the response answer the whole question (`complete`), miss part (`incomplete`), or add unrequested extras (`extra`)? See [Core concepts](/getting-started/concepts#the-three-judges).
+
+## Connection status (the green dots)
+The topbar `● SDK · ● MCP` chip. **SDK** = we've received traces; **MCP** = an agent has connected. The dots mean "has connected", not "connected right now". See [Connection status](/dashboard/connection-status).
+
+## Context
+The retrieved chunks/memories your system used to answer — the middle argument of `log()`. See [Context formats](/integration/context-formats).
+
+## Failure cell
+The precise label for how an answer failed: completeness × faithfulness = six cells. See [the six failure cells](/getting-started/concepts#the-six-failure-cells).
+
+## Faithfulness
+One of the three judges: did the response stay grounded in the context, or **hallucinate**? See [Core concepts](/getting-started/concepts#the-three-judges).
+
+## Grounded / ungrounded
+**Grounded** = every claim is supported by the context. **Ungrounded** = the response asserts something the context doesn't support (a **hallucination**).
+
+## Hallucination
+A fabricated claim not supported by the retrieved context — the `complete_ungrounded` and `extra_ungrounded` [cells](/getting-started/concepts#the-six-failure-cells).
+
+## Healthy rate
+The share of **evaluated** traces that were `complete_grounded`. Denominator is evaluated traces, not total. See [Core concepts](/getting-started/concepts#healthy-rate).
+
+## Heal card
+A cluster of same-root-cause failures with a concrete, reviewable fix. Moves `open → in_progress → pr_raised → resolved`. See [Heals](/dashboard/heals).
+
+## MCP (Model Context Protocol)
+How a coding agent connects to Veralith to read heal cards and open fixes. See [Connect your agent](/self-heal/connect-agent).
+
+## Recurrence
+A heal card opened for a failure category that was fixed before but came back — badged as a recurrence. See [Heal lifecycle](/self-heal/lifecycle#recurrence).
+
+## Repo context
+What your agent learned about your repo during a heal, fed back into future diagnoses. See [Repo context](/self-heal/repo-context).
+
+## Re-evaluate
+Drop a trace's evaluation and re-run the judges — e.g. after a stuck eval. See [Trace explorer](/dashboard/trace-explorer#re-evaluate-a-trace).
+
+## Retrieval gap
+The context was missing part of the answer — the `incomplete_grounded` [cell](/getting-started/concepts#the-six-failure-cells). A retrieval problem, not a generation one.
+
+## Self-heal
+The end-to-end flow of turning a heal card into a merged pull request via a coding agent. See [Self-heal](/self-heal/overview).
+
+## "Stuck on evaluating"
+A trace with no evaluation yet reads `evaluating`. Usually clears in seconds; can persist if your LLM credit is exhausted. See [Troubleshooting](/reference/troubleshooting#a-trace-is-stuck-on-evaluating).
+
+## Sufficiency
+One of the three judges: did retrieval actually surface what was needed to answer? See [Core concepts](/getting-started/concepts#the-three-judges).
+
+## Trace
+One answer, captured as `(query, context, response)` — the unit everything is computed from. See [Core concepts](/getting-started/concepts#trace).

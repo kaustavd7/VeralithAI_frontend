@@ -1,0 +1,41 @@
+---
+title: Heal lifecycle
+description: How a heal card moves from open to resolved — the statuses and the MCP tool calls the agent makes at each step.
+---
+
+# Heal lifecycle
+
+A heal card moves through a defined lifecycle. The dashboard reflects the status; the agent drives it with [MCP tools](/self-heal/mcp-tools).
+
+```
+open → in_progress → pr_raised → resolved
+```
+
+## Statuses
+
+| Status | Meaning | Set by |
+| --- | --- | --- |
+| **open** | Awaiting a decision. | Veralith, when the card is created. |
+| **in_progress** | An agent is working the fix. | `start_heal` / `claim_work_item`. |
+| **pr_raised** | A pull request is open for review. | `mark_pr_raised`. |
+| **resolved** | The PR was accepted — fixed. | You, accepting the PR on the dashboard. |
+| **failed** | An attempt failed; retryable. | `mark_failed`. |
+| **wont_fix** / **manually_fixed** / **superseded** | Terminal states. | You (dismiss), or Veralith (supersede). |
+
+## End to end
+
+<br />
+
+1. A failure cluster produces an **`open`** heal card on the [Heals](/dashboard/heals) canvas.
+2. Your agent calls **`list_heal_cards`** (default `status='open'`) to see what's waiting, or you press **Start heal** on a card.
+3. **`start_heal(heal_card_id)`** moves the card to **`in_progress`** and returns a work item. The agent **`claim_work_item`**s it and reads the fix with **`get_work_item`**.
+4. The agent edits your repo, commits, and opens a PR — then calls **`mark_pr_raised(action_id, pr_url)`** → card is **`pr_raised`**.
+5. You review the PR. Accept it on the dashboard → **`resolved`**. If it wasn't right, decline (back to `in_progress`) or the agent calls **`mark_failed`** to retry.
+
+## Recurrence
+
+If a resolved category fails again later, Veralith opens a **new** card linked to the previous one and badges it as a **recurrence** — so you can see "we tried fix X, it came back." See [Heals](/dashboard/heals).
+
+## Bulk
+
+When several cards are open, **Heal all** hands them to the agent in one run (one combined PR), and **Accept all** resolves every `pr_raised` card at once.

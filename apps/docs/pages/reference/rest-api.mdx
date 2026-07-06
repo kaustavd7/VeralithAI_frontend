@@ -1,0 +1,58 @@
+---
+title: REST / ingest API
+description: Send a trace over plain HTTP — the POST /v1/traces endpoint, its payload, and the response.
+---
+
+# REST / ingest API
+
+The [SDK](/integration/overview) is the recommended way to send traces, but you can POST them directly — useful for languages without a Veralith SDK (there's no Node SDK today, for example).
+
+## Authentication
+
+Every request needs your project API key as a bearer token:
+
+```
+Authorization: Bearer vk_live_your_key
+```
+
+## `POST /v1/traces`
+
+Ingest one trace. Returns immediately; evaluation runs asynchronously.
+
+```bash
+curl -X POST https://api.veralithai.com/v1/traces \
+  -H "Authorization: Bearer vk_live_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What is the Rule of 72?",
+    "response": "At 8%, money doubles in about 9 years.",
+    "retrieved_chunks": [
+      { "text": "Divide 72 by the annual rate to estimate doubling time.", "rank": 0, "source": "finance_101.md", "score": 0.91 }
+    ],
+    "latency_ms_total": 840
+  }'
+```
+
+### Request body
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `query` | string | yes | The user's question (non-empty). |
+| `response` | string | yes | The generated answer (non-empty). |
+| `retrieved_chunks` | array of objects | no | The context. Each object: `text` (required), and optional `rank`, `source`, `score`. Defaults to `[]`. |
+| `latency_ms_total` | number | no | Your RAG response time in ms. Shown as RAG latency; feeds the p95 KPI. |
+| `metadata` | object | no | Arbitrary key/values to attach to the trace. |
+
+### Response — `202 Accepted`
+
+```json
+{
+  "id": "d6597d96-9b27-4b0f-816a-d6db5df0045d",
+  "status": "accepted",
+  "created_at": "2026-07-06T09:47:00Z"
+}
+```
+
+The `id` is the trace id. The trace appears in the [Trace explorer](/dashboard/trace-explorer) as `evaluating`, then `evaluated` once the judges finish.
+
+> **Note:** the `retrieved_chunks` object shape matches the SDK's [context format](/integration/context-formats) — the field is `text`, not `page_content`.

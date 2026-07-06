@@ -1,0 +1,73 @@
+---
+title: Connect your agent
+description: Point Claude Code, Cursor, or Codex at Veralith's MCP server — .mcp.json, the CLI one-liner, and per-client config.
+---
+
+# Connect your agent
+
+Connect a coding agent to Veralith's MCP server so it can read and act on your heal cards. All clients point at the same endpoint:
+
+```
+https://api.veralithai.com/mcp/http
+```
+
+Authenticate with your project's `vk_live_...` [API key](/dashboard/settings).
+
+## Claude Code
+
+Two equivalent options — both prefilled with your key.
+
+**Config file** — add `.mcp.json` at your repo root:
+
+```json
+{
+  "mcpServers": {
+    "veralith": {
+      "type": "http",
+      "url": "https://api.veralithai.com/mcp/http",
+      "headers": { "Authorization": "Bearer vk_live_your_key" }
+    }
+  }
+}
+```
+
+**CLI one-liner** — run in your project:
+
+```bash
+claude mcp add --transport http veralith https://api.veralithai.com/mcp/http \
+  --header "Authorization: Bearer vk_live_your_key"
+```
+
+Reload Claude Code, then run `/mcp` — you should see the **veralith** server and its tools.
+
+## Cursor
+
+Add to `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "veralith": {
+      "type": "streamableHttp",
+      "url": "https://api.veralithai.com/mcp/http",
+      "headers": { "Authorization": "Bearer vk_live_your_key" }
+    }
+  }
+}
+```
+
+## Codex
+
+Add to `~/.codex/config.toml` (Codex reads the key from an env var):
+
+```toml
+[mcp_servers.veralith]
+url = "https://api.veralithai.com/mcp/http"
+bearer_token_env_var = "VERALITH_API_KEY"
+```
+
+## Confirming the connection
+
+Run `/mcp` inside your agent to list the connected `veralith` server. Note that the dashboard's MCP dot means "an agent **has** connected", not a live socket — see [Connection status](/dashboard/connection-status).
+
+> **Tip:** the SDK and the agent both use the same `VERALITH_API_KEY`. Export it once and reference `${VERALITH_API_KEY}` in the config so switching a project key is a one-line change. Your agent reads the real environment, not a `.env` file — so export it. See [Settings → one key, one place](/dashboard/settings#one-key-one-place).

@@ -1,0 +1,38 @@
+---
+title: Troubleshooting
+description: Fixes for the common issues — no traces appearing, a trace stuck on evaluating, exhausted LLM credit, the agent dot not going green, and duplicate heal cards.
+---
+
+# Troubleshooting
+
+## No traces are appearing
+
+- **Is the key set?** The SDK is a **no-op** without `VERALITH_API_KEY`. Confirm it's exported in the environment your app actually runs in (`echo $VERALITH_API_KEY`).
+- **Right project?** Traces land in the project the key belongs to. If you switched projects, make sure the key matches the one you're viewing.
+- **Is `log()` actually reached?** For LangChain **LCEL** chains, agents, or LlamaIndex, the [adapter](/integration/langchain) won't auto-trace — you need an explicit `log()`. See [Recipes](/integration/recipes).
+- **Watch the SDK dot.** When the first trace lands, the [SDK connection dot](/dashboard/connection-status) turns green.
+
+## A trace is stuck on "evaluating"
+
+A trace reads `evaluating` whenever it has **no evaluation row yet**. It normally clears in seconds — a background sweeper also recovers stranded traces automatically.
+
+It can persist if your **LLM provider credit is exhausted** (the eval can't run). The evaluation fails cleanly with no partial data. To recover once credit is restored:
+
+- **Re-evaluate** the trace from the [Trace explorer](/dashboard/trace-explorer#re-evaluate-a-trace) or trace detail, or
+- restart the backend, which re-sweeps all stranded traces in one pass.
+
+## "New traces" and the health donut disagree
+
+That's expected. **New traces** counts *everything ingested*; the trace-health donut counts *evaluated* traces. The gap is traces still being evaluated (or stuck — see above). Once they finish, the two converge.
+
+## The MCP (agent) dot won't turn off
+
+By design. The dot means "an agent **has** connected", not "is connected right now" — it's only ever set, never cleared, because MCP-over-HTTP has no disconnect event. To check a live connection, run `/mcp` in your agent. See [Connection status](/dashboard/connection-status).
+
+## I see two similar heal cards
+
+Occasionally two near-duplicate cards form for one root cause. Dismiss one (*"just ignore"*) to merge them by hand. See [Heals](/dashboard/heals).
+
+## `sync=True` isn't working
+
+`log(sync=True)` isn't supported against the hosted backend. To grade a trace inline, use offline [`veralith.evaluate()`](/integration/evaluate-offline) instead.

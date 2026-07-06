@@ -1,0 +1,32 @@
+---
+title: Self-heal overview
+description: How a heal card becomes a pull request — a coding agent reads Veralith's diagnoses over MCP, applies the fix in your repo, and opens the PR.
+---
+
+# Self-heal overview
+
+Veralith doesn't just *tell* you an answer was wrong — it can get the fix opened. When failures cluster into a [heal card](/dashboard/heals), a **coding agent** connected over **MCP** (Model Context Protocol) reads the card, applies the change in your repository, and opens a pull request for your review.
+
+## The idea
+
+Veralith never sees your codebase. Your **agent** does. So Veralith exposes the diagnosis and the recommended fix as MCP tools, and the agent — running inside your repo — does the editing.
+
+```
+failure cluster → heal card (with a concrete fix)
+      → agent reads it over MCP
+      → agent edits your repo + opens a PR
+      → you review & merge  → card resolved
+```
+
+## What you need
+
+1. A project with heal cards (see [Heals](/dashboard/heals)).
+2. A coding agent that speaks MCP — **Claude Code**, **Cursor**, or **Codex**.
+3. Your Veralith API key wired into the agent. See [Connect your agent](/self-heal/connect-agent).
+
+## Next
+
+- [**Connect your agent**](/self-heal/connect-agent) — the `.mcp.json` / CLI setup for each client.
+- [**Heal lifecycle**](/self-heal/lifecycle) — how a card moves from `open` to `resolved`, tool by tool.
+- [**MCP tools reference**](/self-heal/mcp-tools) — every tool the agent can call.
+- [**Repo context**](/self-heal/repo-context) — how the agent teaches Veralith about your repo so future fixes get smarter.

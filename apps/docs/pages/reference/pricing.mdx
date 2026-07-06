@@ -1,0 +1,27 @@
+---
+title: Pricing
+description: How Veralith is billed — hosted evaluations against a monthly trace quota, and offline evaluation on your own OpenAI key.
+---
+
+# Pricing
+
+<br />
+
+> Pricing is being finalized. For current plans and limits, see the pricing section on [veralithai.com](https://veralithai.com/#pricing). The details below are the billing model.
+
+## Hosted (the dashboard)
+
+When you send traces with [`veralith.log()`](/integration/log) or the [REST API](/reference/rest-api), evaluation runs on Veralith's backend and is billed against your project's **monthly trace quota**. The free tier includes **200 traces per month**.
+
+Everything on the dashboard — the [judges](/getting-started/concepts#the-three-judges), [failure cells](/getting-started/concepts#the-six-failure-cells), [heal cards](/dashboard/heals), and [self-heal over MCP](/self-heal/overview) — is included; you're billed on trace volume, not features.
+
+## Offline evaluation
+
+[`veralith.evaluate()`](/integration/evaluate-offline) runs entirely on your machine against your **own** `OPENAI_API_KEY` — it does **not** touch your Veralith quota. It costs roughly **$0.005 per trace** in OpenAI usage. Good for CI gates and experiments.
+
+## In short
+
+| | Billed against | Cost |
+| --- | --- | --- |
+| `log()` / REST ingest | Your Veralith trace quota | Free tier: 200 traces/mo |
+| `evaluate()` (offline) | Your OpenAI key | ~$0.005 / trace |

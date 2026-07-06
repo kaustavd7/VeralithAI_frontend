@@ -1,0 +1,61 @@
+---
+title: MCP tools reference
+description: Every tool the Veralith MCP server exposes to your coding agent — arguments and what each does.
+---
+
+# MCP tools reference
+
+Once your [agent is connected](/self-heal/connect-agent), it can call these tools. They're scoped automatically to the project the API key belongs to. Most agents orchestrate them for you from a heal prompt — this reference is for when you want to know exactly what's available.
+
+## Reading
+
+### `list_heal_cards`
+List heal cards for the project.
+- `status` *(string, default `open`)* — filter by card status.
+- `limit` *(int, default 50)*.
+
+### `list_pending_work`
+List pending work items waiting for an agent.
+- `limit` *(int, default 20)*.
+
+### `get_work_item`
+Fetch the full details of a work item — the diagnosis, the recommended fix, and the evidence.
+- `action_id` *(string, required)* — UUID of the pending action.
+
+## Acting
+
+### `start_heal`
+Begin working a heal card. Moves it to `in_progress` and creates a work item. Idempotent — calling it again returns the existing work item.
+- `heal_card_id` *(string, required)* — UUID of the heal card.
+
+### `claim_work_item`
+Claim a work item so other agents don't pick it up.
+- `action_id` *(string, required)*.
+
+### `mark_pr_raised`
+Report that you opened a pull request for the fix. Moves the card to `pr_raised`.
+- `action_id` *(string, required)*.
+- `pr_url` *(string, required)* — the PR URL.
+- `summary` *(string, optional)* — one-line description of the change.
+
+### `mark_failed`
+Report that the attempt failed (retryable).
+- `action_id` *(string, required)*.
+- `reason` *(string, required)* — short human-readable explanation.
+- `patch` *(string, optional)* — a unified diff of what you tried.
+
+### `mark_pr_closed`
+Report that a raised PR was closed without merging.
+- `action_id` *(string, required)*.
+
+## Learning
+
+### `save_repo_context`
+Store what the agent learned about the repo, so future recommendations are architecture-aware. See [Repo context](/self-heal/repo-context).
+- `summary` *(string)* — one line: what the app/repo is.
+- `architecture` *(string)* — stack, RAG pipeline, data sources, key files, constraints.
+- `recommendations` *(string)* — repo-specific guidance for future fixes.
+
+---
+
+The same operations are also available over a plain HTTP shim under `/mcp/*` for non-MCP clients. For sending traces (not healing), use the [REST ingest API](/reference/rest-api).
