@@ -282,7 +282,9 @@
       /* ── CTA ─────────────────────────────────────────────── */
       .cta { text-align: center; padding: 128px 0; border-top: 1px solid var(--line); }
       .cta h2 { font-size: clamp(30px, 5vw, 52px); font-weight: 600; letter-spacing: -0.04em; }
+      .cta h2 em { font-style: italic; font-weight: 400; color: var(--fg-3); }
       .cta p { color: var(--fg-3); font-size: 17px; margin: 18px auto 30px; max-width: 48ch; }
+      .cta-sub { font-style: italic; }
       .cta-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
       /* ── Footer ──────────────────────────────────────────── */
@@ -668,11 +670,11 @@ answer = rag_pipeline(<span class="vr">query</span>)
     <!-- ══ CTA ══ -->
     <section class="cta" id="get-started">
       <div class="wrap reveal">
-        <h2>Stop guessing why<br />it hallucinated.</h2>
-        <p>One line of code today. A typed diagnosis in minutes. A pull request that repairs the underlying RAG code. Free for 10,000 traces a month.</p>
+        <h2>Stop shipping <em>hallucinations.</em></h2>
+        <p class="cta-sub">Make ’em grounded!</p>
         <div class="cta-cta">
           <a class="btn btn-white btn-lg" href="https://app.veralithai.com/login?mode=signup">Start free</a>
-          <a class="btn btn-ghost btn-lg" href="https://docs.veralithai.com" target="_blank" rel="noreferrer">Read the docs</a>
+          <a class="btn btn-ghost btn-lg" href="https://app.veralithai.com/login">See it live →</a>
         </div>
       </div>
     </section>
