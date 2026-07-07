@@ -17,7 +17,7 @@
     />
 
     <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
-    <link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet" />
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -27,7 +27,7 @@
          VERALITH LANDING — Scale-style light editorial
          Palette: warm light-gray canvas, white/gray cards, near-black
          ink, black statement bands + deep-forest-green accent panels.
-         Font: General Sans (Aeonik-alike). Mono: JetBrains Mono.
+         Font: Satoshi. Mono: JetBrains Mono. Light weights throughout.
          Motion: Lenis smooth-scroll, IntersectionObserver reveals,
          and a scroll-scrubbed word-fill headline (dim -> ink).
          ============================================================ */
@@ -70,7 +70,7 @@
         --radius-sm: 12px;
         --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-        --font: "General Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+        --font: "Satoshi", system-ui, -apple-system, "Segoe UI", sans-serif;
         --mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
       }
 
@@ -95,13 +95,14 @@
       .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 var(--pad-x); position: relative; }
 
       /* ── Typography ─────────────────────────────────────────── */
-      h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.035em; line-height: 1.04; }
+      h1, h2, h3 { margin: 0; font-weight: 500; letter-spacing: -0.035em; line-height: 1.04; }
       .eyebrow {
         font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em;
         text-transform: uppercase; color: var(--muted); font-weight: 500;
       }
       .lede { color: var(--ink-2); font-size: 19px; line-height: 1.55; }
       .mono { font-family: var(--mono); }
+      b, strong { font-weight: 500; }  /* keep emphasis light, not heavy bold */
 
       /* ── Buttons (Scale-style) ──────────────────────────────── */
       .btn {
@@ -134,7 +135,7 @@
         border-bottom-color: var(--line);
       }
       .nav .wrap { display: flex; align-items: center; justify-content: space-between; }
-      .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -0.03em; font-size: 20px; }
+      .brand { display: flex; align-items: center; gap: 9px; font-weight: 500; letter-spacing: -0.03em; font-size: 20px; }
       .brand img { width: 25px; height: 25px; display: block; }
       .nav-mid { display: flex; align-items: center; gap: 34px; }
       .nav-mid a { color: var(--ink-2); font-size: 15px; font-weight: 500; transition: color 0.18s; }
@@ -181,14 +182,14 @@
       .diag-q span { color: var(--faint); font-family: var(--mono); font-size: 11.5px; display: block; margin-bottom: 6px; letter-spacing: 0.06em; }
       .diag-cell {
         display: inline-flex; align-items: center; gap: 9px; align-self: start; padding: 7px 13px; border-radius: 999px;
-        font-size: 13.5px; font-weight: 550; background: color-mix(in oklab, var(--cell-cu) 12%, var(--card));
+        font-size: 13.5px; font-weight: 450; background: color-mix(in oklab, var(--cell-cu) 12%, var(--card));
         border: 1px solid color-mix(in oklab, var(--cell-cu) 40%, transparent); color: var(--cell-cu);
       }
       .diag-cell .mono { font-size: 12px; opacity: 0.85; }
       .diag-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
       .metric { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px; }
       .metric .k { font-size: 12px; color: var(--muted); }
-      .metric .v { font-size: 22px; font-weight: 600; letter-spacing: -0.03em; margin-top: 2px; }
+      .metric .v { font-size: 22px; font-weight: 500; letter-spacing: -0.03em; margin-top: 2px; }
       .metric .bar { height: 5px; border-radius: 3px; background: var(--line-2); margin-top: 10px; overflow: hidden; }
       .metric .bar i { display: block; height: 100%; border-radius: 3px; }
       .diag-fix { background: var(--card-2); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 12px; padding: 14px 16px; }
@@ -205,7 +206,7 @@
       .statement { background: var(--black); color: var(--on-black); padding: 150px 0; }
       .statement .wrap { max-width: 1000px; }
       .statement .eyebrow { color: #8f9188; margin-bottom: 26px; }
-      .fill { font-size: clamp(30px, 5vw, 60px); font-weight: 600; letter-spacing: -0.04em; line-height: 1.12; }
+      .fill { font-size: clamp(30px, 5vw, 60px); font-weight: 500; letter-spacing: -0.04em; line-height: 1.12; }
       .fill .w { display: inline-block; opacity: 0.16; transition: opacity 0.12s linear; will-change: opacity; }
       .statement .below { margin-top: 40px; display: flex; gap: 12px; flex-wrap: wrap; }
 
@@ -233,7 +234,7 @@
       .cell.eg { --c: var(--cell-eg); } .cell.eu { --c: var(--cell-eu); }
       .cells-copy h2 { font-size: clamp(28px, 3.6vw, 40px); margin: 16px 0 18px; }
       .axis { display: grid; gap: 12px; margin-top: 24px; }
-      .axis .a { font-size: 14.5px; color: var(--muted); } .axis .a b { color: var(--ink); font-weight: 600; }
+      .axis .a { font-size: 14.5px; color: var(--muted); } .axis .a b { color: var(--ink); font-weight: 500; }
 
       /* ── Green accent band ──────────────────────────────────── */
       .greenband { background: var(--green); color: var(--on-green); border-radius: 26px; padding: 56px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
@@ -244,7 +245,7 @@
       .flow-node { display: flex; align-items: center; gap: 13px; padding: 15px 17px; background: color-mix(in oklab, #fff 8%, var(--green)); border: 1px solid var(--green-2); border-radius: 14px; }
       .flow-node .n { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--green-2); color: #8ee6b8; flex: none; }
       .flow-node .n svg { width: 16px; height: 16px; }
-      .flow-node .t b { display: block; font-size: 14.5px; color: #fff; font-weight: 550; }
+      .flow-node .t b { display: block; font-size: 14.5px; color: #fff; font-weight: 450; }
       .flow-node .t span { font-size: 13px; color: color-mix(in oklab, var(--on-green) 65%, transparent); }
       .mcp-cmd { margin-top: 24px; background: #08160f; border: 1px solid var(--green-2); border-radius: 12px; padding: 14px 16px; font-family: var(--mono); font-size: 12.5px; color: color-mix(in oklab, var(--on-green) 88%, transparent); overflow-x: auto; white-space: pre; }
       .mcp-cmd .cm { color: #7fdcae; }
@@ -259,7 +260,7 @@
       .guarantee { display: grid; gap: 14px; margin-top: 28px; }
       .guarantee .g { display: flex; gap: 12px; align-items: flex-start; }
       .guarantee .g svg { width: 19px; height: 19px; color: var(--accent); flex: none; margin-top: 2px; }
-      .guarantee .g b { color: var(--ink); font-weight: 600; } .guarantee .g span { color: var(--muted); font-size: 15px; }
+      .guarantee .g b { color: var(--ink); font-weight: 500; } .guarantee .g span { color: var(--muted); font-size: 15px; }
 
       /* ── Playground ─────────────────────────────────────────── */
       .pg { border: 1px solid var(--line); border-radius: 22px; overflow: hidden; background: var(--card); box-shadow: 0 40px 80px -60px rgba(20,22,18,0.3); }
@@ -274,7 +275,7 @@
       .pg-out { padding: 28px; display: grid; align-content: start; gap: 16px; background: var(--bg-soft); }
       .pg-empty { color: var(--faint); font-size: 14.5px; text-align: center; align-self: center; padding: 44px 0; }
       .pg-verdict { display: none; } .pg-verdict.show { display: grid; gap: 16px; animation: rise 0.5s var(--ease) both; }
-      .pg-cell { display: inline-flex; align-items: center; gap: 9px; align-self: start; padding: 8px 15px; border-radius: 999px; font-weight: 600; font-size: 14px; }
+      .pg-cell { display: inline-flex; align-items: center; gap: 9px; align-self: start; padding: 8px 15px; border-radius: 999px; font-weight: 500; font-size: 14px; }
       .pg-bars { display: grid; gap: 12px; }
       .pg-bar .top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
       .pg-bar .top .k { color: var(--muted); } .pg-bar .top .v { color: var(--ink); font-family: var(--mono); }
@@ -294,7 +295,7 @@
       .price.pop li svg { color: #8ee6b8; }
       .price .tag { display: inline-flex; align-self: start; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--green); background: #8ee6b8; padding: 3px 10px; border-radius: 999px; margin-bottom: 8px; }
       .price h3 { font-size: 19px; }
-      .price .amt { font-size: 42px; font-weight: 600; letter-spacing: -0.04em; margin: 8px 0 2px; }
+      .price .amt { font-size: 42px; font-weight: 500; letter-spacing: -0.04em; margin: 8px 0 2px; }
       .price .amt span { font-size: 15px; color: var(--faint); font-weight: 450; letter-spacing: 0; }
       .price .best { color: var(--muted); font-size: 14px; min-height: 20px; }
       .price ul { list-style: none; margin: 20px 0 24px; padding: 0; display: grid; gap: 11px; }
