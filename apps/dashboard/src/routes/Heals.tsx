@@ -241,7 +241,7 @@ function HealNode({
       };
   return (
     <div
-      className={'he-node' + (selected ? ' is-selected' : '') + (flash ? ' is-flash' : '') + (dragging ? ' is-dragging' : '')}
+      className={'he-node' + (selected ? ' is-selected' : '') + (flash ? ' is-flash' : '') + (dragging ? ' is-dragging' : '') + (TERMINAL.includes(card.status) ? ' is-terminal' : '')}
       style={{ transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`, width: pos.w ?? NODE_W, height: pos.h, '--c': m.color } as React.CSSProperties}
       role="button"
       tabIndex={0}

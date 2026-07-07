@@ -1245,6 +1245,28 @@
   box-shadow: 0 0 0 1.5px color-mix(in oklab, var(--c) 50%, transparent),
     0 14px 30px -16px rgba(0, 0, 0, 0.7);
 }
+/* Terminal cards (resolved / manually_fixed / wont_fix / superseded) recede:
+   a subtly lighter surface + faded content so active work stands out. The
+   footer/status line stays legible; hover brings the body back for reading. */
+.he-node.is-terminal {
+  background: var(--po-panel-2);
+  border-color: var(--po-line);
+  box-shadow: none;
+}
+.he-node.is-terminal .he-node-top,
+.he-node.is-terminal .he-node-title,
+.he-node.is-terminal .he-node-tracechips {
+  opacity: 0.5;
+  transition: opacity 0.12s;
+}
+.he-node.is-terminal:hover {
+  border-color: var(--po-line-strong);
+}
+.he-node.is-terminal:hover .he-node-top,
+.he-node.is-terminal:hover .he-node-title,
+.he-node.is-terminal:hover .he-node-tracechips {
+  opacity: 0.8;
+}
 .he-node.is-dragging {
   cursor: grabbing;
   z-index: 50;
