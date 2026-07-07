@@ -114,9 +114,10 @@
       .logos { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: color-mix(in oklab, var(--panel) 26%, transparent); position: relative; z-index: 1; }
       .logos .wrap { padding: 32px var(--pad-x); }
       .logos .label { text-align: center; font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-4); margin-bottom: 24px; }
-      .logos-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 18px 44px; }
-      .logos-row span { color: var(--fg-3); font-size: 20px; font-weight: 600; letter-spacing: -0.02em; opacity: 0.62; transition: opacity 0.2s, color 0.2s; }
-      .logos-row span:hover { opacity: 1; color: var(--fg); }
+      .logos-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 22px 46px; }
+      /* mixed-source logos normalized to a single white silhouette */
+      .logos-row img { height: 26px; width: auto; filter: brightness(0) invert(1); opacity: 0.5; transition: opacity 0.22s; }
+      .logos-row img:hover { opacity: 0.95; }
       .hero h1 { font-size: clamp(36px, 5vw, 58px); font-weight: 600; letter-spacing: 0.01em; line-height: 1.06; max-width: 20ch; }
       .hero-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; margin-top: 32px; flex-wrap: wrap; }
       .hero-sub { color: var(--fg-3); font-size: 18px; max-width: 52ch; }
@@ -394,7 +395,7 @@
         <h1 class="reveal">The diagnosis &amp; self-heal system for RAG Agents</h1>
         <div class="hero-row">
           <div>
-            <p class="hero-sub reveal">A strict supervisor for your RAG agent — it finds <em>why</em> your answers hallucinate, then fixes them. Designed for the AI era.</p>
+            <p class="hero-sub reveal">A strict supervisor for your RAG agent — it finds <em>why</em> your answers hallucinate, then fixes them. Built to scale from your first trace to your millionth.</p>
             <div class="hero-cta reveal">
               <a class="btn btn-white btn-lg" href="https://app.veralithai.com/login?mode=signup" target="_blank" rel="noreferrer">Start free</a>
               <a class="btn btn-ghost btn-lg" href="#figs">See how it works</a>
@@ -446,14 +447,14 @@
       <div class="wrap">
         <div class="label">Diagnoses RAG built on any stack</div>
         <div class="logos-row stagger">
-          <span>OpenAI</span>
-          <span>Anthropic</span>
-          <span>LangChain</span>
-          <span>LlamaIndex</span>
-          <span>Cohere</span>
-          <span>Pinecone</span>
-          <span>Mistral</span>
-          <span>Cursor</span>
+          <img src="/brand/logos/openai.svg" alt="OpenAI" />
+          <img src="/brand/logos/anthropic.svg" alt="Anthropic" />
+          <img src="/brand/logos/googlegemini.svg" alt="Google Gemini" />
+          <img src="/brand/logos/mistralai.svg" alt="Mistral AI" />
+          <img src="/brand/logos/langchain.svg" alt="LangChain" />
+          <img src="/brand/logos/huggingface.svg" alt="Hugging Face" />
+          <img src="/brand/logos/cursor.svg" alt="Cursor" />
+          <img src="/brand/logos/qdrant.svg" alt="Qdrant" />
         </div>
       </div>
     </section>
