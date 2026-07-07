@@ -103,7 +103,17 @@
       .nav-right .docs:hover { color: var(--fg); }
 
       /* ── Hero ────────────────────────────────────────────── */
-      .hero { padding: clamp(200px, 34vh, 380px) 0 60px; position: relative; overflow: hidden; }
+      .hero { padding: clamp(200px, 34vh, 380px) 0 110px; position: relative; overflow: hidden; }
+      /* overlapping real dashboard screenshots: overview (base) + analytics (floating) */
+      .hero-shots { position: relative; margin-top: 58px; will-change: transform; }
+      .hero-shots img { display: block; border: 1px solid var(--line-2); border-radius: 13px; }
+      .shot-base { width: 88%; box-shadow: 0 2px 6px rgba(0,0,0,.42), 0 44px 80px -38px rgba(0,0,0,.85), 0 110px 170px -60px rgba(0,0,0,.7); }
+      .shot-over { position: absolute; right: 0; bottom: 9%; width: 52%; z-index: 2;
+        box-shadow: 0 8px 16px rgba(0,0,0,.55), 0 34px 58px -18px rgba(0,0,0,.92), 0 80px 110px -36px rgba(0,0,0,.72); }
+      @media (max-width: 760px) {
+        .shot-base { width: 100%; }
+        .shot-over { position: static; width: 100%; margin-top: 14px; }
+      }
       /* lit "floor" the dashboard sits on (Linear-style stage) */
       .hero-floor { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 130%; height: 48%; z-index: 0; pointer-events: none;
         background:
@@ -453,61 +463,9 @@
         </div>
 
         <!-- real Heals panel -->
-        <div class="dash reveal" id="dash">
-          <div class="dash-top">
-            <span class="dash-dot"></span><span class="dash-dot"></span><span class="dash-dot"></span>
-            <span class="dash-title">veralith · Overview</span>
-            <span class="dash-live">Live</span>
-          </div>
-          <div class="dash-app">
-            <aside class="dash-side">
-              <div class="ds-proj"><img src="/favicon.svg" alt="" /> Atlas Assistant <span class="ds-caret">▾</span></div>
-              <a class="ds-nav on"><span class="ds-ic">◈</span> Overview</a>
-              <a class="ds-nav"><span class="ds-ic">≋</span> Traces</a>
-              <a class="ds-nav"><span class="ds-ic">▦</span> Failure cells</a>
-              <a class="ds-nav"><span class="ds-ic">✳</span> Heals <span class="ds-badge">4</span></a>
-              <a class="ds-nav"><span class="ds-ic">◔</span> Insights</a>
-              <a class="ds-nav"><span class="ds-ic">▤</span> Analytics</a>
-              <div class="ds-side-foot"><span class="ds-ic">⚙</span> Settings</div>
-            </aside>
-            <main class="dash-main">
-              <div class="dm-head"><h4>Overview</h4><span class="dm-range">last 7 days · live</span></div>
-              <div class="dm-kpis">
-                <div class="dm-kpi dm-kpi-health">
-                  <svg class="donut" viewBox="0 0 42 42">
-                    <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--line-2)" stroke-width="4"/>
-                    <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--accent)" stroke-width="4" stroke-dasharray="82 100" stroke-dashoffset="25" stroke-linecap="round"/>
-                    <text x="21" y="24.5" text-anchor="middle">82%</text>
-                  </svg>
-                  <div><div class="dm-k">Healthy rate</div><div class="dm-v" style="font-size:15px">Healthy</div></div>
-                </div>
-                <div class="dm-kpi"><div class="dm-k">Sufficiency</div><div class="dm-v">0.78</div><div class="dm-spark"></div></div>
-                <div class="dm-kpi"><div class="dm-k">Faithfulness</div><div class="dm-v">0.83<small> ▲</small></div><div class="dm-spark"></div></div>
-                <div class="dm-kpi"><div class="dm-k">Hallucination</div><div class="dm-v">6.2%</div><div class="dm-spark"></div></div>
-              </div>
-              <div class="dm-lower">
-                <div class="dm-panel">
-                  <div class="dm-ph">Failures by cell · last 14 days</div>
-                  <div class="dm-bars">
-                    <div class="b"><i style="height:62%;background:var(--cell-cu)"></i><span>hall</span></div>
-                    <div class="b"><i style="height:88%;background:var(--cell-ig)"></i><span>ret.gap</span></div>
-                    <div class="b"><i style="height:30%;background:var(--cell-iu)"></i><span>miss</span></div>
-                    <div class="b"><i style="height:22%;background:var(--cell-eg)"></i><span>over</span></div>
-                    <div class="b"><i style="height:16%;background:var(--cell-eu)"></i><span>fab</span></div>
-                    <div class="b"><i style="height:46%;background:var(--cell-cg)"></i><span>ok</span></div>
-                  </div>
-                </div>
-                <div class="dm-panel">
-                  <div class="dm-ph">Recent heals</div>
-                  <div class="dm-heals">
-                    <div class="dm-hrow"><span class="hpill ig">Retrieval gap</span><span class="dm-hstatus"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block"></span> Open · 2</span></div>
-                    <div class="dm-hrow"><span class="hpill cu">Hallucinated</span><span class="dm-hstatus"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block"></span> Open · 8</span></div>
-                    <div class="dm-hrow done"><span class="hpill ig">Retrieval gap</span><span class="dm-hstatus"><span class="pr">PR</span> Resolved</span></div>
-                  </div>
-                </div>
-              </div>
-            </main>
-          </div>
+        <div class="hero-shots reveal" id="dash">
+          <img class="shot-base" src="/shots/overview.png" alt="Veralith project overview — RAG health, latency, knowledge-gap topics" />
+          <img class="shot-over" src="/shots/analytics.png" alt="Veralith analytics — trace volume, failure-cell distribution, hallucination trend" />
         </div>
       </div>
     </header>
