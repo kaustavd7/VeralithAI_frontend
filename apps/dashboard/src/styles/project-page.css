@@ -1253,19 +1253,23 @@
   border-color: var(--po-line);
   box-shadow: none;
 }
+.he-node.is-terminal {
+  opacity: 0.72;
+}
 .he-node.is-terminal .he-node-top,
 .he-node.is-terminal .he-node-title,
 .he-node.is-terminal .he-node-tracechips {
-  opacity: 0.5;
+  opacity: 0.34;
   transition: opacity 0.12s;
 }
 .he-node.is-terminal:hover {
+  opacity: 1;
   border-color: var(--po-line-strong);
 }
 .he-node.is-terminal:hover .he-node-top,
 .he-node.is-terminal:hover .he-node-title,
 .he-node.is-terminal:hover .he-node-tracechips {
-  opacity: 0.8;
+  opacity: 0.75;
 }
 .he-node.is-dragging {
   cursor: grabbing;
