@@ -115,8 +115,8 @@
       .logos .wrap { padding: 32px var(--pad-x); }
       .logos .label { text-align: center; font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-4); margin-bottom: 24px; }
       .logos-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 22px 46px; }
-      /* mixed-source logos normalized to a single white silhouette */
-      .logos-row img { height: 26px; width: auto; filter: brightness(0) invert(1); opacity: 0.5; transition: opacity 0.22s; }
+      /* all logo SVGs are baked to #fff, so just mute + brighten on hover */
+      .logos-row img { height: 26px; width: auto; opacity: 0.55; transition: opacity 0.22s; }
       .logos-row img:hover { opacity: 0.95; }
       .hero h1 { font-size: clamp(36px, 5vw, 58px); font-weight: 600; letter-spacing: 0.01em; line-height: 1.06; max-width: 20ch; }
       .hero-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; margin-top: 32px; flex-wrap: wrap; }
@@ -395,7 +395,7 @@
         <h1 class="reveal">The diagnosis &amp; self-heal system for RAG Agents</h1>
         <div class="hero-row">
           <div>
-            <p class="hero-sub reveal">A strict supervisor for your RAG agent — it finds <em>why</em> your answers hallucinate, then fixes them. Built to scale from your first trace to your millionth.</p>
+            <p class="hero-sub reveal">A strict supervisor for your RAG agent — it finds <em>why</em> your answers hallucinate, then fixes them, at any scale.</p>
             <div class="hero-cta reveal">
               <a class="btn btn-white btn-lg" href="https://app.veralithai.com/login?mode=signup" target="_blank" rel="noreferrer">Start free</a>
               <a class="btn btn-ghost btn-lg" href="#figs">See how it works</a>
