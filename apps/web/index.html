@@ -299,6 +299,20 @@
       .dl.add { background: color-mix(in oklab, var(--add) 12%, transparent); } .dl.add .ln { color: color-mix(in oklab, var(--add) 60%, var(--fg-4)); }
       .hl-del { color: var(--del); } .hl-add { color: var(--add); }
 
+      /* loop panels that embed a real dashboard screenshot (top-aligned, faded bottom) */
+      .lpanel:has(.lshot) { justify-content: flex-start; }
+      .lshot { width: 100%; display: block; border: 1px solid var(--line-2); border-radius: 12px;
+        box-shadow: 0 30px 60px -40px rgba(0,0,0,0.85), 0 2px 8px rgba(0,0,0,0.4);
+        -webkit-mask-image: linear-gradient(to bottom, #000 74%, transparent); mask-image: linear-gradient(to bottom, #000 74%, transparent); }
+      /* richer unified diff for the Heal panel, with a fade-out at the bottom */
+      .diff2 { font-family: var(--mono); font-size: 13px; line-height: 1.95; padding: 8px 0 4px; overflow: hidden;
+        -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent); mask-image: linear-gradient(to bottom, #000 82%, transparent); }
+      .drow { display: grid; grid-template-columns: 24px 1fr; padding: 0 14px; white-space: pre; color: var(--fg-2); }
+      .drow .dm { color: var(--fg-4); }
+      .drow.add { background: color-mix(in oklab, var(--add) 13%, transparent); } .drow.add .dm { color: var(--add); }
+      .drow.del { background: color-mix(in oklab, var(--del) 12%, transparent); } .drow.del .dm { color: var(--del); }
+      .diff2 .kw { color: #c9a6ff; } .diff2 .fn { color: #7ee6b4; } .diff2 .vr { color: var(--fg); } .diff2 .st { color: #e0b45a; } .diff2 .cm { color: var(--fg-4); }
+
       /* monitor mock (real overview) */
       .monitor { margin-top: 46px; display: grid; grid-template-columns: 1fr 1.25fr; gap: 12px; }
       .mcard { border: 1px solid var(--line-2); border-radius: 14px; background: var(--panel); padding: 20px; }
@@ -582,7 +596,7 @@
               <div class="codecard">
                 <div class="codecard-top"><span class="cc-dot"></span><span class="cc-dot"></span><span class="cc-dot"></span><span class="cc-file">pipeline.py</span></div>
                 <div class="codewrap">
-                  <div class="cline"><span class="ln">1</span><span class="ct"><span class="kw">import</span> <span class="vr">veralith</span></span></div>
+                  <div class="cline added"><span class="ln">1</span><span class="ct"><span class="kw">import</span> <span class="vr">veralith</span></span></div>
                   <div class="cline"><span class="ln">2</span><span class="ct"><span class="kw">from</span> rag <span class="kw">import</span> retrieve, generate</span></div>
                   <div class="cline"><span class="ln">3</span><span class="ct"> </span></div>
                   <div class="cline"><span class="ln">4</span><span class="ct"><span class="kw">def</span> <span class="fn">answer</span>(query):</span></div>
@@ -597,69 +611,29 @@
             </div>
             <!-- 02 diagnose -->
             <div class="lpanel" data-i="1">
-              <div class="diagcard">
-                <div class="q-k">QUERY</div>
-                <div class="q-t">What's the refund window for enterprise plans, and does it cover annual contracts?</div>
-                <div class="d-cell">⚠︎ Hallucinated <span>complete_ungrounded</span></div>
-                <div class="dbars">
-                  <div class="dbar"><div class="top">Sufficiency<span>0.71</span></div><div class="tr"><i style="width:71%;background:var(--cell-ig)"></i></div></div>
-                  <div class="dbar"><div class="top">Faithfulness<span>0.34</span></div><div class="tr"><i style="width:34%;background:var(--del)"></i></div></div>
-                  <div class="dbar"><div class="top">Completeness<span>0.92</span></div><div class="tr"><i style="width:92%;background:var(--accent)"></i></div></div>
-                </div>
-              </div>
+              <img class="lshot" src="/shots/diagnose.png" alt="Veralith trace diagnosis — grounded vs ungrounded claims with suggested actions" />
             </div>
             <!-- 03 heal -->
             <div class="lpanel" data-i="2">
               <div class="diffcard">
                 <div class="diffcard-top">rag/generate.py <span class="tag">heal · grounding-constraints</span></div>
-                <div class="diffgrid">
-                  <div class="diffcol">
-                    <div class="dl"><span class="ln">04</span><span>prompt = build_prompt(query, chunks)</span></div>
-                    <div class="dl del"><span class="ln">05</span><span>reply = llm.invoke(prompt)</span></div>
-                    <div class="dl"><span class="ln">06</span><span> </span></div>
-                    <div class="dl"><span class="ln">07</span><span>return reply</span></div>
-                  </div>
-                  <div class="diffcol">
-                    <div class="dl"><span class="ln">04</span><span>prompt = build_prompt(query, chunks)</span></div>
-                    <div class="dl add"><span class="ln">05</span><span>prompt += <span class="hl-add">GROUNDING_RULE</span></span></div>
-                    <div class="dl add"><span class="ln">06</span><span>reply = <span class="hl-add">guard_ungrounded</span>(llm.invoke(prompt))</span></div>
-                    <div class="dl"><span class="ln">07</span><span>return reply</span></div>
-                  </div>
+                <div class="diff2">
+                  <div class="drow"><span class="dm"> </span><span><span class="kw">def</span> <span class="fn">generate</span>(query, chunks):</span></div>
+                  <div class="drow"><span class="dm"> </span><span>    ctx = <span class="fn">format_chunks</span>(chunks)</span></div>
+                  <div class="drow"><span class="dm"> </span><span>    prompt = <span class="fn">build_prompt</span>(query, ctx)</span></div>
+                  <div class="drow del"><span class="dm">-</span><span>    reply = llm.<span class="fn">invoke</span>(prompt)</span></div>
+                  <div class="drow add"><span class="dm">+</span><span>    prompt += <span class="vr">GROUNDING_RULE</span></span></div>
+                  <div class="drow add"><span class="dm">+</span><span>    reply = llm.<span class="fn">invoke</span>(prompt, temperature=<span class="st">0.1</span>)</span></div>
+                  <div class="drow add"><span class="dm">+</span><span>    reply = <span class="fn">drop_ungrounded</span>(reply, chunks)</span></div>
+                  <div class="drow"><span class="dm"> </span><span>    <span class="kw">return</span> reply</span></div>
+                  <div class="drow"><span class="dm"> </span><span> </span></div>
+                  <div class="drow"><span class="dm"> </span><span><span class="cm"># PR #318 · opened by Claude Code via MCP</span></span></div>
                 </div>
               </div>
             </div>
             <!-- 04 monitor -->
             <div class="lpanel" data-i="3">
-              <div class="monitor">
-                <div class="mcard">
-                  <h4>RAG health</h4>
-                  <div class="sub">last 7 days · live</div>
-                  <div class="health">
-                    <svg class="donut" viewBox="0 0 42 42">
-                      <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--line-2)" stroke-width="4"/>
-                      <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--accent)" stroke-width="4" stroke-dasharray="81.5 100" stroke-dashoffset="25" stroke-linecap="round"/>
-                      <text x="21" y="24" text-anchor="middle">82%</text>
-                    </svg>
-                    <div class="kpis">
-                      <div class="kpi"><span class="k">Sufficiency</span><span class="v">0.78</span></div>
-                      <div class="kpi"><span class="k">Faithfulness</span><span class="v">0.83<small>▲ .02</small></span></div>
-                      <div class="kpi"><span class="k">Latency p50 · p95</span><span class="v">0.9s · 2.4s</span></div>
-                    </div>
-                  </div>
-                </div>
-                <div class="mcard">
-                  <h4>Failures by cell</h4>
-                  <div class="sub">last 14 days</div>
-                  <div class="cellbars">
-                    <div class="cb"><i style="height:64%;background:var(--cell-cu)"></i><span>hall</span></div>
-                    <div class="cb"><i style="height:88%;background:var(--cell-ig)"></i><span>ret.gap</span></div>
-                    <div class="cb"><i style="height:30%;background:var(--cell-iu)"></i><span>miss</span></div>
-                    <div class="cb"><i style="height:22%;background:var(--cell-eg)"></i><span>over</span></div>
-                    <div class="cb"><i style="height:16%;background:var(--cell-eu)"></i><span>fab</span></div>
-                    <div class="cb"><i style="height:44%;background:var(--cell-cg)"></i><span>ok</span></div>
-                  </div>
-                </div>
-              </div>
+              <img class="lshot" src="/shots/monitor.png" alt="Veralith failure-cell analytics — per-cell bars and break-out cards" />
             </div>
           </div>
         </div>
