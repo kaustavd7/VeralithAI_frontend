@@ -12,12 +12,12 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
     <style>
       /* ============================================================
          VERALITH — Linear-style dark. Lifted (not pure-black) theme,
-         Inter, compact type. Inline-SVG wireframe figures react on
+         Raleway, compact type. Inline-SVG wireframe figures react on
          hover. Motion: Lenis smooth-scroll + IntersectionObserver
          reveals + scroll-scrubbed word-fill headline + hero parallax.
          Product visuals mirror the real dashboard (Heals, cells,
@@ -56,7 +56,7 @@
         --pad-x: 28px;
         --radius: 14px;
         --ease: cubic-bezier(0.16, 1, 0.3, 1);
-        --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+        --font: "Raleway", system-ui, -apple-system, "Segoe UI", sans-serif;
         --mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
       }
       * { box-sizing: border-box; }
@@ -103,8 +103,21 @@
       .nav-right .docs:hover { color: var(--fg); }
 
       /* ── Hero ────────────────────────────────────────────── */
-      .hero { padding: 148px 0 36px; }
-      .hero h1 { font-size: clamp(36px, 5vw, 58px); font-weight: 600; letter-spacing: -0.035em; line-height: 1.0; max-width: 20ch; }
+      .hero { padding: 148px 0 60px; position: relative; overflow: hidden; }
+      /* lit "floor" the dashboard sits on (Linear-style stage) */
+      .hero-floor { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 130%; height: 48%; z-index: 0; pointer-events: none;
+        background:
+          radial-gradient(ellipse 42% 66% at 50% 100%, rgba(255,255,255,0.17), rgba(255,255,255,0.05) 42%, transparent 72%),
+          radial-gradient(ellipse 60% 40% at 50% 100%, color-mix(in oklab, var(--accent) 10%, transparent), transparent 70%); }
+      .hero-floor::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent); }
+      /* AI-stack logos strip */
+      .logos { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: color-mix(in oklab, var(--panel) 26%, transparent); position: relative; z-index: 1; }
+      .logos .wrap { padding: 32px var(--pad-x); }
+      .logos .label { text-align: center; font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-4); margin-bottom: 24px; }
+      .logos-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 18px 44px; }
+      .logos-row span { color: var(--fg-3); font-size: 20px; font-weight: 600; letter-spacing: -0.02em; opacity: 0.62; transition: opacity 0.2s, color 0.2s; }
+      .logos-row span:hover { opacity: 1; color: var(--fg); }
+      .hero h1 { font-size: clamp(36px, 5vw, 58px); font-weight: 600; letter-spacing: 0.01em; line-height: 1.06; max-width: 20ch; }
       .hero-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; margin-top: 32px; flex-wrap: wrap; }
       .hero-sub { color: var(--fg-3); font-size: 18px; max-width: 52ch; }
       .hero-sub em { font-style: normal; color: var(--fg); }
@@ -376,6 +389,7 @@
 
     <!-- ══ HERO ══ -->
     <header class="hero" id="top">
+      <div class="hero-floor" aria-hidden="true"></div>
       <div class="wrap">
         <h1 class="reveal">The diagnosis &amp; self-heal system for RAG</h1>
         <div class="hero-row">
@@ -426,6 +440,23 @@
         </div>
       </div>
     </header>
+
+    <!-- ══ AI-STACK LOGOS ══ -->
+    <section class="logos reveal">
+      <div class="wrap">
+        <div class="label">Diagnoses RAG built on any stack</div>
+        <div class="logos-row stagger">
+          <span>OpenAI</span>
+          <span>Anthropic</span>
+          <span>LangChain</span>
+          <span>LlamaIndex</span>
+          <span>Cohere</span>
+          <span>Pinecone</span>
+          <span>Mistral</span>
+          <span>Cursor</span>
+        </div>
+      </div>
+    </section>
 
     <!-- ══ STATEMENT (scroll word-fill) ══ -->
     <section class="statement">
