@@ -125,7 +125,9 @@
       .hero-cta { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; }
 
       /* ── Dashboard snippet (real Heals panel) ────────────── */
-      .dash { margin-top: 58px; border: 1px solid var(--line-2); border-radius: 16px; overflow: hidden; background: linear-gradient(180deg, var(--panel), var(--bg-2)); box-shadow: 0 60px 120px -60px rgba(0,0,0,0.8); will-change: transform; }
+      .dash { margin-top: 58px; border: 1px solid var(--line-2); border-radius: 16px; overflow: hidden; background: linear-gradient(180deg, var(--panel), var(--bg-2));
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 34px 60px -26px rgba(0,0,0,0.85), 0 90px 150px -50px rgba(0,0,0,0.75), 0 1px 0 rgba(255,255,255,0.04) inset;
+        will-change: transform; }
       .dash-top { display: flex; align-items: center; gap: 8px; padding: 11px 15px; border-bottom: 1px solid var(--line); }
       .dash-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line-2); }
       .dash-title { margin-left: 8px; font-family: var(--mono); font-size: 12px; color: var(--fg-4); }
@@ -153,6 +155,53 @@
       .hcard-status i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
       .hcard-foot .right { margin-left: auto; display: inline-flex; align-items: center; gap: 9px; }
       .hcard-foot .pr { color: var(--accent); font-weight: 500; }
+
+      /* full dashboard overview mock (sidebar + overview) */
+      .dash-app { display: grid; grid-template-columns: 208px 1fr; min-height: 384px; }
+      .dash-side { border-right: 1px solid var(--line); padding: 14px 12px; display: flex; flex-direction: column; gap: 3px; background: color-mix(in oklab, var(--bg-2) 55%, transparent); }
+      .ds-proj { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; font-size: 13px; font-weight: 500; color: var(--fg-2); margin-bottom: 12px; }
+      .ds-proj img { width: 18px; height: 18px; }
+      .ds-proj .ds-caret { margin-left: auto; color: var(--fg-4); font-size: 11px; }
+      .ds-nav { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 13.5px; color: var(--fg-3); }
+      .ds-nav .ds-ic { width: 15px; text-align: center; color: var(--fg-4); font-size: 12px; }
+      .ds-nav.on { background: var(--panel-2); color: var(--fg); }
+      .ds-nav.on .ds-ic { color: var(--accent); }
+      .ds-badge { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: color-mix(in oklab, var(--accent) 18%, transparent); color: #8ee6b8; font-size: 10.5px; font-family: var(--mono); }
+      .ds-side-foot { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 8px 10px; font-size: 13.5px; color: var(--fg-3); }
+      .ds-side-foot .ds-ic { color: var(--fg-4); font-size: 12px; }
+
+      .dash-main { padding: 20px 22px; display: flex; flex-direction: column; gap: 15px; min-width: 0; }
+      .dm-head { display: flex; align-items: baseline; justify-content: space-between; }
+      .dm-head h4 { font-size: 19px; font-weight: 600; }
+      .dm-range { font-size: 12px; color: var(--fg-4); }
+      .dm-kpis { display: grid; grid-template-columns: 1.35fr 1fr 1fr 1fr; gap: 11px; }
+      .dm-kpi { border: 1px solid var(--line); border-radius: 11px; background: var(--panel); padding: 13px 14px; }
+      .dm-kpi-health { display: flex; align-items: center; gap: 13px; }
+      .dm-kpi-health .donut { width: 56px; height: 56px; flex: none; }
+      .dm-kpi-health .donut text { font-size: 11px; }
+      .dm-k { font-size: 11.5px; color: var(--fg-4); }
+      .dm-v { font-size: 23px; font-weight: 600; letter-spacing: -0.03em; margin-top: 3px; font-family: var(--mono); }
+      .dm-v small { font-size: 11px; color: var(--accent); font-family: var(--font); }
+      .dm-spark { height: 20px; margin-top: 9px; border-radius: 4px; background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 20%, transparent), transparent); border-bottom: 1.5px solid color-mix(in oklab, var(--accent) 50%, transparent); }
+      .dm-lower { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; flex: 1; }
+      .dm-panel { border: 1px solid var(--line); border-radius: 11px; background: var(--panel); padding: 15px; display: flex; flex-direction: column; }
+      .dm-ph { font-size: 13px; font-weight: 500; color: var(--fg-2); margin-bottom: 14px; }
+      .dm-bars { display: flex; align-items: flex-end; gap: 9px; flex: 1; min-height: 92px; }
+      .dm-bars .b { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; height: 100%; justify-content: flex-end; }
+      .dm-bars .b i { width: 100%; border-radius: 4px 4px 0 0; }
+      .dm-bars .b span { font-family: var(--mono); font-size: 9.5px; color: var(--fg-4); }
+      .dm-heals { display: flex; flex-direction: column; gap: 10px; }
+      .dm-hrow { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+      .dm-hrow:last-child { border-bottom: none; padding-bottom: 0; }
+      .dm-hrow.done { opacity: 0.55; }
+      .dm-hstatus { margin-left: auto; font-size: 12px; color: var(--fg-4); display: inline-flex; align-items: center; gap: 7px; }
+      .dm-hstatus .pr { color: var(--accent); font-weight: 500; }
+      @media (max-width: 760px) {
+        .dash-app { grid-template-columns: 1fr; }
+        .dash-side { display: none; }
+        .dm-kpis { grid-template-columns: 1fr 1fr; }
+        .dm-lower { grid-template-columns: 1fr; }
+      }
 
       /* ── Statement (scroll word-fill) ────────────────────── */
       .statement { padding: 128px 0; }
@@ -407,35 +456,57 @@
         <div class="dash reveal" id="dash">
           <div class="dash-top">
             <span class="dash-dot"></span><span class="dash-dot"></span><span class="dash-dot"></span>
-            <span class="dash-title">veralith · Heals</span>
+            <span class="dash-title">veralith · Overview</span>
             <span class="dash-live">Live</span>
           </div>
-          <div class="dash-head">
-            <div>
-              <h4>Heals</h4>
-              <div class="meta">4 cards · 2 awaiting decision</div>
-            </div>
-            <span class="healbtn">✳ Heal all (2)</span>
-          </div>
-          <div class="dash-cards">
-            <div class="hcard">
-              <div class="hcard-top"><span class="hpill ig">Retrieval gap</span><span class="hcard-slug">retrieval-completeness</span></div>
-              <div class="hcard-title">The model fails to retrieve all necessary context for multi-part queries.</div>
-              <div class="hcard-chips"><span class="hchip">c63d2959</span><span class="hchip">f349516b</span></div>
-              <div class="hcard-foot"><span class="hcard-status"><i></i> Open</span><span class="right"><span>2 traces</span><span>13h ago</span></span></div>
-            </div>
-            <div class="hcard">
-              <div class="hcard-top"><span class="hpill cu">Hallucinated</span><span class="hcard-recur">↻ recurred</span><span class="hcard-slug">grounding-constraints</span></div>
-              <div class="hcard-title">The model asserts specific facts that are not supported by the retrieved context.</div>
-              <div class="hcard-chips"><span class="hchip">ee943abf</span><span class="hchip">52f89694</span><span class="hchip">+5 more</span></div>
-              <div class="hcard-foot"><span class="hcard-status"><i></i> Open</span><span class="right"><span>8 traces</span><span>13h ago</span></span></div>
-            </div>
-            <div class="hcard done">
-              <div class="hcard-top"><span class="hpill ig">Retrieval gap</span><span class="hcard-slug">retrieval-completeness</span></div>
-              <div class="hcard-title">The model fails to retrieve all necessary context for multi-part queries.</div>
-              <div class="hcard-chips"><span class="hchip">2cea719f</span><span class="hchip">2cb0bb0d</span></div>
-              <div class="hcard-foot"><span class="hcard-status"><i></i> Resolved</span><span class="right"><span class="pr">PR</span><span>2 traces</span><span>21h ago</span></span></div>
-            </div>
+          <div class="dash-app">
+            <aside class="dash-side">
+              <div class="ds-proj"><img src="/favicon.svg" alt="" /> Acme RAG <span class="ds-caret">▾</span></div>
+              <a class="ds-nav on"><span class="ds-ic">◈</span> Overview</a>
+              <a class="ds-nav"><span class="ds-ic">≋</span> Traces</a>
+              <a class="ds-nav"><span class="ds-ic">▦</span> Failure cells</a>
+              <a class="ds-nav"><span class="ds-ic">✳</span> Heals <span class="ds-badge">4</span></a>
+              <a class="ds-nav"><span class="ds-ic">◔</span> Insights</a>
+              <a class="ds-nav"><span class="ds-ic">▤</span> Analytics</a>
+              <div class="ds-side-foot"><span class="ds-ic">⚙</span> Settings</div>
+            </aside>
+            <main class="dash-main">
+              <div class="dm-head"><h4>Overview</h4><span class="dm-range">last 7 days · live</span></div>
+              <div class="dm-kpis">
+                <div class="dm-kpi dm-kpi-health">
+                  <svg class="donut" viewBox="0 0 42 42">
+                    <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--line-2)" stroke-width="4"/>
+                    <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--accent)" stroke-width="4" stroke-dasharray="82 100" stroke-dashoffset="25" stroke-linecap="round"/>
+                    <text x="21" y="24.5" text-anchor="middle">82%</text>
+                  </svg>
+                  <div><div class="dm-k">Healthy rate</div><div class="dm-v" style="font-size:15px">Healthy</div></div>
+                </div>
+                <div class="dm-kpi"><div class="dm-k">Sufficiency</div><div class="dm-v">0.78</div><div class="dm-spark"></div></div>
+                <div class="dm-kpi"><div class="dm-k">Faithfulness</div><div class="dm-v">0.83<small> ▲</small></div><div class="dm-spark"></div></div>
+                <div class="dm-kpi"><div class="dm-k">Hallucination</div><div class="dm-v">6.2%</div><div class="dm-spark"></div></div>
+              </div>
+              <div class="dm-lower">
+                <div class="dm-panel">
+                  <div class="dm-ph">Failures by cell · last 14 days</div>
+                  <div class="dm-bars">
+                    <div class="b"><i style="height:62%;background:var(--cell-cu)"></i><span>hall</span></div>
+                    <div class="b"><i style="height:88%;background:var(--cell-ig)"></i><span>ret.gap</span></div>
+                    <div class="b"><i style="height:30%;background:var(--cell-iu)"></i><span>miss</span></div>
+                    <div class="b"><i style="height:22%;background:var(--cell-eg)"></i><span>over</span></div>
+                    <div class="b"><i style="height:16%;background:var(--cell-eu)"></i><span>fab</span></div>
+                    <div class="b"><i style="height:46%;background:var(--cell-cg)"></i><span>ok</span></div>
+                  </div>
+                </div>
+                <div class="dm-panel">
+                  <div class="dm-ph">Recent heals</div>
+                  <div class="dm-heals">
+                    <div class="dm-hrow"><span class="hpill ig">Retrieval gap</span><span class="dm-hstatus"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block"></span> Open · 2</span></div>
+                    <div class="dm-hrow"><span class="hpill cu">Hallucinated</span><span class="dm-hstatus"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block"></span> Open · 8</span></div>
+                    <div class="dm-hrow done"><span class="hpill ig">Retrieval gap</span><span class="dm-hstatus"><span class="pr">PR</span> Resolved</span></div>
+                  </div>
+                </div>
+              </div>
+            </main>
           </div>
         </div>
       </div>
