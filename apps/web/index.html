@@ -262,7 +262,18 @@
       .tab { height: 26px; padding: 0 11px; border: none; background: transparent; color: var(--fg-4); font-size: 12px; border-radius: 6px; font-family: var(--mono); transition: background 0.18s, color 0.18s; }
       .tab.active { background: var(--panel-2); color: var(--fg); }
       pre.code { margin: 0; padding: 20px 22px; font-family: var(--mono); font-size: 13px; line-height: 1.8; color: var(--fg-2); overflow-x: auto; }
-      .code .cm { color: var(--fg-4); } .code .kw { color: #c9a6ff; } .code .fn { color: #7ee6b4; } .code .st { color: #e0b45a; } .code .vr { color: var(--fg); }
+      .code .cm, .codewrap .cm { color: var(--fg-4); } .code .kw, .codewrap .kw { color: #c9a6ff; } .code .fn, .codewrap .fn { color: #7ee6b4; } .code .st { color: #e0b45a; } .code .vr, .codewrap .vr { color: var(--fg); }
+      /* editor-style code with line numbers + a highlighted "added" line */
+      .cc-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line-2); }
+      .cc-file { margin-left: 6px; color: var(--fg-4); }
+      .codewrap { padding: 14px 0; font-family: var(--mono); font-size: 13px; line-height: 1.95; overflow-x: auto; }
+      .cline { display: grid; grid-template-columns: 46px 1fr; }
+      .cline .ln { text-align: right; padding-right: 16px; color: var(--fg-4); opacity: 0.42; user-select: none; }
+      .cline .ct { white-space: pre; color: var(--fg-2); padding-right: 18px; }
+      .cline.added { background: color-mix(in oklab, var(--add) 13%, transparent); box-shadow: inset 2px 0 0 var(--add); }
+      .cline.added .ln { color: var(--add); opacity: 0.9; }
+      .cline.added .ct { color: var(--fg); }
+      .cline.added .cm { color: color-mix(in oklab, var(--add) 65%, var(--fg-2)); }
 
       /* failure cells (real labels) */
       .cellgrid { margin-top: 46px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -569,14 +580,19 @@
             <!-- 01 instrument -->
             <div class="lpanel on" data-i="0">
               <div class="codecard">
-                <div class="codecard-top">veralith · pipeline.py</div>
-                <pre class="code"><span class="cm"># pip install veralith</span>
-<span class="kw">import</span> <span class="vr">veralith</span>
-
-answer = rag_pipeline(<span class="vr">query</span>)
-
-<span class="cm"># one line — non-blocking, fail-safe</span>
-<span class="vr">veralith</span>.<span class="fn">log</span>(query=<span class="vr">query</span>, context=<span class="vr">chunks</span>, response=answer)</pre>
+                <div class="codecard-top"><span class="cc-dot"></span><span class="cc-dot"></span><span class="cc-dot"></span><span class="cc-file">pipeline.py</span></div>
+                <div class="codewrap">
+                  <div class="cline"><span class="ln">1</span><span class="ct"><span class="kw">import</span> <span class="vr">veralith</span></span></div>
+                  <div class="cline"><span class="ln">2</span><span class="ct"><span class="kw">from</span> rag <span class="kw">import</span> retrieve, generate</span></div>
+                  <div class="cline"><span class="ln">3</span><span class="ct"> </span></div>
+                  <div class="cline"><span class="ln">4</span><span class="ct"><span class="kw">def</span> <span class="fn">answer</span>(query):</span></div>
+                  <div class="cline"><span class="ln">5</span><span class="ct">    chunks = <span class="fn">retrieve</span>(query)          <span class="cm"># your retriever</span></span></div>
+                  <div class="cline"><span class="ln">6</span><span class="ct">    reply  = <span class="fn">generate</span>(query, chunks)  <span class="cm"># your generator</span></span></div>
+                  <div class="cline"><span class="ln">7</span><span class="ct"> </span></div>
+                  <div class="cline added"><span class="ln">8</span><span class="ct">    <span class="vr">veralith</span>.<span class="fn">log</span>(query=query, context=chunks, response=reply)  <span class="cm"># ← the one line you add</span></span></div>
+                  <div class="cline"><span class="ln">9</span><span class="ct"> </span></div>
+                  <div class="cline"><span class="ln">10</span><span class="ct">    <span class="kw">return</span> reply</span></div>
+                </div>
               </div>
             </div>
             <!-- 02 diagnose -->
