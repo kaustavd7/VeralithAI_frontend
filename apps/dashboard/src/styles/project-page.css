@@ -1259,7 +1259,7 @@
 .he-node.is-terminal .he-node-top,
 .he-node.is-terminal .he-node-title,
 .he-node.is-terminal .he-node-tracechips {
-  opacity: 0.34;
+  opacity: 0.44;
   transition: opacity 0.12s;
 }
 .he-node.is-terminal:hover {
