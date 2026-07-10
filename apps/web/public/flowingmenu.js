@@ -1,5 +1,5 @@
 /* Veralith — FlowingMenu (React Bits port to vanilla + gsap global).
-   Edge-detection slide + infinite marquee copied from reactbits.dev /r/FlowingMenu-JS-CSS.
+   Edge-detection slide-in + infinite marquee copied from reactbits.dev /r/FlowingMenu-JS-CSS.
    Operates on .fmenu .menu__item rows; reduced-motion leaves them as plain links. */
 (function () {
   "use strict";
@@ -13,12 +13,12 @@
       var link = item.querySelector(".menu__item-link");
       var marquee = item.querySelector(".marquee");
       var inner = item.querySelector(".marquee__inner");
-      var part = inner.querySelector(".marquee__part");
+      var part = inner && inner.querySelector(".marquee__part");
       if (!link || !marquee || !inner || !part) return;
       var anim = null;
 
       function build() {
-        // reset to a single part, then clone to fill the row width + spare for a seamless loop
+        /* reset to a single part, then clone to fill the row + spare for a seamless loop */
         [].slice.call(inner.querySelectorAll(".marquee__part")).forEach(function (p, i) { if (i > 0) p.remove(); });
         var w = part.offsetWidth;
         if (!w) return;

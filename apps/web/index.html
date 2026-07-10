@@ -492,17 +492,16 @@
       .fmenu { margin-top: 56px; width: 100%; }
       .fmenu .menu { display: flex; flex-direction: column; margin: 0; padding: 0; border-top: 1px solid var(--line); }
       .fmenu .menu__item { position: relative; overflow: hidden; text-align: center; border-bottom: 1px solid var(--line); background: transparent; }
-      .fmenu .menu__item-link { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; height: 168px; position: relative; z-index: 1; cursor: pointer; text-decoration: none; transition: color 0.25s var(--ease); }
+      .fmenu .menu__item-link { display: flex; align-items: center; justify-content: center; gap: 14px; height: 150px; position: relative; z-index: 1; cursor: pointer; text-decoration: none; transition: color 0.25s var(--ease); }
       .fmenu .fm-head { display: inline-flex; align-items: center; gap: 14px; text-transform: uppercase; white-space: nowrap; font-weight: 600; letter-spacing: -0.01em; font-size: clamp(26px, 4vw, 46px); color: var(--fg); }
       .fmenu .fm-n { font-family: var(--mono); font-size: 0.4em; font-weight: 500; color: var(--accent); letter-spacing: 0.06em; }
-      .fmenu .fm-desc { text-transform: none; font-weight: 400; letter-spacing: 0; font-size: clamp(13px, 1.05vw, 15px); line-height: 1.45; color: var(--fg-4); max-width: 54ch; padding: 0 20px; }
       .fmenu .marquee { position: absolute; top: 0; left: 0; z-index: 2; overflow: hidden; width: 100%; height: 100%; pointer-events: none; transform: translate3d(0, 101%, 0); background: #fff; }
       .fmenu .marquee__inner-wrap { height: 100%; width: 100%; overflow: hidden; }
       .fmenu .marquee__inner { display: flex; align-items: center; position: relative; height: 100%; width: fit-content; will-change: transform; }
-      .fmenu .marquee__part { display: flex; align-items: center; flex-shrink: 0; color: #07140d; }
-      .fmenu .marquee span { white-space: nowrap; text-transform: uppercase; font-weight: 600; font-size: clamp(26px, 4vw, 46px); line-height: 1; padding: 0 1.6vw; }
-      /* capsule (pill) images — fully rounded left/right */
-      .fmenu .marquee__img { width: 210px; height: 78px; margin: 0 2vw; border-radius: 999px; background-size: cover; background-position: 50% 30%; }
+      .fmenu .marquee__part { display: flex; align-items: center; flex-shrink: 0; }
+      /* emerald separator between looping repeats */
+      .fmenu .marquee__part::after { content: "◆"; font-size: 0.5em; color: var(--accent); padding: 0 clamp(28px, 4vw, 60px); }
+      .fmenu .marquee span { white-space: nowrap; text-transform: none; font-weight: 500; font-size: clamp(18px, 2.2vw, 28px); line-height: 1; color: #07140d; }
 
       /* ── Reveal motion ───────────────────────────────────── */
       /* blur-to-clear + slide-up ("motion blur") entrance */
@@ -613,7 +612,7 @@
     <!-- ══ AI-STACK LOGOS ══ -->
     <section class="logos reveal">
       <div class="wrap">
-        <div class="label">Plugs into the tools you already ship</div>
+        <div class="label">Any model · any framework · any agent</div>
         <div class="logos-row stagger">
           <img src="/brand/logos/openai.svg" alt="OpenAI" />
           <img src="/brand/logos/anthropic.svg" alt="Anthropic" />
@@ -629,7 +628,7 @@
     <section class="statement">
       <div class="wrap">
         <span class="fignum">Why it matters</span>
-        <h2 class="fill">Built today for the messy reality of the AI era coming tomorrow — where agents answer at a scale no human can review, and every hallucination ships silently.</h2>
+        <h2 class="fill">Built for the reality of AI era coming tomorrow — where agents answer at a scale no human can review, and every hallucination ships silently.</h2>
       </div>
     </section>
 
@@ -704,27 +703,27 @@
       <div class="fmenu reveal">
           <div class="menu">
             <div class="menu__item" data-speed="17">
-              <a class="menu__item-link" href="https://docs.veralithai.com" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">01</span> Instrument</span><span class="fm-desc">One line in your pipeline — a call, a decorator, or the zero-change LangChain adapter.</span></a>
+              <a class="menu__item-link" href="https://docs.veralithai.com" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">01</span> Instrument</span></a>
               <div class="marquee"><div class="marquee__inner-wrap"><div class="marquee__inner" aria-hidden="true">
-                <div class="marquee__part"><span>Instrument</span><div class="marquee__img" style="background-image:url('/shots/overview.png')"></div></div>
+                <div class="marquee__part"><span>One line in your pipeline — a call, a decorator, or the zero-change LangChain adapter.</span></div>
               </div></div></div>
             </div>
             <div class="menu__item" data-speed="16">
-              <a class="menu__item-link" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">02</span> Diagnose</span><span class="fm-desc">Server-side, every trace is decomposed, judged on three metrics, and sorted into a failure cell.</span></a>
+              <a class="menu__item-link" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">02</span> Diagnose</span></a>
               <div class="marquee"><div class="marquee__inner-wrap"><div class="marquee__inner" aria-hidden="true">
-                <div class="marquee__part"><span>Diagnose</span><div class="marquee__img" style="background-image:url('/shots/diagnose.png')"></div></div>
+                <div class="marquee__part"><span>Server-side, every trace is decomposed, judged on three metrics, and sorted into a failure cell.</span></div>
               </div></div></div>
             </div>
             <div class="menu__item" data-speed="18">
-              <a class="menu__item-link" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">03</span> Heal</span><span class="fm-desc">Recurring failures become heal cards your coding agent turns into a reviewed pull request.</span></a>
+              <a class="menu__item-link" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">03</span> Heal</span></a>
               <div class="marquee"><div class="marquee__inner-wrap"><div class="marquee__inner" aria-hidden="true">
-                <div class="marquee__part"><span>Heal</span><div class="marquee__img" style="background-image:url('/shots/analytics.png')"></div></div>
+                <div class="marquee__part"><span>Recurring failures become heal cards your coding agent turns into a reviewed pull request.</span></div>
               </div></div></div>
             </div>
             <div class="menu__item" data-speed="16">
-              <a class="menu__item-link" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">04</span> Monitor</span><span class="fm-desc">Watch healthy-rate climb — and see what it would be if every open heal were merged.</span></a>
+              <a class="menu__item-link" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">04</span> Monitor</span></a>
               <div class="marquee"><div class="marquee__inner-wrap"><div class="marquee__inner" aria-hidden="true">
-                <div class="marquee__part"><span>Monitor</span><div class="marquee__img" style="background-image:url('/shots/monitor.png')"></div></div>
+                <div class="marquee__part"><span>Watch healthy-rate climb — and see what it would be if every open heal were merged.</span></div>
               </div></div></div>
             </div>
           </div>
