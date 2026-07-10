@@ -440,9 +440,12 @@
       /* ── Pricing ─────────────────────────────────────────── */
       .pricing { padding: 104px 0; border-top: 1px solid var(--line); }
       .price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; margin-top: 50px; }
-      .price { position: relative; border: 1px solid var(--line-2); border-radius: 16px; background: var(--panel); padding: 28px; display: grid; gap: 3px; transition: transform 0.26s var(--ease), border-color 0.26s, box-shadow 0.26s; }
+      /* no radius / bg / border — the Grainient shader is the card surface */
+      .price { position: relative; border: none; border-radius: 0; background: transparent; padding: 28px; display: grid; gap: 3px; isolation: isolate; transition: transform 0.26s var(--ease); }
+      .price > * { position: relative; z-index: 1; }
+      .grainient { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+      .grainient canvas { width: 100%; height: 100%; display: block; }
       .price:hover { transform: translateY(-4px); }
-      .price.pop { border-color: color-mix(in oklab, var(--accent) 42%, var(--line-2)); box-shadow: 0 44px 90px -55px color-mix(in oklab, var(--accent) 55%, transparent); }
       .price-badge { position: absolute; top: -11px; left: 24px; height: 22px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--accent); color: #07140d; font-size: 11px; font-weight: 500; font-family: var(--mono); }
       .price-ic { width: 42px; height: 42px; border-radius: 11px; display: grid; place-items: center; background: color-mix(in oklab, var(--accent) 12%, var(--bg-2)); border: 1px solid color-mix(in oklab, var(--accent) 22%, var(--line)); color: var(--accent); margin-bottom: 18px; }
       .price-ic svg { width: 20px; height: 20px; }
@@ -495,13 +498,19 @@
       .fmenu .menu__item-link { display: flex; align-items: center; justify-content: center; gap: 14px; height: 150px; position: relative; z-index: 1; cursor: pointer; text-decoration: none; transition: color 0.25s var(--ease); }
       .fmenu .fm-head { display: inline-flex; align-items: center; gap: 14px; text-transform: uppercase; white-space: nowrap; font-weight: 600; letter-spacing: -0.01em; font-size: clamp(26px, 4vw, 46px); color: var(--fg); }
       .fmenu .fm-n { font-family: var(--mono); font-size: 0.4em; font-weight: 500; color: var(--accent); letter-spacing: 0.06em; }
-      .fmenu .marquee { position: absolute; top: 0; left: 0; z-index: 2; overflow: hidden; width: 100%; height: 100%; pointer-events: none; transform: translate3d(0, 101%, 0); background: #fff; }
+      /* grainient surface (CSS: emerald gradient + grain — matches the Grainient shader, no extra WebGL context) */
+      .fmenu .marquee { position: absolute; top: 0; left: 0; z-index: 2; overflow: hidden; width: 100%; height: 100%; pointer-events: none; transform: translate3d(0, 101%, 0);
+        background-color: #0a3325;
+        background-image:
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E"),
+          linear-gradient(122deg, #04160f 0%, #0f5a43 46%, #0a3327 60%, #03100a 100%);
+        background-size: 150px 150px, cover; background-blend-mode: overlay, normal; }
       .fmenu .marquee__inner-wrap { height: 100%; width: 100%; overflow: hidden; }
       .fmenu .marquee__inner { display: flex; align-items: center; position: relative; height: 100%; width: fit-content; will-change: transform; }
       .fmenu .marquee__part { display: flex; align-items: center; flex-shrink: 0; }
       /* emerald separator between looping repeats */
-      .fmenu .marquee__part::after { content: "◆"; font-size: 0.5em; color: var(--accent); padding: 0 clamp(28px, 4vw, 60px); }
-      .fmenu .marquee span { white-space: nowrap; text-transform: none; font-weight: 500; font-size: clamp(18px, 2.2vw, 28px); line-height: 1; color: #07140d; }
+      .fmenu .marquee__part::after { content: "◆"; font-size: 0.5em; color: #7ff0c4; padding: 0 clamp(28px, 4vw, 60px); }
+      .fmenu .marquee span { white-space: nowrap; text-transform: none; font-weight: 500; font-size: clamp(18px, 2.2vw, 28px); line-height: 1; color: #eafff6; }
 
       /* ── Reveal motion ───────────────────────────────────── */
       /* blur-to-clear + slide-up ("motion blur") entrance */
@@ -769,16 +778,17 @@
     <section class="pricing" id="pricing">
       <div class="wrap">
         <div class="feature-head reveal">
-          <h2>Start free. Scale when it ships.</h2>
+          <h2>Free while we're in pilot</h2>
           <div class="right">
-            <p>Provisional pricing — current plans always live on your dashboard. Every tier includes the full diagnosis engine.</p>
+            <p>Veralith is in active pilot — free for early teams while we learn what to charge. You'll get plenty of notice, and a say, before any pricing lands. Every tier includes the full diagnosis engine.</p>
           </div>
         </div>
         <div class="price-grid stagger reveal">
           <div class="price">
+            <div class="grainient" aria-hidden="true"></div>
             <div class="price-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg></div>
             <h3>Hobby</h3>
-            <div class="amt">$0</div>
+            <div class="amt">Free</div>
             <div class="desc">For prototypes and side projects finding their footing.</div>
             <ul>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>10,000 traces / month</li>
@@ -789,10 +799,11 @@
             <a class="btn btn-ghost" href="https://app.veralithai.com/login?mode=signup" target="_blank" rel="noreferrer">Start free</a>
           </div>
           <div class="price pop">
-            <span class="price-badge">Most popular</span>
+            <div class="grainient" aria-hidden="true"></div>
+            <span class="price-badge">Recommended</span>
             <div class="price-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/></svg></div>
             <h3>Team</h3>
-            <div class="amt">$79<span> / mo</span></div>
+            <div class="amt">Free<span> in pilot</span></div>
             <div class="desc">For teams running RAG in production and tuning it weekly.</div>
             <ul>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>1,000,000 traces / month</li>
@@ -800,9 +811,10 @@
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Observability dashboards &amp; insights</li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Email &amp; Slack support</li>
             </ul>
-            <a class="btn btn-white" href="https://app.veralithai.com/login?mode=signup" target="_blank" rel="noreferrer">Start 14-day trial</a>
+            <a class="btn btn-white" href="https://app.veralithai.com/login?mode=signup" target="_blank" rel="noreferrer">Join the pilot →</a>
           </div>
           <div class="price">
+            <div class="grainient" aria-hidden="true"></div>
             <div class="price-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/></svg></div>
             <h3>Enterprise</h3>
             <div class="amt">Custom</div>
@@ -855,6 +867,7 @@
     <script src="https://unpkg.com/three@0.160.0/build/three.min.js" defer></script>
     <script src="/beams.js" defer></script>
     <script src="/griddistortion.js" defer></script>
+    <script type="module" src="/grainient.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
     <script src="/flowingmenu.js" defer></script>
     <script>
