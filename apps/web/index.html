@@ -254,17 +254,34 @@
       /* Variable Proximity (reactbits port) — letters thicken near the cursor (needs variable Raleway) */
       .fill .vpl { display: inline-block; font-variation-settings: "wght" 420; will-change: font-variation-settings; }
 
-      /* ── Wireframe figures ───────────────────────────────── */
-      .figs { padding: 30px 0 96px; }
-      .figrow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-      .fig { background: var(--bg); padding: 36px 30px 30px; }
-      .fig-canvas { height: 210px; display: grid; place-items: center; margin-bottom: 22px; }
-      .fig svg { width: 100%; height: 100%; max-width: 240px; overflow: visible; }
-      .fig h3 { font-size: 16.5px; margin-bottom: 7px; }
-      .fig p { color: var(--fg-3); font-size: 13.5px; margin: 0; max-width: 32ch; }
+      /* ── How it works — bento grid (features + MCP) ─────── */
+      .figs { padding: 104px 0; border-top: 1px solid var(--line); }
+      .bento { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line);
+        border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+      .bcell { position: relative; background: var(--bg); padding: 34px 30px 30px; min-height: 360px; overflow: hidden;
+        display: flex; flex-direction: column; --mx: 50%; --my: 0%; }
+      /* Spotlight Card (reactbits port) — cursor-tracked emerald glow per cell */
+      .bcell::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; mix-blend-mode: screen;
+        background: radial-gradient(340px circle at var(--mx) var(--my), rgba(52,211,153,0.12), transparent 60%);
+        opacity: 0; transition: opacity 0.45s ease; }
+      .bcell:hover::before { opacity: 1; }
+      .bcell > * { position: relative; z-index: 1; }
+      .bcell h3 { font-size: 22px; letter-spacing: -0.03em; margin-bottom: 9px; }
+      .bcell > p { color: var(--fg-3); font-size: 13.5px; line-height: 1.55; margin: 0; max-width: 30ch; }
+      .barrow { margin-top: 18px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line-2);
+        display: grid; place-items: center; color: var(--fg-3); transition: color 0.2s, background 0.2s, border-color 0.2s; }
+      .barrow:hover { color: #0b0b0d; background: var(--fg); border-color: var(--fg); }
+      .barrow svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
+      /* intro cell — larger type, no preview */
+      .bintro h2 { font-size: clamp(27px, 3vw, 37px); line-height: 1.06; letter-spacing: -0.035em; margin: 0 0 16px; font-weight: 600; }
+      .bintro > p { font-size: 14.5px; color: var(--fg-3); max-width: 24ch; }
+      /* preview panel, pinned to the bottom of the cell — figures fully visible */
+      .bpanel { margin-top: auto; position: relative; padding-top: 22px; }
+      .bpanel .fig-canvas { height: 150px; display: grid; place-items: center; }
+      .bpanel svg.figsvg { width: auto; height: 138px; max-width: 100%; overflow: visible; }
       .wire { fill: none; stroke: var(--wire); stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; transition: stroke 0.4s var(--ease); }
-      .fig:hover .wire { stroke: var(--wire-hi); }
-      .fig g { transition: transform 0.55s var(--ease); }
+      .bcell:hover .wire { stroke: var(--wire-hi); }
+      .bcell g { transition: transform 0.55s var(--ease); }
       /* A — decompose: slabs separate into atoms */
       .figA:hover .ly1 { transform: translateY(-24px); }
       .figA:hover .ly2 { transform: translateY(-12px); }
@@ -282,6 +299,148 @@
       /* C — the loop turns to close */
       .figC .ring { transition: transform 0.7s var(--ease); transform-box: view-box; transform-origin: 130px 130px; }
       .figC:hover .ring { transform: rotate(120deg); }
+
+      /* MCP preview mock — trace / patch / verify + tool calls */
+      .bmcp { padding: 4px 2px; font-family: var(--mono); }
+      .bmcp-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+      .bmcp-tabs span { font-size: 10.5px; color: var(--fg-4); padding: 3px 9px; border: 1px solid var(--line); border-radius: 6px; }
+      .bmcp-tabs span.on { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 40%, transparent); background: color-mix(in oklab, var(--accent) 12%, transparent); }
+      .bmcp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 11.5px; color: var(--fg-2); padding: 8px 0; border-top: 1px solid var(--line); }
+      .bmcp-row:first-of-type { border-top: none; }
+      .bmcp-row .fn { color: #7ee6b4; }
+      .bmcp-row .ok { color: var(--accent); font-size: 10.5px; white-space: nowrap; }
+      .bmcp-row.dim { color: var(--fg-4); } .bmcp-row.dim .fn { color: var(--fg-3); }
+
+      /* Monitor preview mock — healthy-rate donut + kpis */
+      .bmon { display: flex; align-items: center; gap: 20px; padding: 6px 2px; }
+      .bmon svg { width: 78px; height: 78px; flex: none; transform: rotate(-90deg); }
+      .bmon .track { fill: none; stroke: var(--line-2); stroke-width: 4; }
+      .bmon .val { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; }
+      .bmon-pct { font-family: var(--mono); }
+      .bmon-kpis { display: grid; gap: 12px; font-family: var(--mono); }
+      .bmon-kpis div { display: flex; flex-direction: column; }
+      .bmon-kpis b { color: var(--fg); font-size: 16px; font-weight: 600; line-height: 1.1; }
+      .bmon-kpis b em { color: var(--accent); font-style: normal; }
+      .bmon-kpis span { color: var(--fg-4); font-size: 10.5px; margin-top: 2px; }
+
+      @media (max-width: 1024px) { .bento { grid-template-columns: repeat(2, 1fr); } }
+      @media (max-width: 640px) { .bento { grid-template-columns: 1fr; } }
+
+      /* ── Why Veralith — differentiators (alternating rows) ── */
+      .moat { padding: 112px 0 96px; border-top: 1px solid var(--line); }
+      .moat-head { max-width: 760px; margin-bottom: 26px; }
+      .moat-head .eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+      .moat-head h2 { font-size: clamp(28px, 3.9vw, 44px); font-weight: 600; letter-spacing: -0.03em; margin: 14px 0 0; max-width: 20ch; }
+      .moat-head p { color: var(--fg-3); font-size: 16.5px; line-height: 1.5; margin: 16px 0 0; max-width: 52ch; }
+
+      .mrow { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; padding: 58px 0; border-top: 1px solid var(--line); }
+      .mrow-text { max-width: 44ch; }
+      .mrow.rev .mrow-text { order: 2; }
+      .mrow-ey { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-4); }
+      .mrow-text h3 { font-size: clamp(21px, 2.5vw, 29px); font-weight: 600; letter-spacing: -0.03em; margin: 12px 0 14px; }
+      .mrow-text p { color: var(--fg-2); font-size: 15.5px; line-height: 1.6; margin: 0; }
+      .mlink { display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; color: var(--accent); font-size: 14px; }
+      .mlink svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; transition: transform 0.2s var(--ease); }
+      .mlink:hover svg { transform: translateX(3px); }
+
+      /* shared mock frame */
+      .mock { border: none; border-radius: 0; background: var(--bg); overflow: hidden; }
+      .mock-top { display: flex; align-items: center; gap: 7px; padding: 11px 15px; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 11.5px; color: var(--fg-4); }
+      .mock-top .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line-2); }
+      .mock-file { margin-left: 8px; }
+      .mock-badge { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-size: 11px; }
+      .mock-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent); }
+
+      /* cell chip (shared) */
+      .pgc { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 999px;
+        --c: var(--fg-3); color: var(--c); background: color-mix(in oklab, var(--c) 14%, transparent); border: 1px solid color-mix(in oklab, var(--c) 36%, transparent); }
+      .pgc.cu { --c: var(--cell-cu); } .pgc.ig { --c: var(--cell-ig); } .pgc.cg { --c: var(--cell-cg); } .pgc.iu { --c: var(--cell-iu); }
+
+      /* row 1 — loop → PR diff */
+      .mock-diff { font-family: var(--mono); font-size: 12.5px; line-height: 1.95; padding: 12px 0; overflow-x: auto; }
+      .mock-diff .drow { display: grid; grid-template-columns: 24px 1fr; padding: 0 14px; color: var(--fg-2); }
+      .mock-diff .drow .dm { color: var(--fg-4); }
+      .mock-diff .cl { white-space: pre; }
+      .mock-diff .drow.add { background: color-mix(in oklab, var(--add) 13%, transparent); } .mock-diff .drow.add .dm { color: var(--add); }
+      .mock-diff .drow.del { background: color-mix(in oklab, var(--del) 12%, transparent); } .mock-diff .drow.del .dm { color: var(--del); }
+      .mock-diff .cm { color: var(--fg-4); } .mock-diff .fn { color: #7ee6b4; } .mock-diff .kw { color: #c9a6ff; }
+
+      /* row 2 — diagnosis card */
+      .diag { padding: 20px; }
+      .diag-old { font-family: var(--mono); font-size: 12px; color: var(--fg-4); margin-bottom: 16px; }
+      .diag-verdict { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+      .diag-key { font-family: var(--mono); font-size: 11px; color: var(--fg-4); }
+      .diag-metrics { display: grid; gap: 13px; margin-bottom: 18px; }
+      .diag-m-top { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--fg-3); margin-bottom: 6px; }
+      .diag-m-top b { color: var(--fg); font-family: var(--mono); font-weight: 500; }
+      .diag-bar { height: 6px; border-radius: 3px; background: var(--line-2); overflow: hidden; }
+      .diag-bar i { display: block; height: 100%; border-radius: 3px; }
+      .diag-fix { border-top: 1px solid var(--line); padding-top: 14px; font-size: 13.5px; color: var(--fg-2); line-height: 1.55; }
+      .diag-fix b { display: block; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); font-weight: 400; margin-bottom: 6px; }
+
+      /* row 3 — fail-safe stream */
+      .scale-code { font-family: var(--mono); font-size: 13px; line-height: 1.9; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+      .scale-code .cm { color: var(--fg-4); display: block; font-size: 11.5px; }
+      .scale-code .kw { color: #c9a6ff; } .scale-code .fn { color: #7ee6b4; }
+      .scale-stream { padding: 4px 0; }
+      .srow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 18px; font-family: var(--mono); font-size: 12px; color: var(--fg-3); border-top: 1px solid var(--line); }
+      .srow:first-child { border-top: none; }
+      .srow .sid, .srow.dim { color: var(--fg-4); }
+
+      /* concrete-features strip */
+      .moat-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 58px; }
+      .ms { background: var(--bg); padding: 26px 26px 28px; }
+      .ms-ic { width: 32px; height: 32px; color: var(--accent); margin-bottom: 14px; }
+      .ms-ic svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+      .ms h4 { font-size: 15.5px; font-weight: 600; margin: 0 0 6px; }
+      .ms p { color: var(--fg-3); font-size: 13px; line-height: 1.5; margin: 0; }
+
+      @media (max-width: 860px) {
+        .mrow { grid-template-columns: 1fr; gap: 28px; padding: 44px 0; }
+        .mrow.rev .mrow-text { order: 0; }
+        .moat-strip { grid-template-columns: 1fr; }
+      }
+
+      /* ── Animations (reactbits: AnimatedContent + CountUp + live feed) ── */
+      /* directional row reveal — text and mock slide in from opposite sides */
+      .mrow.reveal { transform: none; filter: none; }
+      .mrow .mrow-text, .mrow .mrow-visual { opacity: 0; transition: opacity 0.8s var(--ease), transform 0.8s var(--ease); will-change: transform, opacity; }
+      .mrow .mrow-text { transform: translateX(-30px); }
+      .mrow .mrow-visual { transform: translateX(30px); }
+      .mrow.rev .mrow-text { transform: translateX(30px); }
+      .mrow.rev .mrow-visual { transform: translateX(-30px); }
+      .mrow.in .mrow-text, .mrow.in .mrow-visual { opacity: 1; transform: none; }
+      .mrow.in .mrow-visual { transition-delay: 0.1s; }
+
+      /* row 1 — self-heal demo: Veralith scans, then writes the fix (JS-driven, loops) */
+      .mock-diff { position: relative; }
+      /* reserve the healed height so the frame never resizes as rows write in */
+      .heal .mock-diff { min-height: 172px; }
+      .heal .r-old { transition: background 0.4s var(--ease); }
+      .heal .r-old .dm { transition: color 0.4s var(--ease); }
+      .heal .r-new { max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.45s var(--ease), opacity 0.45s var(--ease); }
+      .heal .r-new.show { max-height: 40px; opacity: 1; }
+      /* the scanning sweep */
+      .scanline { position: absolute; left: 0; right: 0; top: 6px; height: 2px; opacity: 0; pointer-events: none; z-index: 3;
+        background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--accent) 88%, transparent), transparent);
+        box-shadow: 0 0 12px 2px color-mix(in oklab, var(--accent) 45%, transparent); }
+      .heal.scanning .scanline { animation: scanSweep 1.15s var(--ease); }
+      @keyframes scanSweep { 0% { opacity: 0; top: 6px; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { opacity: 0; top: calc(100% - 6px); } }
+      /* badge states: idle → scanning → PR opened */
+      .mock-badge { color: var(--fg-4); transition: color 0.3s; }
+      .mock-badge::before { background: var(--fg-4); box-shadow: none; transition: background 0.3s, box-shadow 0.3s; }
+      .mock-badge.scan { color: var(--cell-ig); }
+      .mock-badge.scan::before { background: var(--cell-ig); animation: badgePulse 1s var(--ease) infinite; }
+      .mock-badge.done { color: var(--accent); }
+      .mock-badge.done::before { background: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent); }
+      @keyframes badgePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+      /* row 2 diagnosis — bars grow (widths + counts driven by JS) */
+      .diag-bar i { transition: width 0.9s var(--ease); }
+
+      /* row 3 — live trace feed */
+      .srow.new { animation: srowIn 0.5s var(--ease); }
+      @keyframes srowIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 
       /* ── Numbered feature sections ───────────────────────── */
       .feature { padding: 104px 0; border-top: 1px solid var(--line); }
@@ -554,7 +713,8 @@
         .pg { grid-template-columns: 1fr; }
       }
       @media (prefers-reduced-motion: reduce) {
-        .reveal, .stagger > * { opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important; }
+        .reveal, .stagger > *, .mrow .mrow-text, .mrow .mrow-visual, .mock-diff .drow, .mock-badge { opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important; }
+        .diag-bar i { transition: none !important; }
         .fig g, .fig .ring { transition: none !important; }
         .fill .w { opacity: 1 !important; }
         .hero-floor { opacity: 1 !important; animation: none !important; }
@@ -577,7 +737,7 @@
       <div class="wrap">
         <a class="brand" href="#top"><img src="/favicon.svg" alt="" onerror="this.style.display='none'" /> Veralith</a>
         <div class="nav-mid">
-          <a href="#figs">Product</a>
+          <a href="#why">Product</a>
           <a href="#pricing">Pricing</a>
           <a href="mailto:hello@veralithai.com">Contact</a>
         </div>
@@ -600,7 +760,7 @@
             <p class="hero-sub reveal">Built for trace-level supervision of your agents at scale.</p>
             <div class="hero-cta reveal">
               <a class="btn btn-white btn-lg" href="https://app.veralithai.com/login?mode=signup" target="_blank" rel="noreferrer">Start free</a>
-              <a class="btn btn-ghost btn-lg" href="#figs">See how it works</a>
+              <a class="btn btn-ghost btn-lg" href="#why">See how it works</a>
             </div>
           </div>
           <a class="arrow-link reveal" href="#loop"><span class="n">Try</span> Self-heal via MCP →</a>
@@ -641,30 +801,38 @@
       </div>
     </section>
 
-    <!-- ══ WIREFRAME FIGURES ══ -->
+    <!-- ══ HOW IT WORKS — bento grid — DISABLED: to be replaced by a "See it working" section ══ -->
+    <!--
     <section class="figs" id="figs">
       <div class="wrap">
-        <div class="figrow stagger">
-          <!-- FIG 0.1 — decompose every trace -->
-          <div class="fig figA">
-            <div class="fignum">FIG 0.1</div>
-            <div class="fig-canvas">
-              <svg viewBox="0 0 260 240" aria-hidden="true">
+        <div class="bento stagger reveal">
+
+          <div class="bcell bintro">
+            <h2>Your agent, supervised.</h2>
+            <p>From a single trace to production scale, Veralith diagnoses every answer your RAG agent gives — and closes the loop when it's wrong.</p>
+          </div>
+
+          <div class="bcell figA">
+            <h3>Diagnose every trace</h3>
+            <p>Each query splits into atomic claims, judged on faithfulness and completeness.</p>
+            <a class="barrow" href="https://docs.veralithai.com" target="_blank" rel="noreferrer" aria-label="Diagnosis docs"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <div class="bpanel"><div class="fig-canvas">
+              <svg class="figsvg" viewBox="0 0 260 240" aria-hidden="true">
                 <g class="ly ly5"><path class="wire" d="M130 182 L215 138 L130 94 L45 138 Z"/></g>
                 <g class="ly ly4"><path class="wire" d="M130 154 L215 110 L130 66 L45 110 Z"/></g>
                 <g class="ly ly3"><path class="wire" d="M130 126 L215 82 L130 38 L45 82 Z"/><path class="wire" d="M100 82 h60 M108 74 h44 M116 90 h28" style="opacity:.5"/></g>
                 <g class="ly ly2"><path class="wire" d="M130 98 L215 54 L130 10 L45 54 Z"/></g>
                 <g class="ly ly1"><path class="wire" d="M130 70 L215 26 L130 -18 L45 26 Z"/></g>
               </svg>
-            </div>
-            <h3>Decompose every trace</h3>
-            <p>Each query splits into atomic sub-questions and each answer into atomic claims — layer by layer.</p>
+            </div></div>
           </div>
-          <!-- FIG 0.2 — six failure cells -->
-          <div class="fig figB">
-            <div class="fignum">FIG 0.2</div>
-            <div class="fig-canvas">
-              <svg viewBox="0 0 260 240" aria-hidden="true">
+
+          <div class="bcell figB">
+            <h3>Six failure cells</h3>
+            <p>Completeness × Faithfulness sorts every trace into one named, colour-coded cell.</p>
+            <a class="barrow" href="https://docs.veralithai.com" target="_blank" rel="noreferrer" aria-label="Failure cells docs"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <div class="bpanel"><div class="fig-canvas">
+              <svg class="figsvg" viewBox="0 0 260 240" aria-hidden="true">
                 <g class="c00"><rect class="wire" x="52" y="66" width="46" height="46" rx="8"/></g>
                 <g class="c10"><rect class="wire cellhi" x="107" y="66" width="46" height="46" rx="8"/></g>
                 <g class="c20"><rect class="wire" x="162" y="66" width="46" height="46" rx="8"/></g>
@@ -672,15 +840,15 @@
                 <g class="c11"><rect class="wire" x="107" y="128" width="46" height="46" rx="8"/></g>
                 <g class="c21"><rect class="wire" x="162" y="128" width="46" height="46" rx="8"/></g>
               </svg>
-            </div>
-            <h3>Six failure cells</h3>
-            <p>Completeness × Faithfulness sorts every trace into one named, colour-coded cell.</p>
+            </div></div>
           </div>
-          <!-- FIG 0.3 — the heal loop closes -->
-          <div class="fig figC">
-            <div class="fignum">FIG 0.3</div>
-            <div class="fig-canvas">
-              <svg viewBox="0 0 260 240" aria-hidden="true">
+
+          <div class="bcell figC">
+            <h3>Self-heal</h3>
+            <p>Recurring failures become heal cards — a fix, a PR, back to healthy.</p>
+            <a class="barrow" href="https://docs.veralithai.com/self-heal/overview" target="_blank" rel="noreferrer" aria-label="Self-heal docs"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <div class="bpanel"><div class="fig-canvas">
+              <svg class="figsvg" viewBox="0 0 260 240" aria-hidden="true">
                 <g class="ring">
                   <circle class="wire" cx="130" cy="130" r="70"/>
                   <circle class="wire" cx="130" cy="60" r="11" fill="var(--bg)"/>
@@ -691,11 +859,133 @@
                   <path class="wire" d="M92 72 l3 -9 9 3"/>
                 </g>
               </svg>
+            </div></div>
+          </div>
+
+          <div class="bcell">
+            <h3>MCP</h3>
+            <p>Connect Claude Code, Cursor, or Codex and let your own agent run the auto-fix loop — Veralith never sees your code.</p>
+            <a class="barrow" href="https://docs.veralithai.com/self-heal/connect-agent" target="_blank" rel="noreferrer" aria-label="MCP docs"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <div class="bpanel"><div class="bmcp">
+              <div class="bmcp-tabs"><span>trace</span><span>patch</span><span class="on">verify</span></div>
+              <div class="bmcp-row"><span class="fn">mcp.run_autofix</span><span class="ok">✓ PR opened</span></div>
+              <div class="bmcp-row dim"><span class="fn">mcp.get_heal_card</span><span>read</span></div>
+              <div class="bmcp-row dim"><span class="fn">mcp.report_result</span><span>write</span></div>
+            </div></div>
+          </div>
+
+          <div class="bcell">
+            <h3>Monitor</h3>
+            <p>Watch your healthy-rate climb, and get alerted the moment it drops.</p>
+            <a class="barrow" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer" aria-label="Open dashboard"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <div class="bpanel"><div class="bmon">
+              <svg viewBox="0 0 42 42" aria-hidden="true">
+                <circle class="track" cx="21" cy="21" r="15.915"/>
+                <circle class="val" cx="21" cy="21" r="15.915" stroke-dasharray="94 100"/>
+              </svg>
+              <div class="bmon-kpis">
+                <div><b>94%</b><span>healthy rate</span></div>
+                <div><b><em>+6.2</em> pts</b><span>if all heals merged</span></div>
+              </div>
+            </div></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+    -->
+
+    <!-- ══ WHY VERALITH — differentiators (alternating rows) ══ -->
+    <section class="moat" id="why">
+      <div class="wrap">
+        <div class="moat-head reveal">
+          <span class="eyebrow">Why Veralith</span>
+          <h2>Not another eval dashboard.</h2>
+          <p>Most tools flag the failure. Veralith fixes it.</p>
+        </div>
+
+        <div class="mrow reveal">
+          <div class="mrow-text">
+            <span class="mrow-ey">Beyond detection</span>
+            <h3>The loop closes — into a merged PR</h3>
+            <p>Others stop at an alert. Veralith opens the pull request that fixes it — through your own agent, over MCP.</p>
+            <a class="mlink" href="https://docs.veralithai.com/self-heal/overview" target="_blank" rel="noreferrer">See how self-heal works <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+          <div class="mrow-visual">
+            <div class="mock heal" id="healMock">
+              <div class="mock-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="mock-file">heal #142 · retrieval_k too low</span><span class="mock-badge" id="healBadge">idle</span></div>
+              <div class="mock-diff">
+                <div class="drow"><span class="dm"> </span><span class="cl"><span class="cm"># retrieval returns too few chunks</span></span></div>
+                <div class="drow r-old"><span class="dm"> </span><span class="cl">retriever = Retriever(k=<span class="kw">3</span>)</span></div>
+                <div class="drow r-new add"><span class="dm">+</span><span class="cl">retriever = Retriever(k=<span class="kw">8</span>)</span></div>
+                <div class="drow r-new add"><span class="dm">+</span><span class="cl"><span class="kw">if not</span> grounded(a, ctx):</span></div>
+                <div class="drow r-new add"><span class="dm">+</span><span class="cl">    <span class="kw">return</span> ABSTAIN</span></div>
+                <div class="drow"><span class="dm"> </span><span class="cl">answer = rag(query, retriever)</span></div>
+                <div class="scanline"></div>
+              </div>
             </div>
-            <h3>The heal loop closes</h3>
-            <p>Recurring failures cycle into heal cards, into your agent's PR, back to healthy — and around again.</p>
           </div>
         </div>
+
+        <div class="mrow rev reveal">
+          <div class="mrow-text">
+            <span class="mrow-ey">Actionable by design</span>
+            <h3>A diagnosis, not a score</h3>
+            <p>“Faithfulness: 0.33” tells you nothing. Veralith names the failure — and the fix.</p>
+            <a class="mlink" href="https://docs.veralithai.com" target="_blank" rel="noreferrer">Explore the diagnosis <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+          <div class="mrow-visual">
+            <div class="mock diag">
+              <div class="diag-old">Typical eval → <s>faithfulness 0.33</s></div>
+              <div class="diag-verdict"><span class="pgc cu">Hallucinated</span><span class="diag-key">complete_ungrounded</span></div>
+              <div class="diag-metrics">
+                <div><div class="diag-m-top"><span>Faithfulness</span><b data-count="33" data-suffix="%">0%</b></div><div class="diag-bar"><i data-w="33" style="width:0;background:var(--cell-cu)"></i></div></div>
+                <div><div class="diag-m-top"><span>Sufficiency</span><b>LOW</b></div><div class="diag-bar"><i data-w="30" style="width:0;background:var(--cell-ig)"></i></div></div>
+                <div><div class="diag-m-top"><span>Completeness</span><b data-count="100" data-suffix="%">0%</b></div><div class="diag-bar"><i data-w="100" style="width:0;background:var(--cell-cg)"></i></div></div>
+              </div>
+              <div class="diag-fix"><b>Suggested fix</b>The Q3 figure isn't in the retrieved context. Raise retrieval-K so it's fetched, and abstain when the answer isn't supported.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mrow reveal">
+          <div class="mrow-text">
+            <span class="mrow-ey">The whole point</span>
+            <h3>Fail-safe, on every trace, at scale</h3>
+            <p>Fire-and-forget on every answer in production — no added latency, no broken requests, ever.</p>
+            <a class="mlink" href="https://docs.veralithai.com" target="_blank" rel="noreferrer">Reliability guarantees <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+          <div class="mrow-visual">
+            <div class="mock">
+              <div class="scale-code"><span class="cm"># one line — never throws, no-ops without a key</span><span class="kw">@</span><span class="fn">veralith.trace</span></div>
+              <div class="scale-stream" id="traceFeed">
+                <div class="srow"><span class="sid">trace_9f2a…</span><span class="pgc cg">Grounded</span></div>
+                <div class="srow"><span class="sid">trace_7a1c…</span><span class="pgc ig">Retrieval gap</span></div>
+                <div class="srow"><span class="sid">trace_4c80…</span><span class="pgc cu">Hallucinated</span></div>
+                <div class="srow"><span class="sid">trace_2b55…</span><span class="pgc cg">Grounded</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="moat-strip stagger reveal">
+          <div class="ms">
+            <div class="ms-ic"><svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12l9 5 9-5M3 16l9 5 9-5"/></svg></div>
+            <h4>Decompose every trace</h4>
+            <p>Atomic claims, judged one by one — see exactly which broke.</p>
+          </div>
+          <div class="ms">
+            <div class="ms-ic"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h11"/></svg></div>
+            <h4>Drop-in integration</h4>
+            <p>One line, or the zero-change LangChain adapter. Any stack.</p>
+          </div>
+          <div class="ms">
+            <div class="ms-ic"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+            <h4>MCP</h4>
+            <p>Self-heal runs in your repo over MCP. We never see your code.</p>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -852,7 +1142,7 @@
             <div class="brand"><img src="/favicon.svg" alt="" onerror="this.style.display='none'" /> Veralith</div>
             <p class="foot-tag">Truth made solid. Diagnosis and self-heal for retrieval-augmented generation.</p>
           </div>
-          <div class="foot-col"><h5>Product</h5><a href="#figs">Features</a><a href="#pricing">Pricing</a><a href="#loop">How it works</a></div>
+          <div class="foot-col"><h5>Product</h5><a href="#why">Features</a><a href="#pricing">Pricing</a><a href="#loop">How it works</a></div>
           <div class="foot-col"><h5>Developers</h5><a href="https://docs.veralithai.com" target="_blank" rel="noreferrer">Docs</a><a href="https://pypi.org/project/veralith/" target="_blank" rel="noreferrer">SDK</a><a href="https://docs.veralithai.com/reference/rest-api" target="_blank" rel="noreferrer">API reference</a><a href="https://github.com/SrijanShekhar21/VeralithAI" target="_blank" rel="noreferrer">GitHub</a></div>
           <div class="foot-col"><h5>Company</h5><a href="mailto:hello@veralithai.com">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></div>
         </div>
@@ -977,6 +1267,15 @@
             var rect = card.getBoundingClientRect();
             card.style.setProperty("--mouse-x", (e.clientX - rect.left) + "px");
             card.style.setProperty("--mouse-y", (e.clientY - rect.top) + "px");
+          }, { passive: true });
+        });
+
+        /* ── Spotlight glow on the bento cells ── */
+        [].slice.call(document.querySelectorAll(".figs .bcell")).forEach(function (card) {
+          card.addEventListener("pointermove", function (e) {
+            var rect = card.getBoundingClientRect();
+            card.style.setProperty("--mx", (e.clientX - rect.left) + "px");
+            card.style.setProperty("--my", (e.clientY - rect.top) + "px");
           }, { passive: true });
         });
 
@@ -1108,6 +1407,97 @@
           function stop() { running = false; cancelAnimationFrame(raf); }
           document.addEventListener("visibilitychange", function () { if (document.hidden) stop(); else start(); });
           new IntersectionObserver(function (es) { visible = es[0].isIntersecting; if (visible) start(); else stop(); }, { threshold: 0 }).observe(stmt);
+        })();
+
+        /* ── Why-section: CountUp diagnosis + live trace feed (reactbits-style) ── */
+        (function whyAnim() {
+          /* count up the numbers + grow the bars when the diagnosis card enters view */
+          var diag = document.querySelector(".moat .diag");
+          if (diag) {
+            new IntersectionObserver(function (es, ob) {
+              es.forEach(function (en) {
+                if (!en.isIntersecting) return;
+                ob.unobserve(en.target);
+                [].slice.call(diag.querySelectorAll(".diag-bar i")).forEach(function (i) { i.style.width = i.getAttribute("data-w") + "%"; });
+                [].slice.call(diag.querySelectorAll("[data-count]")).forEach(function (el) {
+                  var target = parseInt(el.getAttribute("data-count"), 10), suf = el.getAttribute("data-suffix") || "";
+                  if (reduce) { el.textContent = target + suf; return; }
+                  var dur = 1000, t0 = performance.now();
+                  (function step(t) {
+                    var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+                    el.textContent = Math.round(target * e) + suf;
+                    if (p < 1) requestAnimationFrame(step);
+                  })(t0);
+                });
+              });
+            }, { threshold: 0.45 }).observe(diag);
+          }
+
+          /* live trace feed — new traces stream in at the top */
+          var feed = document.getElementById("traceFeed");
+          if (feed && !reduce) {
+            var SAMPLES = [["Grounded", "cg"], ["Retrieval gap", "ig"], ["Hallucinated", "cu"], ["Grounded", "cg"], ["Incomplete", "iu"], ["Grounded", "cg"]];
+            function makeRow() {
+              var s = SAMPLES[Math.floor(Math.random() * SAMPLES.length)];
+              var row = document.createElement("div");
+              row.className = "srow new";
+              row.innerHTML = '<span class="sid">trace_' + Math.random().toString(16).slice(2, 6) + '…</span><span class="pgc ' + s[1] + '">' + s[0] + '</span>';
+              return row;
+            }
+            var timer = 0, MAX = 4, vis = false, page = !document.hidden;
+            function tick() {
+              feed.insertBefore(makeRow(), feed.firstChild);
+              while (feed.children.length > MAX) feed.removeChild(feed.lastChild);
+            }
+            function start() { if (vis && page && !timer) timer = setInterval(tick, 1700); }
+            function stop() { if (timer) { clearInterval(timer); timer = 0; } }
+            new IntersectionObserver(function (e) { vis = e[0].isIntersecting; vis ? start() : stop(); }, { threshold: 0 }).observe(feed);
+            document.addEventListener("visibilitychange", function () { page = !document.hidden; page ? start() : stop(); });
+          }
+        })();
+
+        /* ── Row 1 self-heal demo: plain code → Veralith scans → fix is written (loops) ── */
+        (function healDemo() {
+          var mock = document.getElementById("healMock");
+          if (!mock) return;
+          var badge = document.getElementById("healBadge");
+          var oldRow = mock.querySelector(".r-old");
+          var oldDm = oldRow.querySelector(".dm");
+          var newRows = [].slice.call(mock.querySelectorAll(".r-new"));
+
+          function reset() {
+            mock.classList.remove("scanning");
+            oldRow.classList.remove("del"); oldDm.textContent = " ";
+            newRows.forEach(function (r) { r.classList.remove("show"); });
+            badge.className = "mock-badge"; badge.textContent = "idle";
+          }
+          if (reduce) {   /* show the final, healed state */
+            oldRow.classList.add("del"); oldDm.textContent = "-";
+            newRows.forEach(function (r) { r.classList.add("show"); });
+            badge.className = "mock-badge done"; badge.textContent = "PR #318 opened";
+            return;
+          }
+
+          var t = [], vis = false, page = !document.hidden, playing = false;
+          function clearT() { t.forEach(clearTimeout); t = []; }
+          function play() {
+            if (!vis || !page) { playing = false; return; }
+            playing = true; clearT(); reset();
+            t.push(setTimeout(function () { mock.classList.add("scanning"); badge.className = "mock-badge scan"; badge.textContent = "veralith · scanning"; }, 700));
+            t.push(setTimeout(function () { mock.classList.remove("scanning"); oldRow.classList.add("del"); oldDm.textContent = "-"; }, 1950));
+            newRows.forEach(function (r, i) { t.push(setTimeout(function () { r.classList.add("show"); }, 2160 + i * 260)); });
+            var doneAt = 2160 + newRows.length * 260 + 220;
+            t.push(setTimeout(function () { badge.className = "mock-badge done"; badge.textContent = "PR #318 opened"; }, doneAt));
+            t.push(setTimeout(play, doneAt + 4000));   /* hold, then loop */
+          }
+          new IntersectionObserver(function (e) {
+            vis = e[0].isIntersecting;
+            if (vis && !playing) play(); else if (!vis) { clearT(); playing = false; }
+          }, { threshold: 0.4 }).observe(mock);
+          document.addEventListener("visibilitychange", function () {
+            page = !document.hidden;
+            if (page && vis && !playing) play(); else if (!page) { clearT(); playing = false; }
+          });
         })();
 
       })();
