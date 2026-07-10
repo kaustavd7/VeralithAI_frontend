@@ -14,6 +14,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@100..900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
+    <!-- fetch both hero screenshots up front, in parallel, so the second doesn't pop in late -->
+    <link rel="preload" as="image" href="/shots/overview.png" fetchpriority="high" />
+    <link rel="preload" as="image" href="/shots/analytics.png" fetchpriority="high" />
+
     <style>
       /* ============================================================
          VERALITH — Linear-style dark. Lifted (not pure-black) theme,
@@ -306,36 +310,40 @@
       .cline.added .cm { color: color-mix(in oklab, var(--add) 65%, var(--fg-2)); }
 
       /* failure cells (real labels) */
-      .cellgrid { margin-top: 46px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-      /* MagicBento-style cells: color accent + matrix mini-map + cursor border-glow */
-      .cell { position: relative; border: 1px solid var(--line-2); border-radius: 14px; padding: 18px 18px 18px 22px; background: var(--panel); overflow: hidden; --c: var(--fg-3);
-        --glow-x: 50%; --glow-y: 50%; --glow-intensity: 0; --glow-radius: 240px;
-        transition: transform 0.26s var(--ease), border-color 0.26s var(--ease), box-shadow 0.26s var(--ease); }
-      .cell:hover { transform: translateY(-4px); border-color: color-mix(in oklab, var(--c) 45%, var(--line-2));
-        box-shadow: 0 16px 36px -16px rgba(0,0,0,0.66), 0 0 32px -6px color-mix(in oklab, var(--c) 26%, transparent); }
-      /* left color accent bar (health at a glance) */
-      .cell::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; opacity: 0.9;
-        background: linear-gradient(180deg, var(--c), color-mix(in oklab, var(--c) 35%, transparent)); }
-      /* MagicBento border glow — radial light masked to the border, follows the cursor, tinted per cell */
-      .cell::after { content: ""; position: absolute; inset: 0; padding: 1.5px; border-radius: inherit; pointer-events: none; z-index: 2;
-        background: radial-gradient(var(--glow-radius) circle at var(--glow-x) var(--glow-y), color-mix(in oklab, var(--c) 85%, transparent), transparent 62%);
-        opacity: var(--glow-intensity); transition: opacity 0.3s ease;
-        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor;
-        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; }
-      .cell .nm { font-size: 15px; font-weight: 600; color: var(--c); }
-      .cell .key { font-family: var(--mono); font-size: 11px; color: var(--fg-4); margin-top: 3px; }
-      .cell .ds { font-size: 13px; color: var(--fg-3); margin-top: 11px; line-height: 1.5; max-width: 34ch; }
-      /* matrix mini-map (Completeness × Faithfulness) — this cell's own position lit */
-      .cell-mini { position: absolute; top: 16px; right: 16px; display: grid; grid-template-columns: repeat(2, 6px); grid-auto-rows: 6px; gap: 3px; }
-      .cell-mini i { width: 6px; height: 6px; border-radius: 2px; background: var(--line-2); transition: background 0.3s; }
-      .cell.cg .cell-mini i:nth-child(1),
-      .cell.cu .cell-mini i:nth-child(2),
-      .cell.ig .cell-mini i:nth-child(3),
-      .cell.iu .cell-mini i:nth-child(4),
-      .cell.eg .cell-mini i:nth-child(5),
-      .cell.eu .cell-mini i:nth-child(6) { background: var(--c); box-shadow: 0 0 7px color-mix(in oklab, var(--c) 65%, transparent); }
-      .cell.cg { --c: var(--cell-cg); } .cell.cu { --c: var(--cell-cu); } .cell.ig { --c: var(--cell-ig); }
-      .cell.iu { --c: var(--cell-iu); } .cell.eg { --c: var(--cell-eg); } .cell.eu { --c: var(--cell-eu); }
+      /* ── Playground: See it working (skeleton) ── */
+      .pg { margin-top: 44px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+      .pg-input, .pg-output { border: 1px solid var(--line-2); border-radius: 16px; background: var(--panel); padding: 22px; }
+      .pg-examples { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+      .pg-ex-label { font-family: var(--mono); font-size: 11px; color: var(--fg-4); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 2px; }
+      .pg-chip { height: 28px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--fg-3); font-size: 12.5px; font-family: var(--font); transition: color 0.18s, background 0.18s, border-color 0.18s; }
+      .pg-chip:hover { color: var(--fg); }
+      .pg-chip.is-active { background: color-mix(in oklab, var(--accent) 16%, transparent); border-color: color-mix(in oklab, var(--accent) 40%, transparent); color: #8ee6b8; }
+      .pg-lab { display: block; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-4); margin: 15px 0 6px; }
+      .pg-field { width: 100%; resize: vertical; background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; color: var(--fg); font-family: var(--mono); font-size: 12.5px; line-height: 1.5; transition: border-color 0.18s; }
+      .pg-field:focus { outline: none; border-color: color-mix(in oklab, var(--accent) 45%, var(--line-2)); }
+      .pg-run { width: 100%; justify-content: center; margin-top: 18px; }
+      .pg-note { font-size: 12px; color: var(--fg-4); margin: 12px 0 0; text-align: center; }
+      .pg-note a { color: var(--accent); }
+
+      .pg-output { min-height: 340px; display: flex; flex-direction: column; }
+      .pg-res-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
+      .pg-cell { --c: var(--fg-3); display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; font-size: 13.5px; font-weight: 600; color: var(--c); background: color-mix(in oklab, var(--c) 14%, transparent); border: 1px solid color-mix(in oklab, var(--c) 38%, transparent); }
+      .pg-cell .pg-key { font-family: var(--mono); font-size: 11px; font-weight: 400; opacity: 0.85; }
+      .pg-cell.cu { --c: var(--cell-cu); } .pg-cell.ig { --c: var(--cell-ig); } .pg-cell.cg { --c: var(--cell-cg); } .pg-cell.iu { --c: var(--cell-iu); }
+      .pg-latency { font-family: var(--mono); font-size: 11px; color: var(--fg-4); white-space: nowrap; }
+      .pg-metrics { display: grid; gap: 14px; }
+      .pg-metric-top { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--fg-3); margin-bottom: 6px; }
+      .pg-metric-top b { color: var(--fg); font-family: var(--mono); font-weight: 500; }
+      .pg-bar { height: 6px; border-radius: 3px; background: var(--line-2); overflow: hidden; }
+      .pg-bar i { display: block; height: 100%; border-radius: 3px; background: var(--accent); width: 0; transition: width 0.7s var(--ease); }
+      .pg-suggest { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 16px; }
+      .pg-suggest-h { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+      .pg-suggest-b { font-size: 13.5px; color: var(--fg-2); line-height: 1.55; }
+      .pg-output.loading .pg-res { opacity: 0.35; filter: blur(1px); transition: opacity 0.2s, filter 0.2s; }
+      .pg-spin { display: none; align-self: center; margin: auto; font-family: var(--mono); font-size: 12px; color: var(--fg-4); }
+      .pg-output.loading .pg-spin { display: block; }
+      .pg-output.loading .pg-res { display: none; }
+      @media (max-width: 860px) { .pg { grid-template-columns: 1fr; } }
 
       /* diff card (heal) */
       .diffcard { margin-top: 46px; border: 1px solid var(--line-2); border-radius: 14px; overflow: hidden; background: var(--panel); }
@@ -386,8 +394,8 @@
       .cellbars .cb i { width: 100%; border-radius: 5px 5px 0 0; }
       .cellbars .cb span { font-family: var(--mono); font-size: 10px; color: var(--fg-4); }
 
-      /* ── Pinned loop walkthrough (scroll-scrub) ──────────── */
-      .loop-track { position: relative; }
+      /* ── The loop (FlowingMenu) ───────────────────────────── */
+      .loop-track { position: relative; border-top: 1px solid var(--line); padding: 96px 0 104px; }
       .loop-sticky { position: sticky; top: 0; height: 100vh; display: flex; align-items: center; overflow: hidden; border-top: 1px solid var(--line); }
       .loop-inner { display: grid; grid-template-columns: 0.82fr 1.18fr; gap: 54px; align-items: center; width: 100%; }
       .loop-left h2 { font-size: clamp(26px, 3.6vw, 42px); margin: 14px 0 26px; max-width: 15ch; }
@@ -448,7 +456,19 @@
       .price .btn { width: 100%; justify-content: center; }
 
       /* ── CTA ─────────────────────────────────────────────── */
-      .cta { text-align: center; padding: 128px 0; border-top: 1px solid var(--line); }
+      .cta { position: relative; overflow: hidden; text-align: center; padding: clamp(200px, 30vh, 320px) 0; border-top: 1px solid var(--line); }
+      /* Grid Distortion (reactbits port) — reactbits demo image, recoloured to Veralith emerald */
+      .cta-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; opacity: 0; animation: ctaBgIn 1.8s var(--ease) 0.3s forwards; isolation: isolate; }
+      .cta-bg canvas { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; display: block; filter: brightness(1.02) contrast(1.06); }
+      /* emerald recolour: keep the image's light/shadow, swap the hue to emerald */
+      .cta-bg::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+        background: linear-gradient(135deg, #0d6b4e, #10b981 52%, #34d399); mix-blend-mode: color; }
+      .cta-bg::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+        background:
+          radial-gradient(58% 62% at 50% 46%, transparent, color-mix(in oklab, var(--bg) 46%, transparent) 66%, var(--bg) 100%),
+          linear-gradient(180deg, var(--bg), transparent 22%, transparent 78%, var(--bg)); }
+      @keyframes ctaBgIn { to { opacity: 1; } }
+      .cta .wrap { position: relative; z-index: 1; }
       .cta h2 { font-size: clamp(30px, 5vw, 52px); font-weight: 600; letter-spacing: -0.04em; }
       .cta h2 em { font-style: italic; font-weight: 400; color: var(--fg-3); }
       .cta p { color: var(--fg-3); font-size: 17px; margin: 18px auto 30px; max-width: 48ch; }
@@ -466,6 +486,23 @@
       .foot-bottom { display: flex; align-items: center; gap: 18px; margin-top: 52px; padding-top: 24px; border-top: 1px solid var(--line); }
       .foot-bottom .cr { color: var(--fg-4); font-size: 12.5px; }
       .foot-bottom .mark { margin-left: auto; color: var(--fg-4); font-size: 12.5px; font-family: var(--mono); }
+
+      /* ── FlowingMenu (reactbits port) ─────────────────────── */
+      .fmenu-section { padding: 30px 0 96px; border-top: 1px solid var(--line); }
+      .fmenu { margin-top: 56px; width: 100%; }
+      .fmenu .menu { display: flex; flex-direction: column; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+      .fmenu .menu__item { position: relative; overflow: hidden; text-align: center; border-bottom: 1px solid var(--line); background: transparent; }
+      .fmenu .menu__item-link { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; height: 168px; position: relative; z-index: 1; cursor: pointer; text-decoration: none; transition: color 0.25s var(--ease); }
+      .fmenu .fm-head { display: inline-flex; align-items: center; gap: 14px; text-transform: uppercase; white-space: nowrap; font-weight: 600; letter-spacing: -0.01em; font-size: clamp(26px, 4vw, 46px); color: var(--fg); }
+      .fmenu .fm-n { font-family: var(--mono); font-size: 0.4em; font-weight: 500; color: var(--accent); letter-spacing: 0.06em; }
+      .fmenu .fm-desc { text-transform: none; font-weight: 400; letter-spacing: 0; font-size: clamp(13px, 1.05vw, 15px); line-height: 1.45; color: var(--fg-4); max-width: 54ch; padding: 0 20px; }
+      .fmenu .marquee { position: absolute; top: 0; left: 0; z-index: 2; overflow: hidden; width: 100%; height: 100%; pointer-events: none; transform: translate3d(0, 101%, 0); background: #fff; }
+      .fmenu .marquee__inner-wrap { height: 100%; width: 100%; overflow: hidden; }
+      .fmenu .marquee__inner { display: flex; align-items: center; position: relative; height: 100%; width: fit-content; will-change: transform; }
+      .fmenu .marquee__part { display: flex; align-items: center; flex-shrink: 0; color: #07140d; }
+      .fmenu .marquee span { white-space: nowrap; text-transform: uppercase; font-weight: 600; font-size: clamp(26px, 4vw, 46px); line-height: 1; padding: 0 1.6vw; }
+      /* capsule (pill) images — fully rounded left/right */
+      .fmenu .marquee__img { width: 210px; height: 78px; margin: 0 2vw; border-radius: 999px; background-size: cover; background-position: 50% 30%; }
 
       /* ── Reveal motion ───────────────────────────────────── */
       /* blur-to-clear + slide-up ("motion blur") entrance */
@@ -499,7 +536,6 @@
         .lstep { opacity: 1; } .lstep p { max-height: none; opacity: 1; margin-top: 7px; }
         .foot-top { grid-template-columns: 1fr 1fr; gap: 32px 20px; }
         .foot-brand { grid-column: 1 / -1; }
-        .cellgrid { grid-template-columns: 1fr; }
         .diffcol:first-child { border-right: none; border-bottom: 1px solid var(--line); }
         .nav-mid, .nav-sep { display: none; }
         .dash-cards .hcard:nth-child(3) { display: none; }
@@ -507,12 +543,14 @@
       @media (max-width: 620px) {
         .hero { padding: 120px 0 26px; }
         .feature, .figs, .statement { padding: 72px 0; }
+        .pg { grid-template-columns: 1fr; }
       }
       @media (prefers-reduced-motion: reduce) {
         .reveal, .stagger > * { opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important; }
         .fig g, .fig .ring { transition: none !important; }
         .fill .w { opacity: 1 !important; }
         .hero-floor { opacity: 1 !important; animation: none !important; }
+        .cta-bg { display: none !important; }
         /* unpin the loop → normal stacked scroll, all panels visible */
         .loop-track { height: auto !important; }
         .loop-sticky { position: static; height: auto; display: block; padding: 80px 0; }
@@ -563,10 +601,10 @@
         <!-- real dashboard screenshots — spotlight cards -->
         <div class="hero-shots" id="dash">
           <div class="shot shot-base reveal">
-            <img src="/shots/overview.png" alt="Veralith project overview — RAG health, latency, knowledge-gap topics" />
+            <img src="/shots/overview.png" fetchpriority="high" decoding="async" alt="Veralith project overview — RAG health, latency, knowledge-gap topics" />
           </div>
           <div class="shot shot-over reveal">
-            <img src="/shots/analytics.png" alt="Veralith analytics — trace volume, failure-cell distribution, hallucination trend" />
+            <img src="/shots/analytics.png" fetchpriority="high" decoding="async" alt="Veralith analytics — trace volume, failure-cell distribution, hallucination trend" />
           </div>
         </div>
       </div>
@@ -575,7 +613,7 @@
     <!-- ══ AI-STACK LOGOS ══ -->
     <section class="logos reveal">
       <div class="wrap">
-        <div class="label">Works with your stack</div>
+        <div class="label">Plugs into the tools you already ship</div>
         <div class="logos-row stagger">
           <img src="/brand/logos/openai.svg" alt="OpenAI" />
           <img src="/brand/logos/anthropic.svg" alt="Anthropic" />
@@ -653,96 +691,80 @@
       </div>
     </section>
 
-    <!-- ══ THE LOOP (pinned scroll-scrub) ══ -->
-    <section class="loop-track" id="loop" style="height: 400vh;">
-      <div class="loop-sticky">
-        <div class="wrap loop-inner">
-          <div class="loop-left">
-            <div class="fignum">The loop</div>
-            <h2>From a silent failure to a merged fix.</h2>
-            <div class="loop-steps">
-              <div class="lstep" data-i="0"><div class="lrail"><i class="ldot"></i></div><div class="lbody"><span class="ln">01</span><b>Instrument</b><p>One line in your pipeline — a call, a decorator, or the zero-change LangChain adapter.</p></div></div>
-              <div class="lstep" data-i="1"><div class="lrail"><i class="ldot"></i></div><div class="lbody"><span class="ln">02</span><b>Diagnose</b><p>Server-side, every trace is decomposed, judged on three metrics, and sorted into a failure cell.</p></div></div>
-              <div class="lstep" data-i="2"><div class="lrail"><i class="ldot"></i></div><div class="lbody"><span class="ln">03</span><b>Heal</b><p>Recurring failures become heal cards your coding agent turns into a reviewed pull request.</p></div></div>
-              <div class="lstep" data-i="3"><div class="lrail"><i class="ldot"></i></div><div class="lbody"><span class="ln">04</span><b>Monitor</b><p>Watch healthy-rate climb — and see what it would be if every open heal were merged.</p></div></div>
-            </div>
-          </div>
-          <div class="loop-right">
-            <!-- 01 instrument -->
-            <div class="lpanel on" data-i="0">
-              <div class="codecard tiltcard">
-                <div class="codecard-top"><span class="cc-dot"></span><span class="cc-dot"></span><span class="cc-dot"></span><span class="cc-file">pipeline.py</span></div>
-                <div class="codewrap">
-                  <div class="cline added"><span class="ln">1</span><span class="ct"><span class="kw">import</span> <span class="vr">veralith</span></span></div>
-                  <div class="cline"><span class="ln">2</span><span class="ct"><span class="kw">from</span> rag <span class="kw">import</span> retrieve, generate</span></div>
-                  <div class="cline"><span class="ln">3</span><span class="ct"> </span></div>
-                  <div class="cline"><span class="ln">4</span><span class="ct"><span class="kw">def</span> <span class="fn">answer</span>(query):</span></div>
-                  <div class="cline"><span class="ln">5</span><span class="ct">    chunks = <span class="fn">retrieve</span>(query)          <span class="cm"># your retriever</span></span></div>
-                  <div class="cline"><span class="ln">6</span><span class="ct">    reply  = <span class="fn">generate</span>(query, chunks)  <span class="cm"># your generator</span></span></div>
-                  <div class="cline"><span class="ln">7</span><span class="ct"> </span></div>
-                  <div class="cline added"><span class="ln">8</span><span class="ct">    <span class="vr">veralith</span>.<span class="fn">log</span>(query=query, context=chunks, response=reply)  <span class="cm"># ← the one line you add</span></span></div>
-                  <div class="cline"><span class="ln">9</span><span class="ct"> </span></div>
-                  <div class="cline"><span class="ln">10</span><span class="ct">    <span class="kw">return</span> reply</span></div>
-                </div>
-              </div>
-            </div>
-            <!-- 02 diagnose -->
-            <div class="lpanel" data-i="1">
-              <div class="winshot tiltcard">
-                <div class="winshot-top"><span class="cc-dot"></span><span class="cc-dot"></span><span class="cc-dot"></span><span class="cc-file">Trace diagnosis</span><span class="winshot-live">live</span></div>
-                <div class="winshot-body"><img src="/shots/diagnose.png" alt="Veralith trace diagnosis — grounded vs ungrounded claims with suggested actions" /></div>
-              </div>
-            </div>
-            <!-- 03 heal -->
-            <div class="lpanel" data-i="2">
-              <div class="diffcard tiltcard">
-                <div class="diffcard-top">rag/generate.py <span class="tag">heal · grounding-constraints</span></div>
-                <div class="diff2">
-                  <div class="drow"><span class="dm"> </span><span><span class="kw">def</span> <span class="fn">generate</span>(query, chunks):</span></div>
-                  <div class="drow"><span class="dm"> </span><span>    ctx = <span class="fn">format_chunks</span>(chunks)</span></div>
-                  <div class="drow"><span class="dm"> </span><span>    prompt = <span class="fn">build_prompt</span>(query, ctx)</span></div>
-                  <div class="drow del"><span class="dm">-</span><span>    reply = llm.<span class="fn">invoke</span>(prompt)</span></div>
-                  <div class="drow add"><span class="dm">+</span><span>    prompt += <span class="vr">GROUNDING_RULE</span></span></div>
-                  <div class="drow add"><span class="dm">+</span><span>    reply = llm.<span class="fn">invoke</span>(prompt, temperature=<span class="st">0.1</span>)</span></div>
-                  <div class="drow add"><span class="dm">+</span><span>    reply = <span class="fn">drop_ungrounded</span>(reply, chunks)</span></div>
-                  <div class="drow"><span class="dm"> </span><span>    <span class="kw">return</span> reply</span></div>
-                  <div class="drow"><span class="dm"> </span><span> </span></div>
-                  <div class="drow"><span class="dm"> </span><span><span class="cm"># PR #318 · opened by Claude Code via MCP</span></span></div>
-                </div>
-              </div>
-            </div>
-            <!-- 04 monitor -->
-            <div class="lpanel" data-i="3">
-              <div class="winshot tiltcard">
-                <div class="winshot-top"><span class="cc-dot"></span><span class="cc-dot"></span><span class="cc-dot"></span><span class="cc-file">Failure-cell analytics</span><span class="winshot-live">live</span></div>
-                <div class="winshot-body"><img src="/shots/monitor.png" alt="Veralith failure-cell analytics — per-cell bars and break-out cards" /></div>
-              </div>
-            </div>
+    <!-- ══ THE LOOP (FlowingMenu) ══ -->
+    <section class="loop-track" id="loop">
+      <div class="wrap">
+        <div class="feature-head reveal">
+          <h2>From a silent failure to a merged fix</h2>
+          <div class="right">
+            <p>Four steps close the loop — instrument once, and Veralith diagnoses, heals, and monitors every trace your RAG agent serves.</p>
           </div>
         </div>
+      </div>
+      <div class="fmenu reveal">
+          <div class="menu">
+            <div class="menu__item" data-speed="17">
+              <a class="menu__item-link" href="https://docs.veralithai.com" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">01</span> Instrument</span><span class="fm-desc">One line in your pipeline — a call, a decorator, or the zero-change LangChain adapter.</span></a>
+              <div class="marquee"><div class="marquee__inner-wrap"><div class="marquee__inner" aria-hidden="true">
+                <div class="marquee__part"><span>Instrument</span><div class="marquee__img" style="background-image:url('/shots/overview.png')"></div></div>
+              </div></div></div>
+            </div>
+            <div class="menu__item" data-speed="16">
+              <a class="menu__item-link" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">02</span> Diagnose</span><span class="fm-desc">Server-side, every trace is decomposed, judged on three metrics, and sorted into a failure cell.</span></a>
+              <div class="marquee"><div class="marquee__inner-wrap"><div class="marquee__inner" aria-hidden="true">
+                <div class="marquee__part"><span>Diagnose</span><div class="marquee__img" style="background-image:url('/shots/diagnose.png')"></div></div>
+              </div></div></div>
+            </div>
+            <div class="menu__item" data-speed="18">
+              <a class="menu__item-link" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">03</span> Heal</span><span class="fm-desc">Recurring failures become heal cards your coding agent turns into a reviewed pull request.</span></a>
+              <div class="marquee"><div class="marquee__inner-wrap"><div class="marquee__inner" aria-hidden="true">
+                <div class="marquee__part"><span>Heal</span><div class="marquee__img" style="background-image:url('/shots/analytics.png')"></div></div>
+              </div></div></div>
+            </div>
+            <div class="menu__item" data-speed="16">
+              <a class="menu__item-link" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">04</span> Monitor</span><span class="fm-desc">Watch healthy-rate climb — and see what it would be if every open heal were merged.</span></a>
+              <div class="marquee"><div class="marquee__inner-wrap"><div class="marquee__inner" aria-hidden="true">
+                <div class="marquee__part"><span>Monitor</span><div class="marquee__img" style="background-image:url('/shots/monitor.png')"></div></div>
+              </div></div></div>
+            </div>
+          </div>
       </div>
     </section>
 
-    <!-- ══ 2.0 FAILURE CELLS (real labels) ══ -->
-    <section class="feature" id="cells">
+    <!-- ══ PLAYGROUND — See it working (skeleton) — HIDDEN until the API is wired ══ -->
+    <!--
+    <section class="feature" id="playground">
       <div class="wrap">
         <div class="feature-head reveal">
-          <h2>Name the failure, not just flag it</h2>
+          <h2>See it working</h2>
           <div class="right">
-            <p>Different bugs need different fixes — bump retrieval-K, tighten the prompt, fix a chunk boundary. Veralith's six cells tell them apart.</p>
-            <a class="arrow-link" href="https://app.veralithai.com/login?mode=signup" target="_blank" rel="noreferrer"><span class="n">2.0</span> Explore cells →</a>
+            <p>Paste a query, the context your retriever returned, and your agent's answer. Veralith diagnoses the trace live — the same engine that runs on every trace in production.</p>
           </div>
         </div>
-        <div class="cellgrid stagger reveal">
-          <div class="cell cg"><span class="cell-mini" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><div class="nm">Grounded</div><div class="key">complete_grounded</div><div class="ds">Answers everything, every claim supported. The healthy trace.</div></div>
-          <div class="cell cu"><span class="cell-mini" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><div class="nm">Hallucinated</div><div class="key">complete_ungrounded</div><div class="ds">Full answer, but invented a claim. Classic hallucination.</div></div>
-          <div class="cell ig"><span class="cell-mini" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><div class="nm">Retrieval gap</div><div class="key">incomplete_grounded</div><div class="ds">Grounded, but skipped part of the query.</div></div>
-          <div class="cell iu"><span class="cell-mini" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><div class="nm">Missing + made-up</div><div class="key">incomplete_ungrounded</div><div class="ds">Missed part of the query and invented a claim. Worst case.</div></div>
-          <div class="cell eg"><span class="cell-mini" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><div class="nm">Over-answered</div><div class="key">extra_grounded</div><div class="ds">Grounded, but padded with unrequested content.</div></div>
-          <div class="cell eu"><span class="cell-mini" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><div class="nm">Fabricated extras</div><div class="key">extra_ungrounded</div><div class="ds">Padded with unsupported extra content. Scope creep.</div></div>
+
+        <div class="pg reveal">
+          <div class="pg-input">
+            <div class="pg-examples">
+              <span class="pg-ex-label">Load an example</span>
+              <button type="button" class="pg-chip is-active" data-ex="halluc">Hallucination</button>
+              <button type="button" class="pg-chip" data-ex="gap">Retrieval gap</button>
+              <button type="button" class="pg-chip" data-ex="healthy">Healthy</button>
+            </div>
+            <label class="pg-lab" for="pg-q">Query</label>
+            <textarea id="pg-q" class="pg-field" rows="2" spellcheck="false">What was Acme Corp's revenue in Q3 2024?</textarea>
+            <label class="pg-lab" for="pg-c">Retrieved context</label>
+            <textarea id="pg-c" class="pg-field" rows="5" spellcheck="false">Acme Corp reported Q2 2024 revenue of $4.2M, up 12% year-over-year. Full-year 2023 revenue was $15.1M across four business units.</textarea>
+            <label class="pg-lab" for="pg-r">Agent response</label>
+            <textarea id="pg-r" class="pg-field" rows="3" spellcheck="false">Acme Corp's Q3 2024 revenue was $5.1M, a 21% increase over the prior quarter.</textarea>
+            <button type="button" class="pg-run btn btn-white" id="pgRun">Run diagnosis →</button>
+            <p class="pg-note">Demo runs on a sample of Veralith's engine. <a href="https://app.veralithai.com/login?mode=signup" target="_blank" rel="noreferrer">Sign up</a> to diagnose your own traces.</p>
+          </div>
+
+          <div class="pg-output" id="pgOut" aria-live="polite"></div>
         </div>
       </div>
     </section>
+    -->
 
     <!-- ══ PRICING ══ -->
     <section class="pricing" id="pricing">
@@ -800,6 +822,7 @@
 
     <!-- ══ CTA ══ -->
     <section class="cta" id="get-started">
+      <div class="cta-bg" id="ctaDistort" data-src="/cta-bg.jpg" aria-hidden="true"></div>
       <div class="wrap reveal">
         <h2>Stop shipping <em>hallucinations.</em></h2>
         <p class="cta-sub">Make ’em <span class="grad">grounded!</span></p>
@@ -818,13 +841,13 @@
             <div class="brand"><img src="/favicon.svg" alt="" onerror="this.style.display='none'" /> Veralith</div>
             <p class="foot-tag">Truth made solid. Diagnosis and self-heal for retrieval-augmented generation.</p>
           </div>
-          <div class="foot-col"><h5>Product</h5><a href="#figs">Features</a><a href="#pricing">Pricing</a><a href="#loop">How it works</a><a href="#cells">Failure cells</a></div>
+          <div class="foot-col"><h5>Product</h5><a href="#figs">Features</a><a href="#pricing">Pricing</a><a href="#loop">How it works</a></div>
           <div class="foot-col"><h5>Developers</h5><a href="https://docs.veralithai.com" target="_blank" rel="noreferrer">Docs</a><a href="https://pypi.org/project/veralith/" target="_blank" rel="noreferrer">SDK</a><a href="https://docs.veralithai.com/reference/rest-api" target="_blank" rel="noreferrer">API reference</a><a href="https://github.com/SrijanShekhar21/VeralithAI" target="_blank" rel="noreferrer">GitHub</a></div>
           <div class="foot-col"><h5>Company</h5><a href="mailto:hello@veralithai.com">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></div>
         </div>
         <div class="foot-bottom">
           <span class="cr">© 2026 Veralith</span>
-          <span class="mark">vera · truth &nbsp;+&nbsp; lith · stone</span>
+          <span class="mark"><span class="grad">vera</span> · truth &nbsp;+&nbsp; <span class="grad">lith</span> · stone</span>
         </div>
       </div>
     </footer>
@@ -832,6 +855,9 @@
     <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
     <script src="https://unpkg.com/three@0.160.0/build/three.min.js" defer></script>
     <script src="/beams.js" defer></script>
+    <script src="/griddistortion.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
+    <script src="/flowingmenu.js" defer></script>
     <script>
       (function () {
         "use strict";
@@ -867,6 +893,12 @@
           es.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } });
         }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
         document.querySelectorAll(".reveal, .stagger").forEach(function (el) { io.observe(el); });
+        /* hero is always the first thing on screen — reveal its elements on load so the
+           second (below-the-fold) dashboard shot fades in with the cascade instead of
+           waiting for a scroll to intersect. */
+        document.querySelectorAll(".hero .reveal, .hero.reveal").forEach(function (el) {
+          el.classList.add("in"); io.unobserve(el);
+        });
 
         /* scroll-scrubbed word fill + hero parallax (one rAF-gated handler) */
         var fillEls = [].slice.call(document.querySelectorAll(".fill"));
@@ -964,30 +996,77 @@
           function run() { if (!raf) raf = requestAnimationFrame(frame); }
         })();
 
-        /* ── MagicBento (reactbits port) — failure-cell cards glow at the border near the cursor ── */
-        (function magicBento() {
-          if (reduce) return;
-          var grid = document.querySelector(".cellgrid");
-          if (!grid) return;
-          var cards = [].slice.call(grid.querySelectorAll(".cell"));
-          if (!cards.length) return;
-          var RADIUS = 300, prox = RADIUS * 0.5, fade = RADIUS * 0.75, visible = false;
-          function clearAll() { cards.forEach(function (c) { c.style.setProperty("--glow-intensity", "0"); }); }
-          new IntersectionObserver(function (es) { visible = es[0].isIntersecting; if (!visible) clearAll(); }, { threshold: 0 }).observe(grid);
-          window.addEventListener("mousemove", function (e) {
-            if (!visible) return;
-            for (var i = 0; i < cards.length; i++) {
-              var card = cards[i], r = card.getBoundingClientRect();
-              var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-              var eff = Math.max(0, Math.hypot(e.clientX - cx, e.clientY - cy) - Math.max(r.width, r.height) / 2);
-              var g = eff <= prox ? 1 : (eff <= fade ? (fade - eff) / (fade - prox) : 0);
-              if (g > 0) {
-                card.style.setProperty("--glow-x", (((e.clientX - r.left) / r.width) * 100).toFixed(1) + "%");
-                card.style.setProperty("--glow-y", (((e.clientY - r.top) / r.height) * 100).toFixed(1) + "%");
-              }
-              card.style.setProperty("--glow-intensity", g.toFixed(3));
+        /* ── Playground (skeleton) — example presets + mock diagnosis ── */
+        (function playground() {
+          var out = document.getElementById("pgOut");
+          if (!out) return;
+          var q = document.getElementById("pg-q"), c = document.getElementById("pg-c"), r = document.getElementById("pg-r");
+          var runBtn = document.getElementById("pgRun");
+          var chips = [].slice.call(document.querySelectorAll(".pg-chip"));
+
+          /* mock results (client-side stand-in for the real API — to be wired later) */
+          var EX = {
+            halluc: {
+              q: "What was Acme Corp's revenue in Q3 2024?",
+              c: "Acme Corp reported Q2 2024 revenue of $4.2M, up 12% year-over-year. Full-year 2023 revenue was $15.1M across four business units.",
+              r: "Acme Corp's Q3 2024 revenue was $5.1M, a 21% increase over the prior quarter.",
+              cell: { name: "Hallucinated", key: "complete_ungrounded", cls: "cu" }, latency: "1.9s",
+              m: [["Faithfulness", 33, "33%"], ["Sufficiency", 30, "LOW"], ["Completeness", 100, "Complete"]],
+              sug: "The Q3 figure isn't in the retrieved context — the model fabricated it. Raise retrieval-K so Q3 data is fetched, and add a grounding constraint that abstains when the answer isn't supported."
+            },
+            gap: {
+              q: "Compare the price and trace quota of the Team and Enterprise plans.",
+              c: "The Team plan is $79/mo and includes 1,000,000 traces per month.",
+              r: "The Team plan is $79/mo with 1,000,000 traces per month.",
+              cell: { name: "Retrieval gap", key: "incomplete_grounded", cls: "ig" }, latency: "1.6s",
+              m: [["Faithfulness", 100, "100%"], ["Sufficiency", 30, "LOW"], ["Completeness", 55, "Incomplete"]],
+              sug: "Every claim is grounded, but the Enterprise half of the question was never retrieved. Widen retrieval or fix chunk boundaries so both plans are in context."
+            },
+            healthy: {
+              q: "What is a P/E ratio?",
+              c: "The price-to-earnings (P/E) ratio is a company's share price divided by its earnings per share.",
+              r: "A P/E ratio is a company's share price divided by its earnings per share.",
+              cell: { name: "Grounded", key: "complete_grounded", cls: "cg" }, latency: "1.4s",
+              m: [["Faithfulness", 100, "100%"], ["Sufficiency", 100, "HIGH"], ["Completeness", 100, "Complete"]],
+              sug: "Healthy trace — the answer is complete and every claim is supported by the context. Nothing to fix."
             }
-          }, { passive: true });
+          };
+
+          function barColor(label, v) {
+            if (label === "Faithfulness") return v >= 80 ? "var(--cell-cg)" : v >= 50 ? "var(--cell-ig)" : "var(--cell-cu)";
+            return "var(--accent)";
+          }
+          function render(e) {
+            var metrics = e.m.map(function (m) {
+              return '<div class="pg-metric"><div class="pg-metric-top"><span>' + m[0] + '</span><b>' + m[2] + '</b></div>' +
+                '<div class="pg-bar"><i data-w="' + m[1] + '" style="background:' + barColor(m[0], m[1]) + '"></i></div></div>';
+            }).join("");
+            out.innerHTML =
+              '<div class="pg-res">' +
+                '<div class="pg-res-head"><span class="pg-cell ' + e.cell.cls + '">' + e.cell.name + ' <span class="pg-key">' + e.cell.key + '</span></span>' +
+                '<span class="pg-latency">eval ' + e.latency + '</span></div>' +
+                '<div class="pg-metrics">' + metrics + '</div>' +
+                '<div class="pg-suggest"><div class="pg-suggest-h">Suggested fix</div><div class="pg-suggest-b">' + e.sug + '</div></div>' +
+              '</div>' +
+              '<div class="pg-spin">diagnosing…</div>';
+            requestAnimationFrame(function () {
+              [].slice.call(out.querySelectorAll(".pg-bar i")).forEach(function (i) { i.style.width = i.getAttribute("data-w") + "%"; });
+            });
+          }
+          function currentKey() { var a = document.querySelector(".pg-chip.is-active"); return a ? a.getAttribute("data-ex") : "halluc"; }
+          function load(key) {
+            var e = EX[key]; if (!e) return;
+            q.value = e.q; c.value = e.c; r.value = e.r;
+            chips.forEach(function (ch) { ch.classList.toggle("is-active", ch.getAttribute("data-ex") === key); });
+            render(e);
+          }
+          function runDiagnosis() {
+            out.classList.add("loading");
+            setTimeout(function () { out.classList.remove("loading"); render(EX[currentKey()]); }, 750);
+          }
+          chips.forEach(function (ch) { ch.addEventListener("click", function () { load(ch.getAttribute("data-ex")); }); });
+          if (runBtn) runBtn.addEventListener("click", runDiagnosis);
+          render(EX.halluc);   /* initial state matches the prefilled inputs */
         })();
 
         /* ── Variable Proximity (reactbits port) — statement letters thicken toward the cursor ── */
