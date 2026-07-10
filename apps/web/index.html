@@ -105,6 +105,28 @@
       .nav-right { display: flex; align-items: center; gap: 14px; }
       .nav-right .docs { color: var(--fg-3); font-size: 14px; transition: color 0.18s; }
       .nav-right .docs:hover { color: var(--fg); }
+      /* ── Mobile nav: hamburger + drop-sheet drawer ── */
+      .nav-burger { display: none; position: relative; width: 44px; height: 44px; margin-left: auto; flex: none; border: none; background: transparent; border-radius: 9px; -webkit-tap-highlight-color: transparent; }
+      .nav-burger span { position: absolute; left: 12px; right: 12px; height: 2px; background: var(--fg); border-radius: 2px;
+        transition: transform 0.32s var(--ease), opacity 0.2s var(--ease), top 0.32s var(--ease); }
+      .nav-burger span:nth-child(1) { top: 16px; }
+      .nav-burger span:nth-child(2) { top: 22px; }
+      .nav-burger span:nth-child(3) { top: 28px; }
+      body.nav-open .nav-burger span:nth-child(1) { top: 22px; transform: rotate(45deg); }
+      body.nav-open .nav-burger span:nth-child(2) { opacity: 0; }
+      body.nav-open .nav-burger span:nth-child(3) { top: 22px; transform: rotate(-45deg); }
+      .nav-scrim { position: fixed; inset: 0; z-index: 55; background: rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: opacity 0.3s var(--ease); }
+      body.nav-open .nav-scrim { opacity: 1; pointer-events: auto; }
+      .nav-drawer { position: fixed; top: 61px; left: 0; right: 0; z-index: 58; padding: 10px var(--pad-x) 26px;
+        background: color-mix(in oklab, var(--bg) 90%, transparent); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+        border-bottom: 1px solid var(--line); transform: translateY(-14px); opacity: 0; pointer-events: none; visibility: hidden;
+        transition: transform 0.34s var(--ease), opacity 0.28s var(--ease), visibility 0s linear 0.34s; }
+      body.nav-open .nav-drawer { transform: none; opacity: 1; pointer-events: auto; visibility: visible; transition: transform 0.34s var(--ease), opacity 0.28s var(--ease); }
+      .nav-drawer .nav-link { display: block; padding: 16px 4px; font-size: 17px; color: var(--fg-2); border-bottom: 1px solid var(--line); transition: color 0.18s; }
+      .nav-drawer .nav-link:hover, .nav-drawer .nav-link:active { color: var(--fg); }
+      .nav-drawer-cta { display: grid; gap: 10px; margin-top: 20px; }
+      .nav-drawer-cta .btn { width: 100%; justify-content: center; }
+      @media (min-width: 901px) { .nav-drawer, .nav-scrim { display: none; } }
 
       /* ── Hero ────────────────────────────────────────────── */
       .hero { padding: clamp(200px, 34vh, 380px) 0 110px; position: relative; overflow: hidden; }
@@ -435,8 +457,9 @@
       .mock-badge.done::before { background: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent); }
       @keyframes badgePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
-      /* row 2 diagnosis — bars grow (widths + counts driven by JS) */
-      .diag-bar i { transition: width 0.9s var(--ease); }
+      /* row 2 diagnosis — bars grow + recolor as the verdict cycles (JS-driven) */
+      .diag-bar i { transition: width 0.9s var(--ease), background 0.5s var(--ease); }
+      .diag-verdict, .diag-fix-t { transition: opacity 0.28s var(--ease); }
 
       /* row 3 — live trace feed */
       .srow.new { animation: srowIn 0.5s var(--ease); }
@@ -670,6 +693,17 @@
       /* emerald separator between looping repeats */
       .fmenu .marquee__part::after { content: "◆"; font-size: 0.5em; color: #7ff0c4; padding: 0 clamp(28px, 4vw, 60px); }
       .fmenu .marquee span { white-space: nowrap; text-transform: none; font-weight: 500; font-size: clamp(18px, 2.2vw, 28px); line-height: 1; color: #eafff6; }
+      /* touch/mobile: no hover → drop the marquee, show a static description under each step */
+      .fmenu .fm-sub { display: none; }
+      @media (max-width: 900px) {
+        .fmenu { margin-top: 30px; padding: 0 var(--pad-x); }
+        .fmenu .menu { border-top: none; }
+        .fmenu .menu__item { text-align: left; overflow: visible; }
+        .fmenu .menu__item-link { height: auto; justify-content: flex-start; padding: 22px 0 4px; }
+        .fmenu .fm-head { font-size: clamp(23px, 7.4vw, 34px); }
+        .fmenu .marquee { display: none; }
+        .fmenu .fm-sub { display: block; margin: 0 0 20px; color: var(--fg-3); font-size: 14px; line-height: 1.5; max-width: 54ch; }
+      }
 
       /* ── Reveal motion ───────────────────────────────────── */
       /* blur-to-clear + slide-up ("motion blur") entrance */
@@ -693,7 +727,17 @@
 
       /* ── Responsive ──────────────────────────────────────── */
       @media (max-width: 900px) {
+        :root { --pad-x: 26px; }
         .figrow, .feature-head, .price-grid, .monitor, .diffgrid, .dash-cards { grid-template-columns: 1fr; }
+        /* CTA: drop the WebGL distortion (skipped in JS too) for a clean emerald glow */
+        .cta-bg canvas, .cta-bg::before, .cta-bg::after { display: none; }
+        .cta-bg { background: radial-gradient(135% 100% at 50% 22%, color-mix(in oklab, var(--accent) 20%, transparent), transparent 62%); }
+        /* mobile nav → hamburger drawer */
+        .nav-mid, .nav-sep, .nav-right { display: none; }
+        .nav-burger { display: block; }
+        /* hero: kill the huge clamp top-pad, tighten bottom */
+        .hero { padding: 128px 0 60px; }
+        .hero-shots { margin-top: 40px; }
         /* unpin the loop on mobile → normal stacked scroll */
         .loop-track { height: auto !important; }
         .loop-sticky { position: static; height: auto; display: block; padding: 76px 0; }
@@ -704,13 +748,32 @@
         .foot-top { grid-template-columns: 1fr 1fr; gap: 32px 20px; }
         .foot-brand { grid-column: 1 / -1; }
         .diffcol:first-child { border-right: none; border-bottom: 1px solid var(--line); }
-        .nav-mid, .nav-sep { display: none; }
         .dash-cards .hcard:nth-child(3) { display: none; }
+        /* section rhythm on tablet */
+        .figs, .feature, .pricing, .cta, .loop-track { padding-top: 80px; padding-bottom: 80px; }
+        .statement { padding: 88px 0; }
+        .moat { padding: 80px 0; }
+        .cta { padding: clamp(120px, 22vh, 200px) 0; }
       }
-      @media (max-width: 620px) {
-        .hero { padding: 120px 0 26px; }
-        .feature, .figs, .statement { padding: 72px 0; }
+      @media (max-width: 640px) {
+        :root { --pad-x: 22px; }
+        .hero { padding: 116px 0 24px; }
+        .hero h1 { font-size: clamp(30px, 8.4vw, 42px); }
+        .hero h1 br { display: none; }             /* let it wrap naturally on small screens */
+        .hero-sub { font-size: 16px; }
+        .hero-row { gap: 18px; margin-top: 14px; }
+        .hero-cta { margin-top: 20px; }
+        .logos-row { gap: 18px 30px; }
+        .logos-row img { height: 22px; }
+        .feature, .figs, .statement, .pricing, .loop-track { padding: 64px 0; }
+        .moat { padding: 64px 0; }
         .pg { grid-template-columns: 1fr; }
+        .moat-head { margin-bottom: 24px; }
+        .foot-bottom { flex-direction: column; align-items: flex-start; gap: 10px; }
+        .foot-bottom .mark { margin-left: 0; }
+      }
+      @media (max-width: 460px) {
+        .foot-top { grid-template-columns: 1fr; gap: 26px; }
       }
       @media (prefers-reduced-motion: reduce) {
         .reveal, .stagger > *, .mrow .mrow-text, .mrow .mrow-visual, .mock-diff .drow, .mock-badge { opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important; }
@@ -746,8 +809,22 @@
           <a class="docs" href="https://docs.veralithai.com" target="_blank" rel="noreferrer">Docs</a>
           <a class="btn btn-white" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer">Open app</a>
         </div>
+        <button type="button" class="nav-burger" id="navBurger" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </nav>
+    <div class="nav-scrim" id="navScrim" aria-hidden="true"></div>
+    <div class="nav-drawer" id="navDrawer">
+      <a class="nav-link" href="#why">Product</a>
+      <a class="nav-link" href="#pricing">Pricing</a>
+      <a class="nav-link" href="https://docs.veralithai.com" target="_blank" rel="noreferrer">Docs</a>
+      <a class="nav-link" href="mailto:hello@veralithai.com">Contact</a>
+      <div class="nav-drawer-cta">
+        <a class="btn btn-ghost btn-lg" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer">Open app</a>
+        <a class="btn btn-white btn-lg" href="https://app.veralithai.com/login?mode=signup" target="_blank" rel="noreferrer">Start free</a>
+      </div>
+    </div>
 
     <!-- ══ HERO ══ -->
     <header class="hero" id="top">
@@ -907,8 +984,8 @@
         <div class="mrow reveal">
           <div class="mrow-text">
             <span class="mrow-ey">Beyond detection</span>
-            <h3>The loop closes — into a merged PR</h3>
-            <p>Others stop at an alert. Veralith opens the pull request that fixes it — through your own agent, over MCP.</p>
+            <h3>We ship fixes, not just alerts</h3>
+            <p>Detection is only half the loop. Veralith turns the fix into a pull request — written by your own agent, in your own repo, over MCP.</p>
             <a class="mlink" href="https://docs.veralithai.com/self-heal/overview" target="_blank" rel="noreferrer">See how self-heal works <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
           </div>
           <div class="mrow-visual">
@@ -930,7 +1007,7 @@
         <div class="mrow rev reveal">
           <div class="mrow-text">
             <span class="mrow-ey">Actionable by design</span>
-            <h3>A diagnosis, not a score</h3>
+            <h3>End-to-end diagnosis of every trace</h3>
             <p>“Faithfulness: 0.33” tells you nothing. Veralith names the failure — and the fix.</p>
             <a class="mlink" href="https://docs.veralithai.com" target="_blank" rel="noreferrer">Explore the diagnosis <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
           </div>
@@ -943,7 +1020,7 @@
                 <div><div class="diag-m-top"><span>Sufficiency</span><b>LOW</b></div><div class="diag-bar"><i data-w="30" style="width:0;background:var(--cell-ig)"></i></div></div>
                 <div><div class="diag-m-top"><span>Completeness</span><b data-count="100" data-suffix="%">0%</b></div><div class="diag-bar"><i data-w="100" style="width:0;background:var(--cell-cg)"></i></div></div>
               </div>
-              <div class="diag-fix"><b>Suggested fix</b>The Q3 figure isn't in the retrieved context. Raise retrieval-K so it's fetched, and abstain when the answer isn't supported.</div>
+              <div class="diag-fix"><b>Suggested fix</b><span class="diag-fix-t">The Q3 figure isn't in the retrieved context. Raise retrieval-K so it's fetched, and abstain when the answer isn't supported.</span></div>
             </div>
           </div>
         </div>
@@ -951,7 +1028,7 @@
         <div class="mrow reveal">
           <div class="mrow-text">
             <span class="mrow-ey">The whole point</span>
-            <h3>Fail-safe, on every trace, at scale</h3>
+            <h3>Fail-safe supervision at scale</h3>
             <p>Fire-and-forget on every answer in production — no added latency, no broken requests, ever.</p>
             <a class="mlink" href="https://docs.veralithai.com" target="_blank" rel="noreferrer">Reliability guarantees <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
           </div>
@@ -1006,24 +1083,28 @@
               <div class="marquee"><div class="marquee__inner-wrap"><div class="marquee__inner" aria-hidden="true">
                 <div class="marquee__part"><span>One line in your pipeline — a call, a decorator, or the zero-change LangChain adapter.</span></div>
               </div></div></div>
+              <p class="fm-sub">One line in your pipeline — a call, a decorator, or the zero-change LangChain adapter.</p>
             </div>
             <div class="menu__item" data-speed="16">
               <a class="menu__item-link" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">02</span> Diagnose</span></a>
               <div class="marquee"><div class="marquee__inner-wrap"><div class="marquee__inner" aria-hidden="true">
                 <div class="marquee__part"><span>Server-side, every trace is decomposed, judged on three metrics, and sorted into a failure cell.</span></div>
               </div></div></div>
+              <p class="fm-sub">Server-side, every trace is decomposed, judged on three metrics, and sorted into a failure cell.</p>
             </div>
             <div class="menu__item" data-speed="18">
               <a class="menu__item-link" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">03</span> Heal</span></a>
               <div class="marquee"><div class="marquee__inner-wrap"><div class="marquee__inner" aria-hidden="true">
                 <div class="marquee__part"><span>Recurring failures become heal cards your coding agent turns into a reviewed pull request.</span></div>
               </div></div></div>
+              <p class="fm-sub">Recurring failures become heal cards your coding agent turns into a reviewed pull request.</p>
             </div>
             <div class="menu__item" data-speed="16">
               <a class="menu__item-link" href="https://app.veralithai.com/login" target="_blank" rel="noreferrer"><span class="fm-head"><span class="fm-n">04</span> Monitor</span></a>
               <div class="marquee"><div class="marquee__inner-wrap"><div class="marquee__inner" aria-hidden="true">
                 <div class="marquee__part"><span>Watch healthy-rate climb — and see what it would be if every open heal were merged.</span></div>
               </div></div></div>
+              <p class="fm-sub">Watch healthy-rate climb — and see what it would be if every open heal were merged.</p>
             </div>
           </div>
       </div>
@@ -1189,6 +1270,44 @@
         var nav = document.getElementById("nav");
         function ns() { nav.classList.toggle("scrolled", window.scrollY > 12); }
         window.addEventListener("scroll", ns, { passive: true }); ns();
+
+        /* mobile nav drawer */
+        (function navDrawer() {
+          var burger = document.getElementById("navBurger");
+          var drawer = document.getElementById("navDrawer");
+          var scrim = document.getElementById("navScrim");
+          if (!burger || !drawer || !scrim) return;
+          function setOpen(open) {
+            document.body.classList.toggle("nav-open", open);
+            document.body.style.overflow = open ? "hidden" : "";
+            burger.setAttribute("aria-expanded", open ? "true" : "false");
+            burger.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+            if (lenis) { open ? lenis.stop() : lenis.start(); }
+          }
+          burger.addEventListener("click", function () { setOpen(!document.body.classList.contains("nav-open")); });
+          scrim.addEventListener("click", function () { setOpen(false); });
+          /* capture-phase so we run before the global hash-scroll handler and can
+             resume Lenis before scrolling to the target */
+          drawer.querySelectorAll("a").forEach(function (a) {
+            a.addEventListener("click", function (e) {
+              var href = a.getAttribute("href") || "";
+              if (href.charAt(0) === "#" && href.length > 1) {
+                e.preventDefault();
+                e.stopPropagation();
+                var el = document.querySelector(href);
+                setOpen(false);
+                if (el) setTimeout(function () {
+                  if (lenis) lenis.scrollTo(el, { offset: -68 });
+                  else el.scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
+                }, 80);
+              } else {
+                setOpen(false);   /* external / mailto — just close and let it navigate */
+              }
+            }, true);
+          });
+          document.addEventListener("keydown", function (e) { if (e.key === "Escape") setOpen(false); });
+          window.addEventListener("resize", function () { if (window.innerWidth > 900 && document.body.classList.contains("nav-open")) setOpen(false); });
+        })();
 
         /* reveals */
         var io = new IntersectionObserver(function (es) {
@@ -1414,23 +1533,58 @@
           /* count up the numbers + grow the bars when the diagnosis card enters view */
           var diag = document.querySelector(".moat .diag");
           if (diag) {
-            new IntersectionObserver(function (es, ob) {
-              es.forEach(function (en) {
-                if (!en.isIntersecting) return;
-                ob.unobserve(en.target);
-                [].slice.call(diag.querySelectorAll(".diag-bar i")).forEach(function (i) { i.style.width = i.getAttribute("data-w") + "%"; });
-                [].slice.call(diag.querySelectorAll("[data-count]")).forEach(function (el) {
-                  var target = parseInt(el.getAttribute("data-count"), 10), suf = el.getAttribute("data-suffix") || "";
-                  if (reduce) { el.textContent = target + suf; return; }
-                  var dur = 1000, t0 = performance.now();
-                  (function step(t) {
-                    var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
-                    el.textContent = Math.round(target * e) + suf;
-                    if (p < 1) requestAnimationFrame(step);
-                  })(t0);
-                });
+            /* cycle the verdict so it feels live alongside the trace feed */
+            var DEX = [
+              { name: "Hallucinated", key: "complete_ungrounded", cls: "cu",
+                m: [["Faithfulness", 33, "33%"], ["Sufficiency", 30, "LOW"], ["Completeness", 100, "100%"]],
+                fix: "The Q3 figure isn't in the retrieved context. Raise retrieval-K so it's fetched, and abstain when the answer isn't supported." },
+              { name: "Retrieval gap", key: "incomplete_grounded", cls: "ig",
+                m: [["Faithfulness", 100, "100%"], ["Sufficiency", 34, "LOW"], ["Completeness", 55, "55%"]],
+                fix: "Every claim checks out, but half the question was never retrieved. Widen retrieval so the missing context is in scope." },
+              { name: "Incomplete", key: "incomplete_ungrounded", cls: "iu",
+                m: [["Faithfulness", 58, "58%"], ["Sufficiency", 33, "LOW"], ["Completeness", 46, "46%"]],
+                fix: "Part of the answer is unsupported and part is missing. Fix chunk boundaries and add a grounding check before responding." },
+              { name: "Grounded", key: "complete_grounded", cls: "cg",
+                m: [["Faithfulness", 100, "100%"], ["Sufficiency", 96, "HIGH"], ["Completeness", 100, "100%"]],
+                fix: "Healthy trace — the answer is complete and every claim is supported. Nothing to fix." }
+            ];
+            var dVerdict = diag.querySelector(".diag-verdict .pgc");
+            var dKey = diag.querySelector(".diag-key");
+            var dOld = diag.querySelector(".diag-old s");
+            var dFix = diag.querySelector(".diag-fix-t");
+            var dRows = [].slice.call(diag.querySelectorAll(".diag-metrics > div"));
+            function barColor(v) { return v >= 80 ? "var(--cell-cg)" : v >= 50 ? "var(--cell-ig)" : "var(--cell-cu)"; }
+            function numIn(s) { var m = (s || "").match(/\d+/); return m ? parseInt(m[0], 10) : 0; }
+            function setMetric(b, disp) {
+              if (reduce || !/%$/.test(disp)) { b.textContent = disp; return; }
+              var from = numIn(b.textContent), to = numIn(disp), t0 = performance.now(), dur = 560;
+              (function step(t) {
+                var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+                b.textContent = Math.round(from + (to - from) * e) + "%";
+                if (p < 1) requestAnimationFrame(step);
+              })(t0);
+            }
+            function renderDiag(e) {
+              dVerdict.className = "pgc " + e.cls; dVerdict.textContent = e.name;
+              dKey.textContent = e.key;
+              if (dOld) dOld.textContent = "faithfulness " + (e.m[0][1] / 100).toFixed(2);
+              if (dFix) dFix.textContent = e.fix;
+              dRows.forEach(function (row, i) {
+                var b = row.querySelector("b"), bar = row.querySelector(".diag-bar i"), mv = e.m[i];
+                setMetric(b, mv[2]);
+                bar.style.background = barColor(mv[1]);
+                bar.style.width = mv[1] + "%";
               });
-            }, { threshold: 0.45 }).observe(diag);
+            }
+            if (reduce) { renderDiag(DEX[0]); }
+            else {
+              var di = 0, dTimer = 0, dVis = false, dPage = !document.hidden;
+              function dTick() { renderDiag(DEX[di % DEX.length]); di++; }
+              function dStart() { if (dVis && dPage && !dTimer) { dTick(); dTimer = setInterval(dTick, 3400); } }
+              function dStop() { if (dTimer) { clearInterval(dTimer); dTimer = 0; } }
+              new IntersectionObserver(function (es) { dVis = es[0].isIntersecting; dVis ? dStart() : dStop(); }, { threshold: 0.4 }).observe(diag);
+              document.addEventListener("visibilitychange", function () { dPage = !document.hidden; dPage ? dStart() : dStop(); });
+            }
           }
 
           /* live trace feed — new traces stream in at the top */

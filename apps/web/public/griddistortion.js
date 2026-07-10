@@ -5,6 +5,8 @@
   "use strict";
   function init() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    /* mobile: skip the WebGL distortion — CSS shows a clean static emerald bg instead */
+    if (window.matchMedia("(max-width: 900px)").matches) return;
     if (typeof THREE === "undefined") return;
     var container = document.getElementById("ctaDistort");
     if (!container) return;
