@@ -1,9 +1,11 @@
 import { useMemo, useState, type CSSProperties } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
+import { healsPath } from '../lib/nav';
 import detailStyles from '../components/detail/detail.module.css';
 import { DiagnosisHero } from '../components/detail/DiagnosisHero';
+import { TraceHealCards } from '../components/detail/TraceHealCards';
 import { QueryPane } from '../components/detail/QueryPane';
 import { ResponsePane } from '../components/detail/ResponsePane';
 import { RetrievedChunks } from '../components/detail/RetrievedChunks';
@@ -87,6 +89,24 @@ export default function TraceDetail() {
             evaluation completes.
           </div>
         </div>
+      )}
+
+      {/* The fix: heal card(s) this trace is evidence for — or, for a failure
+          not yet clustered, a hint on how heal cards form. */}
+      {(trace.heal_cards?.length ?? 0) > 0 ? (
+        <TraceHealCards slug={slug} cards={trace.heal_cards ?? []} />
+      ) : (
+        evaluated &&
+        trace.diagnosis &&
+        trace.diagnosis.failure_cell !== 'complete_grounded' && (
+          <div className={detailStyles.section}>
+            <div className={detailStyles.healHint}>
+              This trace isn’t in a heal card yet — Veralith groups recurring failures
+              into a heal card automatically. See the suggested actions above, or the{' '}
+              <Link to={healsPath(slug)}>heal queue</Link>.
+            </div>
+          </div>
+        )
       )}
 
       <div className={detailStyles.section}>
@@ -325,6 +345,45 @@ function DetailActionBar({
         </div>
       </div>
       <div className={detailStyles.topActions}>
+        {(() => {
+          const cards = trace?.heal_cards ?? [];
+          if (cards.length === 0) return null;
+          const fixIcon = (
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path
+                d="M10.6 2.4a3 3 0 0 0-3.8 3.8L2 11l3 3 4.8-4.8a3 3 0 0 0 3.8-3.8l-1.9 1.9-1.3-1.3 1.9-1.9z"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinejoin="round"
+              />
+            </svg>
+          );
+          if (cards.length === 1) {
+            return (
+              <Link
+                to={healsPath(slug, cards[0].id)}
+                className={`${detailStyles.btn} ${detailStyles.btnFix}`}
+                title="Open the heal card that fixes this trace"
+              >
+                {fixIcon}
+                View fix
+              </Link>
+            );
+          }
+          return (
+            <button
+              type="button"
+              className={`${detailStyles.btn} ${detailStyles.btnFix}`}
+              onClick={() =>
+                document.getElementById('trace-fix')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+              title={`${cards.length} heal cards reference this trace`}
+            >
+              {fixIcon}
+              View fixes ({cards.length})
+            </button>
+          );
+        })()}
         <button
           type="button"
           className={detailStyles.btn}

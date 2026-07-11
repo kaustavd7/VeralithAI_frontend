@@ -278,6 +278,19 @@ export interface HealSession {
   summary: string | null;
 }
 
+// A heal card this trace is evidence for. A trace can belong to several cards
+// (different failure families), so trace detail returns a list of these.
+export interface HealCardRef {
+  id: string;
+  status: string;
+  title: string;
+  suggestion_slug: string;
+  pr_url: string | null;
+  is_recurrence: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface TraceDetail {
   // UUID per backend.
   id: string;
@@ -303,6 +316,9 @@ export interface TraceDetail {
   latency_ms: Record<string, number>;
   errors: Record<string, string>;
   heal_sessions?: HealSession[];
+  // Heal cards this trace belongs to (newest first). Empty/absent when the
+  // trace hasn't been clustered into any heal card yet.
+  heal_cards?: HealCardRef[];
 }
 
 export interface TraceDetailResponse {

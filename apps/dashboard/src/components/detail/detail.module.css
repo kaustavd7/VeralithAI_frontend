@@ -71,6 +71,17 @@
 .btnPrimary:hover { background: var(--accent); border-color: var(--accent); filter: brightness(1.08); }
 .btnGhost { background: transparent; border-color: transparent; color: var(--po-fg-2); }
 .btnGhost:hover { background: var(--po-hover); border-color: transparent; color: var(--po-fg); }
+/* "View fix" — emerald-tinted so the path to the fix stands out in the action bar */
+.btnFix {
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 42%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.btnFix:hover {
+  background: color-mix(in oklab, var(--accent) 22%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 62%, transparent);
+}
 
 .btnDisabled {
   opacity: 0.55;
@@ -245,6 +256,60 @@
 }
 .sectionSub { color: var(--po-fg-4); font-size: 11px; font-family: var(--font-mono); }
 .sectionRight { margin-left: auto; }
+
+/* ---------- Heal cards for this trace ---------- */
+.healRefs { display: flex; flex-direction: column; gap: 8px; }
+.healRef {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
+  background: var(--po-panel);
+  border: 1px solid var(--po-line);
+  border-radius: var(--po-radius);
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 140ms, background 140ms, transform 140ms;
+}
+.healRef:hover {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--po-line-strong));
+  background: var(--po-hover);
+  transform: translateY(-1px);
+}
+.healRefDot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.healRefMain { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.healRefTitle {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--po-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.healRefMeta { display: flex; align-items: center; gap: 8px; }
+.healRefMeta code { font-family: var(--font-mono); font-size: 11px; color: var(--po-fg-4); }
+.healRefRecur {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--cell-ig);
+  background: color-mix(in oklab, var(--cell-ig) 14%, transparent);
+  border: 1px solid color-mix(in oklab, var(--cell-ig) 32%, transparent);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+.healRefStatus { font-size: 12px; font-weight: 500; white-space: nowrap; }
+.healRefArrow { color: var(--po-fg-4); flex: none; }
+.healRef:hover .healRefArrow { color: var(--po-fg-2); }
+.healHint {
+  font-size: 12.5px;
+  color: var(--po-fg-4);
+  padding: 12px 15px;
+  border: 1px dashed var(--po-line-strong);
+  border-radius: var(--po-radius);
+}
+.healHint a { color: var(--accent); text-decoration: none; }
+.healHint a:hover { text-decoration: underline; }
 
 /* ---------- Q / R columns ---------- */
 .qr { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }

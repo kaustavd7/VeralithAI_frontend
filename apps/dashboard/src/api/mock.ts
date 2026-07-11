@@ -300,6 +300,30 @@ function buildSeedTraceDetail(projectId: string, id: string = SEED_DETAIL_ID): T
     },
     errors: {},
     heal_sessions: [],
+    // This failing trace is evidence for two heal cards — demonstrates the
+    // "a trace can appear in multiple heal cards" case on the trace page.
+    heal_cards: [
+      {
+        id: '535a3728-mock-open',
+        status: 'open',
+        title: 'Retrieval misses queries about compounding frequency tradeoffs.',
+        suggestion_slug: 'retrieval-coverage-compounding',
+        pr_url: null,
+        is_recurrence: false,
+        created_at: new Date(Date.now() - 2 * 3600_000).toISOString(),
+        updated_at: new Date(Date.now() - 5 * 60_000).toISOString(),
+      },
+      {
+        id: 'a1b2c3d4-mock-pr',
+        status: 'pr_raised',
+        title: 'Generator fabricates bank-policy claims when retrieval is thin.',
+        suggestion_slug: 'guardrail-refuse-when-insufficient',
+        pr_url: 'https://github.com/example/rag-app/pull/42',
+        is_recurrence: false,
+        created_at: new Date(Date.now() - 6 * 3600_000).toISOString(),
+        updated_at: new Date(Date.now() - 15 * 60_000).toISOString(),
+      },
+    ],
   };
 }
 
