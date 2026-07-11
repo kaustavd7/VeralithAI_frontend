@@ -64,7 +64,7 @@
         --mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
       }
       * { box-sizing: border-box; }
-      html { -webkit-text-size-adjust: 100%; }
+      html { -webkit-text-size-adjust: 100%; overflow-x: clip; }
       body {
         margin: 0; background: var(--bg); color: var(--fg);
         font-family: var(--font); font-size: 15px; line-height: 1.6;
@@ -354,7 +354,8 @@
       @media (max-width: 640px) { .bento { grid-template-columns: 1fr; } }
 
       /* ── Why Veralith — differentiators (alternating rows) ── */
-      .moat { padding: 112px 0 96px; border-top: 1px solid var(--line); }
+      /* overflow-x: clip contains the ±30px reveal slide so it never adds page scroll */
+      .moat { padding: 112px 0 96px; border-top: 1px solid var(--line); overflow-x: clip; }
       .moat-head { max-width: 760px; margin-bottom: 26px; }
       .moat-head .eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
       .moat-head h2 { font-size: clamp(28px, 3.9vw, 44px); font-weight: 600; letter-spacing: -0.03em; margin: 14px 0 0; max-width: 20ch; }
@@ -426,6 +427,9 @@
         .mrow { grid-template-columns: 1fr; gap: 28px; padding: 44px 0; }
         .mrow.rev .mrow-text { order: 0; }
         .moat-strip { grid-template-columns: 1fr; }
+        /* stacked layout: reveal vertically so the x-slide can't push past the viewport */
+        .mrow .mrow-text, .mrow .mrow-visual,
+        .mrow.rev .mrow-text, .mrow.rev .mrow-visual { transform: translateY(24px); }
       }
 
       /* ── Animations (reactbits: AnimatedContent + CountUp + live feed) ── */
