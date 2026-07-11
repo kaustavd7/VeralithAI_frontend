@@ -751,6 +751,8 @@
         /* CTA on mobile: swap the WebGL grid-distortion for the pricing Grainient */
         .cta-bg { display: none; }
         .cta-grain { display: block; }
+        /* lift the headline off the bright grainient without darkening the bg */
+        .cta h2, .cta .cta-sub { text-shadow: 0 1px 2px rgba(0,0,0,0.45), 0 2px 16px rgba(0,0,0,0.35); }
         /* mobile nav → hamburger drawer */
         .nav-mid, .nav-sep, .nav-right { display: none; }
         .nav-burger { display: block; }
