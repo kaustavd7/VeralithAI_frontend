@@ -91,6 +91,7 @@ function hexToRgb(hex) {
 
 /* emerald palette (color1 = lightest → color3 = darkest) */
 function paletteFor(el) {
+  if (el.classList.contains("cta-grain")) return ["#1bbd88", "#0c4a37", "#06140d"]; /* brighter — reads on the large CTA */
   if (el.classList.contains("pop")) return ["#12946b", "#0c3f2f", "#06110c"]; /* brighter for the recommended tier */
   return ["#0c6a4e", "#0a2c21", "#050e0a"];
 }
@@ -143,7 +144,12 @@ function initOne(container) {
 
 function init() {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  document.querySelectorAll(".grainient").forEach(initOne);
+  document.querySelectorAll(".grainient").forEach(function (el) {
+    // Skip hidden grainients (e.g. the CTA grainient is display:none on desktop,
+    // where the grid-distortion runs instead) so we don't spin up a dead WebGL context.
+    if (getComputedStyle(el).display === "none") return;
+    initOne(el);
+  });
 }
 if (document.readyState !== "loading") init();
 else document.addEventListener("DOMContentLoaded", init);

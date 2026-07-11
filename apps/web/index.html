@@ -662,6 +662,16 @@
           radial-gradient(58% 62% at 50% 46%, transparent, color-mix(in oklab, var(--bg) 46%, transparent) 66%, var(--bg) 100%),
           linear-gradient(180deg, var(--bg), transparent 22%, transparent 78%, var(--bg)); }
       @keyframes ctaBgIn { to { opacity: 1; } }
+      /* Grainient (reactbits, same as pricing) — CTA background on mobile, where the
+         WebGL grid-distortion is skipped. Hidden on desktop (grainient.js skips
+         display:none elements, so no extra WebGL context there). */
+      .cta-grain { position: absolute; inset: 0; z-index: 0; display: none; overflow: hidden;
+        opacity: 0; animation: ctaBgIn 1.8s var(--ease) 0.3s forwards; }
+      .cta-grain canvas { width: 100%; height: 100%; display: block; }
+      /* only a light top/bottom edge-fade to blend into the neighbouring sections —
+         the middle shows the grainient at full brightness (like the pricing cards) */
+      .cta-grain::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+        background: linear-gradient(180deg, var(--bg), transparent 12%, transparent 88%, var(--bg)); }
       .cta .wrap { position: relative; z-index: 1; }
       .cta h2 { font-size: clamp(30px, 5vw, 52px); font-weight: 600; letter-spacing: -0.04em; }
       .cta h2 em { font-style: italic; font-weight: 400; color: var(--fg-3); }
@@ -738,9 +748,9 @@
       @media (max-width: 900px) {
         :root { --pad-x: 26px; }
         .figrow, .feature-head, .price-grid, .monitor, .diffgrid, .dash-cards { grid-template-columns: 1fr; }
-        /* CTA: drop the WebGL distortion (skipped in JS too) for a clean emerald glow */
-        .cta-bg canvas, .cta-bg::before, .cta-bg::after { display: none; }
-        .cta-bg { background: radial-gradient(135% 100% at 50% 22%, color-mix(in oklab, var(--accent) 20%, transparent), transparent 62%); }
+        /* CTA on mobile: swap the WebGL grid-distortion for the pricing Grainient */
+        .cta-bg { display: none; }
+        .cta-grain { display: block; }
         /* mobile nav → hamburger drawer */
         .nav-mid, .nav-sep, .nav-right { display: none; }
         .nav-burger { display: block; }
@@ -1221,6 +1231,7 @@
     <!-- ══ CTA ══ -->
     <section class="cta" id="get-started">
       <div class="cta-bg" id="ctaDistort" data-src="/cta-bg.jpg" aria-hidden="true"></div>
+      <div class="cta-grain grainient" aria-hidden="true"></div>
       <div class="wrap reveal">
         <h2>Stop shipping <em>hallucinations.</em></h2>
         <p class="cta-sub">Make ’em <span class="grad">grounded!</span></p>
