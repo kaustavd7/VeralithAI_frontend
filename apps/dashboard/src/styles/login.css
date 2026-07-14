@@ -52,10 +52,9 @@
 }
 .lg-brandline svg { display: block; }
 .lg-brandline-name {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 26px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--fg);
   font-weight: 600;
 }

@@ -93,7 +93,7 @@ export default function Login() {
         <div className="lg-form">
           <div className="lg-brandline">
             <BrandMark size={42} />
-            <span className="lg-brandline-name">veralith</span>
+            <span className="lg-brandline-name">Veralith</span>
           </div>
 
           <h1 className="lg-h1">{mode === 'sign-in' ? 'Sign in' : 'Create your account'}</h1>
