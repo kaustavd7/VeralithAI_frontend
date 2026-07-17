@@ -301,7 +301,7 @@ export function ApiKeysSettings() {
           Your OpenAI key
         </div>
         <div style={{ fontSize: 12, color: 'var(--po-fg-4)', marginBottom: 12, maxWidth: '62ch' }}>
-          Optional. Set once — applies to all your projects.
+          Set once — applies to all your projects.
         </div>
         <ByokKeyRow />
       </div>
