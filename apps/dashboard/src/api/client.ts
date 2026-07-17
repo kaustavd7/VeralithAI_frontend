@@ -4,6 +4,7 @@ import { ApiError } from './types';
 import type {
   ApiKey,
   ApiKeyWithSecret,
+  ByokKeyStatus,
   CalibrationResponse,
   CategoriesResponse,
   CellTimeseriesResponse,
@@ -252,6 +253,27 @@ export const api = {
     await request<void>(`/v1/projects/${projectId}/api-keys/${keyId}`, {
       method: 'DELETE',
     });
+  },
+
+  /* BYOK — the project's own OpenAI key, used for judge calls so evaluation
+     bills the customer instead of Veralith. The key itself is write-only; we
+     only ever read back {configured, hint}. */
+  async getByokKey(projectId: string): Promise<ByokKeyStatus> {
+    if (USE_MOCK) return mockApi.getByokKey(projectId);
+    return request(`/v1/projects/${projectId}/byok-key`);
+  },
+
+  async setByokKey(projectId: string, apiKey: string): Promise<ByokKeyStatus> {
+    if (USE_MOCK) return mockApi.setByokKey(projectId, apiKey);
+    return request(`/v1/projects/${projectId}/byok-key`, {
+      method: 'PUT',
+      body: JSON.stringify({ api_key: apiKey }),
+    });
+  },
+
+  async clearByokKey(projectId: string): Promise<ByokKeyStatus> {
+    if (USE_MOCK) return mockApi.clearByokKey(projectId);
+    return request(`/v1/projects/${projectId}/byok-key`, { method: 'DELETE' });
   },
 
   // -------------------------------------------------------------------------

@@ -278,6 +278,14 @@ export interface HealSession {
   summary: string | null;
 }
 
+// BYOK: whether this project has its own OpenAI key configured (used for judge
+// calls, so evaluation bills the customer). The full key is never returned —
+// only a safe last-4 hint like '…a1b2'.
+export interface ByokKeyStatus {
+  configured: boolean;
+  hint: string | null;
+}
+
 // A heal card this trace is evidence for. A trace can belong to several cards
 // (different failure families), so trace detail returns a list of these.
 export interface HealCardRef {

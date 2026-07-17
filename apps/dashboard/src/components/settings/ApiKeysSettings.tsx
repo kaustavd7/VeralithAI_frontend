@@ -5,6 +5,7 @@ import { useApiKeys } from '../../hooks/useOverviewData';
 import { api } from '../../api/client';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
 import { Skel, SkelStatus } from '../Skeleton';
+import { ByokKeyRow } from './ByokKeyRow';
 import type { ApiKey, ApiKeyWithSecret, Project } from '../../api/types';
 
 function KeyIcon() {
@@ -122,6 +123,9 @@ function ProjectKeysGroup({ project }: { project: Project }) {
           </div>
         </div>
       )}
+
+      {/* BYOK — this project's own OpenAI key (judges bill the customer). */}
+      <ByokKeyRow project={project} />
 
       {/* Create modal */}
       {createOpen && (

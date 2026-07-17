@@ -15,6 +15,7 @@ import type {
   Project,
   StatsResponse,
   SystemHealthResponse,
+  ByokKeyStatus,
   TraceDetail,
   TraceDetailResponse,
   TraceListItem,
@@ -26,6 +27,7 @@ import { ApiError } from './types';
 const state = {
   projects: new Map<string, Project>(),
   keysByProject: new Map<string, ApiKeyWithSecret[]>(),
+  byokByProject: new Map<string, ByokKeyStatus>(),
   heals: new Map<string, HealCardDetail>(),
 };
 
@@ -622,6 +624,28 @@ export const mockApi = {
     const key = list.find((k) => k.id === keyId);
     if (!key) throw new ApiError('not_found', 'API key not found.', 404);
     key.revoked_at = new Date().toISOString();
+  },
+
+  /* BYOK — in-memory only; the real backend encrypts the key at rest. */
+  async getByokKey(projectId: string): Promise<ByokKeyStatus> {
+    await delay(80);
+    return state.byokByProject.get(projectId) ?? { configured: false, hint: null };
+  },
+
+  async setByokKey(projectId: string, apiKey: string): Promise<ByokKeyStatus> {
+    await delay(200);
+    if (!apiKey.startsWith('sk-')) {
+      throw new ApiError('bad_request', 'OpenAI rejected this key — it was not saved.', 400);
+    }
+    const status: ByokKeyStatus = { configured: true, hint: `…${apiKey.slice(-4)}` };
+    state.byokByProject.set(projectId, status);
+    return status;
+  },
+
+  async clearByokKey(projectId: string): Promise<ByokKeyStatus> {
+    await delay(120);
+    state.byokByProject.delete(projectId);
+    return { configured: false, hint: null };
   },
 
   // -------------------------------------------------------------------------
