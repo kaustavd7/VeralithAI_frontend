@@ -124,20 +124,6 @@ function ProjectKeysGroup({ project }: { project: Project }) {
         </div>
       )}
 
-      {/* Clearly separate the BYOK model key from the Veralith SDK keys above —
-          they're both "keys" but do completely different jobs. */}
-      <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--po-line)' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--po-fg-2)' }}>
-          Model provider key · bring your own
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--po-fg-4)', marginTop: 3, maxWidth: '60ch' }}>
-          Different from the Veralith keys above. Those authenticate the SDK; this is your
-          own <b>LLM provider</b> key, which Veralith runs this project’s judges on — so
-          evaluation bills your account, not ours.
-        </div>
-      </div>
-      <ByokKeyRow project={project} />
-
       {/* Create modal */}
       {createOpen && (
         <div className="he-modal-scrim" onClick={() => setCreateOpen(false)}>
@@ -308,9 +294,21 @@ export function ApiKeysSettings() {
 
   return (
     <>
+      {/* Account-level: one OpenAI key for all projects. Kept above the SDK keys
+          so the two aren't confused. */}
+      <div style={{ marginBottom: 26 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--po-fg-2)', marginBottom: 3 }}>
+          Your OpenAI key
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--po-fg-4)', marginBottom: 12, maxWidth: '62ch' }}>
+          Optional. Set once for your whole account — Veralith runs your judges on it, so
+          evaluation bills your OpenAI, not ours.
+        </div>
+        <ByokKeyRow />
+      </div>
+
       <p className="se-keys-intro">
-        Keys authenticate the SDK and ingest endpoints. They’re scoped per project; secrets are shown once,
-        at creation.
+        <b>Veralith API keys</b> — authenticate the SDK. Scoped per project; secrets shown once, at creation.
       </p>
       <div className="se-keys">
         {list.map((p) => (

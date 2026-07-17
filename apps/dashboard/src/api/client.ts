@@ -255,25 +255,25 @@ export const api = {
     });
   },
 
-  /* BYOK — the project's own OpenAI key, used for judge calls so evaluation
-     bills the customer instead of Veralith. The key itself is write-only; we
-     only ever read back {configured, hint}. */
-  async getByokKey(projectId: string): Promise<ByokKeyStatus> {
-    if (USE_MOCK) return mockApi.getByokKey(projectId);
-    return request(`/v1/projects/${projectId}/byok-key`);
+  /* BYOK — the account's own OpenAI key (applies to ALL the user's projects),
+     used for judge calls so evaluation bills the customer instead of Veralith.
+     Write-only; we only ever read back {configured, hint}. */
+  async getByokKey(): Promise<ByokKeyStatus> {
+    if (USE_MOCK) return mockApi.getByokKey();
+    return request(`/v1/me/byok-key`);
   },
 
-  async setByokKey(projectId: string, apiKey: string): Promise<ByokKeyStatus> {
-    if (USE_MOCK) return mockApi.setByokKey(projectId, apiKey);
-    return request(`/v1/projects/${projectId}/byok-key`, {
+  async setByokKey(apiKey: string): Promise<ByokKeyStatus> {
+    if (USE_MOCK) return mockApi.setByokKey(apiKey);
+    return request(`/v1/me/byok-key`, {
       method: 'PUT',
       body: JSON.stringify({ api_key: apiKey }),
     });
   },
 
-  async clearByokKey(projectId: string): Promise<ByokKeyStatus> {
-    if (USE_MOCK) return mockApi.clearByokKey(projectId);
-    return request(`/v1/projects/${projectId}/byok-key`, { method: 'DELETE' });
+  async clearByokKey(): Promise<ByokKeyStatus> {
+    if (USE_MOCK) return mockApi.clearByokKey();
+    return request(`/v1/me/byok-key`, { method: 'DELETE' });
   },
 
   // -------------------------------------------------------------------------

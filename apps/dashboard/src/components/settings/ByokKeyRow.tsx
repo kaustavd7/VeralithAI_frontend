@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../api/client';
-import type { Project } from '../../api/types';
 
 function OpenAiIcon() {
   return (
@@ -18,40 +17,32 @@ function OpenAiIcon() {
 }
 
 /**
- * BYOK — the project's own OpenAI key.
- *
- * When set, Veralith runs this project's judges (Sufficiency / Faithfulness /
- * Completeness) on the customer's key, so evaluation bills their OpenAI account
- * instead of ours. Heal cards still run on Veralith's key (that's the paid part).
- *
- * The key is write-only: we store it encrypted and only ever read back a
- * `…last4` hint, so it can never be displayed again after saving.
+ * BYOK — the account's own OpenAI key. Set once; applies to every project.
+ * When set, Veralith runs your judges on this key (evaluation bills you). Heal
+ * cards still run on Veralith's key. Write-only: stored encrypted, only a
+ * `…last4` hint is read back.
  */
-export function ByokKeyRow({ project }: { project: Project }) {
-  const slug = project.slug;
+export function ByokKeyRow() {
   const queryClient = useQueryClient();
-  const statusQuery = useQuery({
-    queryKey: ['byok-key', slug],
-    queryFn: () => api.getByokKey(slug),
-  });
+  const statusQuery = useQuery({ queryKey: ['byok-key'], queryFn: () => api.getByokKey() });
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [confirmClear, setConfirmClear] = useState(false);
 
   const saveMut = useMutation({
-    mutationFn: (key: string) => api.setByokKey(slug, key.trim()),
+    mutationFn: (key: string) => api.setByokKey(key.trim()),
     onSuccess: () => {
       setEditing(false);
       setDraft('');
-      queryClient.invalidateQueries({ queryKey: ['byok-key', slug] });
+      queryClient.invalidateQueries({ queryKey: ['byok-key'] });
     },
   });
   const clearMut = useMutation({
-    mutationFn: () => api.clearByokKey(slug),
+    mutationFn: () => api.clearByokKey(),
     onSuccess: () => {
       setConfirmClear(false);
-      queryClient.invalidateQueries({ queryKey: ['byok-key', slug] });
+      queryClient.invalidateQueries({ queryKey: ['byok-key'] });
     },
   });
 
@@ -59,7 +50,7 @@ export function ByokKeyRow({ project }: { project: Project }) {
   const configured = status?.configured ?? false;
 
   return (
-    <div className="ak-card" style={{ marginTop: 10 }}>
+    <div className="ak-card">
       <div className="ak-row">
         <div className="ak-key-ic"><OpenAiIcon /></div>
         <div className="ak-main">
@@ -86,16 +77,9 @@ export function ByokKeyRow({ project }: { project: Project }) {
             {statusQuery.isLoading ? (
               <span>Checking…</span>
             ) : configured ? (
-              <>
-                <span className="ak-prefix">sk-…{(status?.hint ?? '').replace('…', '')}</span>
-                <span className="he-dot-sep">·</span>
-                <span>Judges run on your key — evaluation bills your OpenAI account.</span>
-              </>
+              <span className="ak-prefix">sk-…{(status?.hint ?? '').replace('…', '')}</span>
             ) : (
-              <span>
-                Not set — judges currently run on Veralith’s key. Add your own to bill your
-                OpenAI account directly.
-              </span>
+              <span>Not set — judges run on Veralith’s key.</span>
             )}
           </div>
         </div>
@@ -120,16 +104,13 @@ export function ByokKeyRow({ project }: { project: Project }) {
         </div>
       </div>
 
-      {/* Add / replace */}
       {editing && (
         <div className="he-modal-scrim" onClick={() => setEditing(false)}>
           <div className="he-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-            <div className="he-modal-title">
-              {configured ? 'Replace' : 'Add'} OpenAI key · {project.name}
-            </div>
+            <div className="he-modal-title">{configured ? 'Replace' : 'Add'} OpenAI key</div>
             <div className="he-modal-body">
-              Veralith will run this project’s judges on this key, so evaluation bills your
-              OpenAI account. We store it encrypted and never show it again.
+              Applies to all your projects. We verify it with OpenAI, store it encrypted,
+              and never show it again.
               <input
                 autoFocus
                 type="password"
@@ -144,14 +125,9 @@ export function ByokKeyRow({ project }: { project: Project }) {
               />
               {saveMut.isError && (
                 <div style={{ marginTop: 8, color: 'var(--po-bad)', fontSize: 12.5 }}>
-                  {saveMut.error instanceof Error
-                    ? saveMut.error.message
-                    : 'Could not save the key.'}
+                  {saveMut.error instanceof Error ? saveMut.error.message : 'Could not save the key.'}
                 </div>
               )}
-              <div style={{ marginTop: 8, fontSize: 11.5, color: 'var(--po-fg-4)' }}>
-                We verify the key with OpenAI before saving.
-              </div>
             </div>
             <div className="he-modal-actions">
               <button className="he-btn he-btn-ghost" onClick={() => setEditing(false)}>Cancel</button>
@@ -167,14 +143,13 @@ export function ByokKeyRow({ project }: { project: Project }) {
         </div>
       )}
 
-      {/* Confirm removal */}
       {confirmClear && (
         <div className="he-modal-scrim" onClick={() => setConfirmClear(false)}>
           <div className="he-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="he-modal-title">Remove your OpenAI key?</div>
             <div className="he-modal-body">
-              Judges for <b>{project.name}</b> will go back to running on Veralith’s key.
-              Your existing traces and diagnoses are unaffected.
+              Judges will go back to running on Veralith’s key. Existing traces and
+              diagnoses are unaffected.
             </div>
             <div className="he-modal-actions">
               <button className="he-btn he-btn-ghost" onClick={() => setConfirmClear(false)}>Cancel</button>
