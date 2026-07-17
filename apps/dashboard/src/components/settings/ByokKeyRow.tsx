@@ -79,7 +79,7 @@ export function ByokKeyRow() {
             ) : configured ? (
               <span className="ak-prefix">sk-…{(status?.hint ?? '').replace('…', '')}</span>
             ) : (
-              <span>Not set — judges run on Veralith’s key.</span>
+              <span>Not set.</span>
             )}
           </div>
         </div>
@@ -148,8 +148,7 @@ export function ByokKeyRow() {
           <div className="he-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="he-modal-title">Remove your OpenAI key?</div>
             <div className="he-modal-body">
-              Judges will go back to running on Veralith’s key. Existing traces and
-              diagnoses are unaffected.
+              Existing traces and diagnoses are unaffected.
             </div>
             <div className="he-modal-actions">
               <button className="he-btn he-btn-ghost" onClick={() => setConfirmClear(false)}>Cancel</button>
