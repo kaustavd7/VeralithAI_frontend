@@ -124,7 +124,18 @@ function ProjectKeysGroup({ project }: { project: Project }) {
         </div>
       )}
 
-      {/* BYOK — this project's own OpenAI key (judges bill the customer). */}
+      {/* Clearly separate the BYOK model key from the Veralith SDK keys above —
+          they're both "keys" but do completely different jobs. */}
+      <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--po-line)' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--po-fg-2)' }}>
+          Model provider key · bring your own
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--po-fg-4)', marginTop: 3, maxWidth: '60ch' }}>
+          Different from the Veralith keys above. Those authenticate the SDK; this is your
+          own <b>LLM provider</b> key, which Veralith runs this project’s judges on — so
+          evaluation bills your account, not ours.
+        </div>
+      </div>
       <ByokKeyRow project={project} />
 
       {/* Create modal */}
