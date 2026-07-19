@@ -11,6 +11,7 @@ import { QueryPane } from '../components/detail/QueryPane';
 import { ResponsePane } from '../components/detail/ResponsePane';
 import { RetrievedChunks } from '../components/detail/RetrievedChunks';
 import { ClaimIssues } from '../components/detail/ClaimIssues';
+import { TraceGraph } from '../components/detail/TraceGraph';
 import { HealHistory } from '../components/detail/HealHistory';
 import { useTrace } from '../hooks/useTrace';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -31,6 +32,7 @@ export default function TraceDetail() {
 
   const [hoveredClaimId, setHoveredClaimId] = useState<number | null>(null);
   const [hoveredChunkRank, setHoveredChunkRank] = useState<number | null>(null);
+  const [qrView, setQrView] = useState<'graph' | 'text'>('graph');
 
   function onClaimHover(id: number | null) {
     setHoveredChunkRank(null);
@@ -71,6 +73,72 @@ export default function TraceDetail() {
 
   return shell(
     (<>
+      {/* Query & Response first — the very first thing you should see is what was
+          asked and what the model answered, before any diagnosis. */}
+      <div className={detailStyles.section}>
+        <div className={detailStyles.sectionHead}>
+          <h2>Query &amp; Response</h2>
+          <span className={detailStyles.sectionSub}>
+            {qrView === 'graph'
+              ? 'how the answer connects to the query and its grounding · hover to trace a chain'
+              : 'grounded claims read as plain text — only problems are marked · hover for reasoning'}
+          </span>
+          <div className={detailStyles.sectionRight}>
+            {qrView === 'text' && (
+              <span className={detailStyles.legendRow}>
+                <span><span className={`${detailStyles.legendMark} ${detailStyles.legendBad}`} />unsupported</span>
+                <span><span className={`${detailStyles.legendMark} ${detailStyles.legendExtra}`} />extra</span>
+                <span><span className={`${detailStyles.legendMark} ${detailStyles.legendConv}`} />not scored</span>
+              </span>
+            )}
+            <div className={detailStyles.viewToggle} role="tablist">
+              <button
+                type="button"
+                className={qrView === 'graph' ? detailStyles.viewOn : ''}
+                onClick={() => setQrView('graph')}
+              >
+                Graph
+              </button>
+              <button
+                type="button"
+                className={qrView === 'text' ? detailStyles.viewOn : ''}
+                onClick={() => setQrView('text')}
+              >
+                Text
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {qrView === 'graph' ? (
+          <TraceGraph
+            query={trace.query}
+            subQuestions={trace.sub_questions}
+            sufficiency={trace.sufficiency}
+            claims={trace.claims}
+            faithfulness={trace.faithfulness}
+            chunks={trace.context_chunks}
+            completeness={trace.completeness}
+          />
+        ) : (
+          <div className={detailStyles.qr}>
+            <QueryPane
+              query={trace.query}
+              subQuestions={trace.sub_questions}
+              sufficiency={trace.sufficiency}
+            />
+            <ResponsePane
+              response={trace.response}
+              claims={trace.claims}
+              faithfulness={trace.faithfulness}
+              extraClaimIds={trace.completeness?.extra_claim_ids ?? []}
+              hoveredChunkRank={hoveredChunkRank}
+              onClaimHover={onClaimHover}
+            />
+          </div>
+        )}
+      </div>
+
       {(trace.heal_sessions?.length ?? 0) > 0 && (
         <HealHistory sessions={trace.heal_sessions ?? []} />
       )}
@@ -89,6 +157,22 @@ export default function TraceDetail() {
             Judges have not produced a diagnosis yet. This page will update once the
             evaluation completes.
           </div>
+        </div>
+      )}
+
+      {evaluated && (
+        <div className={detailStyles.section}>
+          <div className={detailStyles.sectionHead}>
+            <h2>Issues found</h2>
+            <span className={detailStyles.sectionSub}>
+              only claims worth inspecting — unsupported or extra
+            </span>
+          </div>
+          <ClaimIssues
+            claims={trace.claims}
+            faithfulness={trace.faithfulness}
+            extraClaimIds={trace.completeness?.extra_claim_ids ?? []}
+          />
         </div>
       )}
 
@@ -111,38 +195,6 @@ export default function TraceDetail() {
       )}
 
       <div className={detailStyles.section}>
-        <div className={detailStyles.sectionHead}>
-          <h2>Query &amp; Response</h2>
-          <span className={detailStyles.sectionSub}>
-            grounded claims read as plain text — only problems are marked · hover for reasoning
-          </span>
-          <div className={detailStyles.sectionRight}>
-            <span className={detailStyles.legendRow}>
-              <span><span className={`${detailStyles.legendMark} ${detailStyles.legendBad}`} />unsupported</span>
-              <span><span className={`${detailStyles.legendMark} ${detailStyles.legendExtra}`} />extra</span>
-              <span><span className={`${detailStyles.legendMark} ${detailStyles.legendConv}`} />not scored</span>
-            </span>
-          </div>
-        </div>
-
-        <div className={detailStyles.qr}>
-          <QueryPane
-            query={trace.query}
-            subQuestions={trace.sub_questions}
-            sufficiency={trace.sufficiency}
-          />
-          <ResponsePane
-            response={trace.response}
-            claims={trace.claims}
-            faithfulness={trace.faithfulness}
-            extraClaimIds={trace.completeness?.extra_claim_ids ?? []}
-            hoveredChunkRank={hoveredChunkRank}
-            onClaimHover={onClaimHover}
-          />
-        </div>
-      </div>
-
-      <div className={detailStyles.section}>
         <RetrievedChunks
           chunks={trace.context_chunks}
           faithfulness={trace.faithfulness}
@@ -150,23 +202,6 @@ export default function TraceDetail() {
           onChunkHover={onChunkHover}
         />
       </div>
-
-      {evaluated && (
-        <div className={detailStyles.section}>
-          <div className={detailStyles.sectionHead}>
-            <h2>Issues found</h2>
-            <span className={detailStyles.sectionSub}>
-              only claims worth inspecting — unsupported or extra
-            </span>
-          </div>
-          <ClaimIssues
-            claims={trace.claims}
-            faithfulness={trace.faithfulness}
-            extraClaimIds={trace.completeness?.extra_claim_ids ?? []}
-          />
-        </div>
-      )}
-
     </>),
     trace,
   );

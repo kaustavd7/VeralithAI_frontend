@@ -14,21 +14,6 @@ interface Props {
   isAbstention?: boolean;
 }
 
-const CELL_MEANINGS: Record<string, string> = {
-  complete_grounded:
-    'The response covered every sub-question and every claim is supported by retrieved context. Healthy.',
-  complete_ungrounded:
-    'The response answered every sub-question, but some claims are not grounded in retrieved context — the generator filled gaps with fabrication.',
-  incomplete_grounded:
-    'The response is grounded where it spoke, but missed sub-questions. Retrieval likely lacks coverage for parts of the query.',
-  incomplete_ungrounded:
-    'The response missed parts of the question, and fabricated facts within what it did answer. This is the worst-case cell — both retrieval and generation failed at once.',
-  extra_grounded:
-    'The response answered the question and any extra claims are grounded in retrieved context. Healthy — thorough, with no fabrication.',
-  extra_ungrounded:
-    'The response added ungrounded extras beyond the question. The generator strayed from retrieved context.',
-};
-
 const CELL_SEVERITY: Record<string, string> = {
   complete_grounded:     'HEALTHY',
   complete_ungrounded:   'UNGROUNDED',
@@ -73,6 +58,30 @@ function renderInlineCode(text: string) {
   });
 }
 
+/* A plain-English, trace-specific verdict — what actually happened, in one line,
+   from the counts. Leads the hero so you don't have to decode the cell slug. */
+function verdictLine(d: Diagnosis): string {
+  const grounded = Math.round(d.faithfulness_fraction * d.n_claims);
+  const unsupported = Math.max(0, d.n_claims - grounded);
+  const extra = d.n_extra_claims;
+  const uncovered = d.n_uncovered_sub_questions;
+
+  if (d.failure_cell === 'complete_grounded' || d.failure_cell === 'extra_grounded') {
+    return extra > 0
+      ? `The answer is grounded and covers the question, with ${extra} grounded extra${extra > 1 ? 's' : ''}. Healthy.`
+      : 'The answer is grounded and covers the question. Healthy.';
+  }
+
+  const lead =
+    uncovered > 0
+      ? `The answer missed ${uncovered} of ${d.n_sub_questions} sub-question${d.n_sub_questions > 1 ? 's' : ''}`
+      : 'The answer covers the question';
+  const tail: string[] = [];
+  if (unsupported > 0) tail.push(`${unsupported} unsupported claim${unsupported > 1 ? 's' : ''}`);
+  if (extra > 0) tail.push(`${extra} extra`);
+  return tail.length ? `${lead}, but added ${tail.join(' and ')}.` : `${lead}.`;
+}
+
 // Fallback so an unknown/missing failure_cell can't throw on .color/.label.
 const CELL_META_FALLBACK = {
   label: 'unknown_cell',
@@ -86,7 +95,6 @@ export function DiagnosisHero({ diagnosis, suggestion, traceId, isAbstention }: 
   const navigate = useNavigate();
   const [toast, setToast] = useState(false);
   const meta = CELL_META[diagnosis.failure_cell] ?? CELL_META_FALLBACK;
-  const meaning = CELL_MEANINGS[diagnosis.failure_cell] ?? '';
   const severity = CELL_SEVERITY[diagnosis.failure_cell] ?? '';
   const tint = CELL_TINT[diagnosis.failure_cell] ?? CELL_TINT_FALLBACK;
 
@@ -148,8 +156,15 @@ export function DiagnosisHero({ diagnosis, suggestion, traceId, isAbstention }: 
           >
             {severity}
           </span>
-          <div className={styles.cellName}>{meta.label}</div>
-          <div className={styles.cellMeaning}>{meaning}</div>
+          <div className={styles.verdict}>{verdictLine(diagnosis)}</div>
+          <button
+            type="button"
+            className={styles.cellRef}
+            onClick={goToCellTraces}
+            title={`View ${meta.label} traces`}
+          >
+            {meta.label} · view similar
+          </button>
           {isHonestAbstention && (
             <div className={styles.abstentionNote}>
               <span className={styles.abstentionBadge}>

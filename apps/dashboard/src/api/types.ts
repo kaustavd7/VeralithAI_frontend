@@ -249,11 +249,20 @@ export interface CompletenessMapping {
   covered_by_claim_id: number | null;
 }
 
+/** Full per-claim alignment (every claim → the sub-question it answers, or null
+ *  = extra). Present on traces graded by veralith >= 0.2.7. */
+export interface ClaimAssignment {
+  claim_id: number;
+  sub_question_id: number | null;
+}
+
 export interface CompletenessJudgment {
   overall: 'complete' | 'incomplete' | 'extra';
   reasoning: string;
   mappings: CompletenessMapping[];
   extra_claim_ids: number[];
+  /** Absent on pre-0.2.7 traces — the graph falls back to `mappings`. */
+  claim_assignments?: ClaimAssignment[];
 }
 
 export interface Diagnosis {
