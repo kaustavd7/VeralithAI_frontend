@@ -37,8 +37,10 @@ function planBadge(me?: {
     return { label, kind: 'paid' };
   }
   if (me.subscription_status === 'trialing') {
-    const expired = new Date(me.trial_expires_at).getTime() <= Date.now();
-    return expired ? { label: 'Free', kind: 'free' } : { label: 'Trial', kind: 'trial' };
+    const msLeft = new Date(me.trial_expires_at).getTime() - Date.now();
+    if (msLeft <= 0) return { label: 'Free', kind: 'free' };
+    const days = Math.ceil(msLeft / 86_400_000); // round up: part of a day still counts
+    return { label: `Trial · ${days}d`, kind: 'trial' };
   }
   return { label: 'Free', kind: 'free' }; // canceled / anything unrecognized
 }
