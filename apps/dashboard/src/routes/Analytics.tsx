@@ -909,7 +909,9 @@ function CellBubblePanel({ slug, pageWindow }: { slug: string; pageWindow: TimeW
   const [hover, setHover] = useState<number | null>(null);
   const hc = hover != null ? cells[hover] : null;
   const healthyPct = grandTotal > 0
-    ? Math.round(((byCell?.complete_grounded ?? 0) / grandTotal) * 100)
+    ? Math.round(
+        (((byCell?.complete_grounded ?? 0) + (byCell?.extra_grounded ?? 0)) / grandTotal) * 100,
+      )
     : 0;
 
   if (statsQuery.isPending) {

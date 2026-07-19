@@ -219,10 +219,15 @@ export interface SubQuestion {
   text: string;
 }
 
+/** answer/elaboration are "substantive" (graded); conversational is not scored. */
+export type ClaimType = 'answer' | 'elaboration' | 'conversational';
+
 export interface Claim {
   id: number;
   order_idx: number;
   text: string;
+  /** Absent on pre-0.2.5 traces — treat missing as 'answer' (substantive). */
+  claim_type?: ClaimType;
 }
 
 export interface SufficiencyJudgment {

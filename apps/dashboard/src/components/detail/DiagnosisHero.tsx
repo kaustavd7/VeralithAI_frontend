@@ -24,7 +24,7 @@ const CELL_MEANINGS: Record<string, string> = {
   incomplete_ungrounded:
     'The response missed parts of the question, and fabricated facts within what it did answer. This is the worst-case cell — both retrieval and generation failed at once.',
   extra_grounded:
-    'The response answered the question and added grounded extras. Often acceptable but worth checking for relevance.',
+    'The response answered the question and any extra claims are grounded in retrieved context. Healthy — thorough, with no fabrication.',
   extra_ungrounded:
     'The response added ungrounded extras beyond the question. The generator strayed from retrieved context.',
 };
@@ -34,7 +34,7 @@ const CELL_SEVERITY: Record<string, string> = {
   complete_ungrounded:   'UNGROUNDED',
   incomplete_grounded:   'INCOMPLETE',
   incomplete_ungrounded: 'CRITICAL · worst-case',
-  extra_grounded:        'EXTRA',
+  extra_grounded:        'HEALTHY · thorough',
   extra_ungrounded:      'EXTRA · ungrounded',
 };
 
@@ -44,7 +44,7 @@ const CELL_SEVERITY: Record<string, string> = {
 const CELL_TINT: Record<string, { hue: string; ink: string }> = {
   complete_grounded:     { hue: 'var(--cell-cg)', ink: '#06150e' }, // green
   incomplete_grounded:   { hue: 'var(--cell-ig)', ink: '#1d1503' }, // amber
-  extra_grounded:        { hue: 'var(--cell-eg)', ink: '#181504' }, // yellow
+  extra_grounded:        { hue: 'var(--cell-cg)', ink: '#06150e' }, // green (grounded = healthy)
   complete_ungrounded:   { hue: 'var(--cell-cu)', ink: '#ffffff' }, // red
   extra_ungrounded:      { hue: 'var(--cell-eu)', ink: '#ffffff' }, // red
   incomplete_ungrounded: { hue: 'var(--cell-iu)', ink: '#ffffff' }, // dark red

@@ -60,7 +60,7 @@ type Pt = [number, number];
 const FC_CELLS: FcCell[] = [
   { key: 'complete_grounded',     label: 'complete · grounded',     comp: 'complete',   ground: 'grounded',   color: 'var(--fcell-cg)', healthy: true  },
   { key: 'incomplete_grounded',   label: 'incomplete · grounded',   comp: 'incomplete', ground: 'grounded',   color: 'var(--fcell-ig)', healthy: false },
-  { key: 'extra_grounded',        label: 'extra · grounded',        comp: 'extra',      ground: 'grounded',   color: 'var(--fcell-eg)', healthy: false },
+  { key: 'extra_grounded',        label: 'extra · grounded',        comp: 'extra',      ground: 'grounded',   color: 'var(--fcell-eg)', healthy: true  },
   { key: 'complete_ungrounded',   label: 'complete · ungrounded',   comp: 'complete',   ground: 'ungrounded', color: 'var(--fcell-cu)', healthy: false },
   { key: 'extra_ungrounded',      label: 'extra · ungrounded',      comp: 'extra',      ground: 'ungrounded', color: 'var(--fcell-eu)', healthy: false },
   { key: 'incomplete_ungrounded', label: 'incomplete · ungrounded', comp: 'incomplete', ground: 'ungrounded', color: 'var(--fcell-iu)', healthy: false },
@@ -497,9 +497,11 @@ function FailureCellsPage({ projectId, slug }: { projectId: string; slug: string
     );
   }
 
-  // Window-level headline: healthy share = complete·grounded / total.
+  // Window-level headline: healthy share = grounded answers (tight + verbose) / total.
   const totalAll = model.total;
-  const healthyPct = totalAll ? (model.totals.complete_grounded / totalAll) * 100 : 0;
+  const healthyPct = totalAll
+    ? ((model.totals.complete_grounded + (model.totals.extra_grounded ?? 0)) / totalAll) * 100
+    : 0;
   const hbad = healthyPct < 90;
 
   // Render helpers (plain functions, not components — avoids remounting on every

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { HEALTHY_CELLS } from '../../utils/cellMeta';
 import './healthdonut.css';
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -50,7 +51,10 @@ export function HealthDonut({
   const { total, healthyPct, arcs } = useMemo(() => {
     const slices = counts ? slicesFromCounts(counts) : SLICES;
     const total = slices.reduce((a, s) => a + s.count, 0);
-    const healthy = slices.find((s) => s.id === HEALTHY_ID)?.count ?? 0;
+    // Healthy = all grounded-answer cells (complete + verbose), matching stats.
+    const healthy = slices
+      .filter((s) => (HEALTHY_CELLS as readonly string[]).includes(s.id))
+      .reduce((a, s) => a + s.count, 0);
     const healthyPct = total ? (healthy / total) * 100 : 0;
     // cumulative start fraction for each slice (prefix sum of preceding fracs;
     // no post-render mutation of an outer variable)

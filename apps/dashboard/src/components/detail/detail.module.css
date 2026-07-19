@@ -419,6 +419,30 @@
 }
 .tipExtra { display: block; margin-top: 4px; color: var(--cell-eg); font-weight: 500; }
 
+/* "conversational" claim — encouragement/closer/meta with no factual content.
+   Not graded for grounding, so it's neutral and dimmed with a dotted underline
+   (distinct from grounded solid, ungrounded solid, and dashed "extra"). */
+.claimConversational {
+  background: transparent;
+  color: var(--po-fg-4);
+  border-bottom: 1px dotted var(--po-line);
+}
+.claimConversational .claimBadge { color: var(--po-fg-4); }
+.claimConvTag {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--po-fg-4);
+  background: var(--po-panel);
+  border: 1px solid var(--po-line);
+  padding: 0 4px;
+  border-radius: 3px;
+  margin-left: 2px;
+  vertical-align: 1px;
+}
+.tipConv { display: block; margin-top: 4px; color: var(--po-fg-3); font-weight: 500; }
+
 /* tooltip — pure CSS, opens on :hover (revisit in Phase 6 a11y pass) */
 .tip {
   position: absolute;

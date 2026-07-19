@@ -28,6 +28,9 @@ export function ResponsePane({
   const extraSet = new Set(extraClaimIds);
   const grounded = faithfulness.filter((f) => f.verdict === 'Y').length;
   const ungrounded = faithfulness.length - grounded;
+  // Conversational claims (encouragement, closers, meta) carry no factual claim
+  // and are not graded — shown neutrally so they don't read as failures.
+  const conversational = claims.filter((c) => c.claim_type === 'conversational').length;
 
   return (
     <div className={styles.pane}>
@@ -37,6 +40,7 @@ export function ResponsePane({
         <span className={styles.paneMeta}>
           {claims.length} claims · {grounded} grounded · {ungrounded} ungrounded
           {extraSet.size > 0 && ` · ${extraSet.size} extra`}
+          {conversational > 0 && ` · ${conversational} conversational`}
         </span>
       </div>
       {claims.length === 0 ? (
@@ -44,15 +48,16 @@ export function ResponsePane({
       ) : (
         <p className={styles.rText}>
           {claims.map((claim, idx) => {
+            const isConversational = claim.claim_type === 'conversational';
             const f = judgmentByClaim.get(claim.id);
             const ok = f?.verdict === 'Y';
-            const isExtra = extraSet.has(claim.id);
+            const isExtra = extraSet.has(claim.id) && !isConversational;
             const cited =
               hoveredChunkRank != null &&
               (f?.grounding_chunk_ranks ?? []).includes(hoveredChunkRank);
             const className = [
               styles.claim,
-              ok ? styles.claimOk : styles.claimBad,
+              isConversational ? styles.claimConversational : ok ? styles.claimOk : styles.claimBad,
               isExtra ? styles.claimExtra : '',
               cited ? styles.claimOutline : '',
             ]
@@ -68,30 +73,40 @@ export function ResponsePane({
                 >
                   {claim.text}
                   <span className={styles.claimBadge}>R{idx}</span>
+                  {isConversational && <span className={styles.claimConvTag}>conversational</span>}
                   {isExtra && <span className={styles.claimExtraTag}>extra</span>}
-                  {(f || isExtra) && (
+                  {(f || isExtra || isConversational) && (
                     <span className={styles.tip}>
-                      {f && (
-                        <span className={styles.tipHead}>
-                          <span
-                            className={`${styles.tipV} ${
-                              ok ? styles.tipVOk : styles.tipVNo
-                            }`}
-                          >
-                            {f.verdict}
-                          </span>
-                          Faithfulness
-                          <span className={styles.tipChunkRef}>
-                            {formatChunkRefs(f.grounding_chunk_ranks)}
-                          </span>
+                      {isConversational ? (
+                        <span className={styles.tipConv}>
+                          Conversational — not scored. Encouragement or phrasing with no factual
+                          claim to ground, so it can’t be a hallucination.
                         </span>
+                      ) : (
+                        <>
+                          {f && (
+                            <span className={styles.tipHead}>
+                              <span
+                                className={`${styles.tipV} ${
+                                  ok ? styles.tipVOk : styles.tipVNo
+                                }`}
+                              >
+                                {f.verdict}
+                              </span>
+                              Faithfulness
+                              <span className={styles.tipChunkRef}>
+                                {formatChunkRefs(f.grounding_chunk_ranks)}
+                              </span>
+                            </span>
+                          )}
+                          {isExtra && (
+                            <span className={styles.tipExtra}>
+                              Extra claim — doesn’t answer any sub-question (not asked for).
+                            </span>
+                          )}
+                          {f?.reasoning}
+                        </>
                       )}
-                      {isExtra && (
-                        <span className={styles.tipExtra}>
-                          Extra claim — doesn’t answer any sub-question (not asked for).
-                        </span>
-                      )}
-                      {f?.reasoning}
                     </span>
                   )}
                 </span>

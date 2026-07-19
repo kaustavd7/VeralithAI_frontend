@@ -12,3 +12,11 @@ export const CELL_META = {
 } as const;
 
 export type CellName = keyof typeof CELL_META;
+
+/** Cells that count as HEALTHY for rate/quality math. Must match the backend
+ *  (api/v1/stats._HEALTHY_CELLS): a fully-grounded answer — tight
+ *  (complete_grounded) or verbose (extra_grounded) — is not a defect for a
+ *  conversational agent. Only ungrounded or incomplete answers are failures. */
+export const HEALTHY_CELLS = ['complete_grounded', 'extra_grounded'] as const;
+export const isHealthyCell = (cell: string | null | undefined): boolean =>
+  cell != null && (HEALTHY_CELLS as readonly string[]).includes(cell);

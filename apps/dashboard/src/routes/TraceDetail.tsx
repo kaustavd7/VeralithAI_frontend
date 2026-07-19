@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ProjectShell } from '../components/projectShell/ProjectShell';
 import { useProjects } from '../hooks/useProjects';
 import { healsPath } from '../lib/nav';
+import { isHealthyCell } from '../utils/cellMeta';
 import detailStyles from '../components/detail/detail.module.css';
 import { DiagnosisHero } from '../components/detail/DiagnosisHero';
 import { TraceHealCards } from '../components/detail/TraceHealCards';
@@ -98,7 +99,7 @@ export default function TraceDetail() {
       ) : (
         evaluated &&
         trace.diagnosis &&
-        trace.diagnosis.failure_cell !== 'complete_grounded' && (
+        !isHealthyCell(trace.diagnosis.failure_cell) && (
           <div className={detailStyles.section}>
             <div className={detailStyles.healHint}>
               This trace isn’t in a heal card yet — Veralith groups recurring failures
