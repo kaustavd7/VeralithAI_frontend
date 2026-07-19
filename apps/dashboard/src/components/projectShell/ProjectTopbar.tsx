@@ -16,8 +16,32 @@ type Props = {
   onMenu?: () => void;
 };
 
-// Backend only models trial/pro today; trial reads as the free tier.
-const TIER_LABEL: Record<string, string> = { trial: 'Free', pro: 'Pro', max: 'Max' };
+// The topbar badge reflects the user's REAL access state, derived from
+// subscription_status + the trial clock (mirrors the backend entitlement rule
+// in services/entitlements.py):
+//   active / past_due            -> paid plan name ("Pro"/"Team"/…)
+//   trialing & not yet expired   -> "Trial" (full access, time-limited)
+//   trialing-expired / canceled  -> "Free" (locked out of the paid surface)
+const PAID_PLAN_LABEL: Record<string, string> = { pro: 'Pro', team: 'Team', max: 'Max' };
+
+function planBadge(me?: {
+  subscription_status: string;
+  plan_tier: string;
+  trial_expires_at: string;
+}): { label: string; kind: 'free' | 'trial' | 'paid' } | null {
+  if (!me) return null;
+  if (me.subscription_status === 'active' || me.subscription_status === 'past_due') {
+    const label =
+      PAID_PLAN_LABEL[me.plan_tier] ??
+      (me.plan_tier ? me.plan_tier.charAt(0).toUpperCase() + me.plan_tier.slice(1) : 'Pro');
+    return { label, kind: 'paid' };
+  }
+  if (me.subscription_status === 'trialing') {
+    const expired = new Date(me.trial_expires_at).getTime() <= Date.now();
+    return expired ? { label: 'Free', kind: 'free' } : { label: 'Trial', kind: 'trial' };
+  }
+  return { label: 'Free', kind: 'free' }; // canceled / anything unrecognized
+}
 
 export function ProjectTopbar({ workspace = 'workspace', project, onMenu }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -29,8 +53,7 @@ export function ProjectTopbar({ workspace = 'workspace', project, onMenu }: Prop
   const projectsQuery = useProjects();
   const meQuery = useQuery({ queryKey: ['me'], queryFn: () => api.getMe() });
 
-  const tier = meQuery.data?.plan_tier;
-  const tierLabel = tier ? (TIER_LABEL[tier] ?? tier) : null;
+  const badge = planBadge(meQuery.data);
 
   const projects = projectsQuery.data?.projects ?? [];
   const filtered = useMemo(() => {
@@ -107,7 +130,7 @@ export function ProjectTopbar({ workspace = 'workspace', project, onMenu }: Prop
         <button type="button" className="tb-crumb tb-crumb-link" onClick={() => navigate('/projects')}>
           {workspaceLabel || workspace}
         </button>
-        {tierLabel && <span className="tb-tier">{tierLabel}</span>}
+        {badge && <span className={`tb-tier tb-tier--${badge.kind}`}>{badge.label}</span>}
 
         {project && (
         <>
