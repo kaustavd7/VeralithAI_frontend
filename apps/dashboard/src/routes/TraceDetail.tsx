@@ -10,7 +10,7 @@ import { TraceHealCards } from '../components/detail/TraceHealCards';
 import { QueryPane } from '../components/detail/QueryPane';
 import { ResponsePane } from '../components/detail/ResponsePane';
 import { RetrievedChunks } from '../components/detail/RetrievedChunks';
-import { PerClaimTable } from '../components/detail/PerClaimTable';
+import { ClaimIssues } from '../components/detail/ClaimIssues';
 import { HealHistory } from '../components/detail/HealHistory';
 import { useTrace } from '../hooks/useTrace';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -114,30 +114,13 @@ export default function TraceDetail() {
         <div className={detailStyles.sectionHead}>
           <h2>Query &amp; Response</h2>
           <span className={detailStyles.sectionSub}>
-            claims highlighted by judge verdict · hover any claim for reasoning
+            grounded claims read as plain text — only problems are marked · hover for reasoning
           </span>
           <div className={detailStyles.sectionRight}>
             <span className={detailStyles.legendRow}>
-              <span>
-                <span
-                  className={detailStyles.legendSw}
-                  style={{
-                    background: 'var(--hl-green)',
-                    borderBottom: '1.5px solid var(--hl-green-b)',
-                  }}
-                />
-                grounded claim
-              </span>
-              <span>
-                <span
-                  className={detailStyles.legendSw}
-                  style={{
-                    background: 'var(--hl-red)',
-                    borderBottom: '1.5px solid var(--hl-red-b)',
-                  }}
-                />
-                ungrounded claim
-              </span>
+              <span><span className={`${detailStyles.legendMark} ${detailStyles.legendBad}`} />unsupported</span>
+              <span><span className={`${detailStyles.legendMark} ${detailStyles.legendExtra}`} />extra</span>
+              <span><span className={`${detailStyles.legendMark} ${detailStyles.legendConv}`} />not scored</span>
             </span>
           </div>
         </div>
@@ -171,12 +154,16 @@ export default function TraceDetail() {
       {evaluated && (
         <div className={detailStyles.section}>
           <div className={detailStyles.sectionHead}>
-            <h2>Per-claim breakdown</h2>
+            <h2>Issues found</h2>
             <span className={detailStyles.sectionSub}>
-              {trace.claims.length} claims · ranked by judge order
+              only claims worth inspecting — unsupported or extra
             </span>
           </div>
-          <PerClaimTable claims={trace.claims} faithfulness={trace.faithfulness} />
+          <ClaimIssues
+            claims={trace.claims}
+            faithfulness={trace.faithfulness}
+            extraClaimIds={trace.completeness?.extra_claim_ids ?? []}
+          />
         </div>
       )}
 

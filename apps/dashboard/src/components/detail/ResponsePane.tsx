@@ -5,17 +5,15 @@ interface Props {
   response: string;
   claims: Claim[];
   faithfulness: FaithfulnessJudgment[];
-  /** Claim ids that don't map to any sub-question (Ri with no Qi) — "extra" padding. */
+  /** Claim ids that don't map to any sub-question (Ri with no Qi) — "extra". */
   extraClaimIds: number[];
   hoveredChunkRank: number | null;
   onClaimHover: (claimId: number | null) => void;
 }
 
-function formatChunkRefs(ranks: number[]): string {
-  if (ranks.length === 0) return '→ no chunk';
-  return '→ ' + ranks.map((r) => `chunk #${r}`).join(', ');
-}
-
+/* Highlight by EXCEPTION: a grounded, on-topic claim reads as ordinary prose so
+   the eye lands on the problems. Only unsupported (red wavy), extra (amber
+   dashed), and conversational (dim) claims are marked; hover any for reasoning. */
 export function ResponsePane({
   response,
   claims,
@@ -28,9 +26,14 @@ export function ResponsePane({
   const extraSet = new Set(extraClaimIds);
   const grounded = faithfulness.filter((f) => f.verdict === 'Y').length;
   const ungrounded = faithfulness.length - grounded;
-  // Conversational claims (encouragement, closers, meta) carry no factual claim
-  // and are not graded — shown neutrally so they don't read as failures.
   const conversational = claims.filter((c) => c.claim_type === 'conversational').length;
+
+  // Exception-framed summary: lead with problems, or "all grounded" when clean.
+  const parts: string[] = [];
+  if (ungrounded) parts.push(`${ungrounded} unsupported`);
+  if (extraSet.size) parts.push(`${extraSet.size} extra`);
+  if (conversational) parts.push(`${conversational} not scored`);
+  const summary = parts.length ? parts.join(' · ') : 'all grounded';
 
   return (
     <div className={styles.pane}>
@@ -38,28 +41,28 @@ export function ResponsePane({
         <span className={styles.paneTag}>R</span>
         <h3>Response</h3>
         <span className={styles.paneMeta}>
-          {claims.length} claims · {grounded} grounded · {ungrounded} ungrounded
-          {extraSet.size > 0 && ` · ${extraSet.size} extra`}
-          {conversational > 0 && ` · ${conversational} conversational`}
+          {claims.length} claims · {summary}
         </span>
       </div>
       {claims.length === 0 ? (
-        <p className={styles.rText}>{response || '(empty response)'}</p>
+        <p className={styles.rProse}>{response || '(empty response)'}</p>
       ) : (
-        <p className={styles.rText}>
+        <p className={styles.rProse}>
           {claims.map((claim, idx) => {
             const isConversational = claim.claim_type === 'conversational';
             const f = judgmentByClaim.get(claim.id);
-            const ok = f?.verdict === 'Y';
+            const isUngrounded = !isConversational && f?.verdict === 'N';
             const isExtra = extraSet.has(claim.id) && !isConversational;
+            const flagged = isUngrounded || isExtra || isConversational;
             const cited =
               hoveredChunkRank != null &&
               (f?.grounding_chunk_ranks ?? []).includes(hoveredChunkRank);
             const className = [
               styles.claim,
-              isConversational ? styles.claimConversational : ok ? styles.claimOk : styles.claimBad,
+              isUngrounded ? styles.claimBad : '',
               isExtra ? styles.claimExtra : '',
-              cited ? styles.claimOutline : '',
+              isConversational ? styles.claimConversational : '',
+              cited ? styles.claimCited : '',
             ]
               .filter(Boolean)
               .join(' ');
@@ -72,41 +75,24 @@ export function ResponsePane({
                   onMouseLeave={() => onClaimHover(null)}
                 >
                   {claim.text}
-                  <span className={styles.claimBadge}>R{idx}</span>
-                  {isConversational && <span className={styles.claimConvTag}>conversational</span>}
-                  {isExtra && <span className={styles.claimExtraTag}>extra</span>}
-                  {(f || isExtra || isConversational) && (
+                  {flagged && (
                     <span className={styles.tip}>
-                      {isConversational ? (
-                        <span className={styles.tipConv}>
-                          Conversational — not scored. Encouragement or phrasing with no factual
-                          claim to ground, so it can’t be a hallucination.
+                      {isUngrounded && (
+                        <span className={styles.tipBad}>
+                          Unsupported — not grounded in the retrieved context.
                         </span>
-                      ) : (
-                        <>
-                          {f && (
-                            <span className={styles.tipHead}>
-                              <span
-                                className={`${styles.tipV} ${
-                                  ok ? styles.tipVOk : styles.tipVNo
-                                }`}
-                              >
-                                {f.verdict}
-                              </span>
-                              Faithfulness
-                              <span className={styles.tipChunkRef}>
-                                {formatChunkRefs(f.grounding_chunk_ranks)}
-                              </span>
-                            </span>
-                          )}
-                          {isExtra && (
-                            <span className={styles.tipExtra}>
-                              Extra claim — doesn’t answer any sub-question (not asked for).
-                            </span>
-                          )}
-                          {f?.reasoning}
-                        </>
                       )}
+                      {isExtra && (
+                        <span className={styles.tipExtra}>
+                          Extra — doesn’t answer the question (not asked for).
+                        </span>
+                      )}
+                      {isConversational && (
+                        <span className={styles.tipConv}>
+                          Conversational — no factual claim to check, so it isn’t scored.
+                        </span>
+                      )}
+                      {f?.reasoning}
                     </span>
                   )}
                 </span>

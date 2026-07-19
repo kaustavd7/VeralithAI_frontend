@@ -373,75 +373,74 @@
 .verdictNo { background: var(--cell-cu); }
 .verdictMissing { background: var(--cell-iu); }
 
-/* ---------- claim highlights ---------- */
+/* ---------- claim highlights — by EXCEPTION ----------
+   A grounded, on-topic claim reads as ordinary prose. Only problems are marked,
+   spellcheck-style, so the eye lands on what actually needs attention. */
+.rProse { font-size: 14.5px; line-height: 1.95; color: var(--po-fg); margin: 0; }
 .rText { font-size: 14px; line-height: 1.85; color: var(--po-fg); margin: 0; }
-.claim {
-  position: relative;
-  padding: 1px 4px;
-  margin: 0 -2px;
-  border-radius: 3px;
-  cursor: help;
-  border-bottom: 1.5px solid transparent;
-}
-.claimOk { background: var(--hl-green); border-bottom-color: var(--hl-green-b); }
-.claimBad { background: var(--hl-red); border-bottom-color: var(--hl-red-b); }
-.claim:hover { filter: brightness(1.25); }
-.claimOutline { outline: 1px solid var(--accent); }
-.claimBadge {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  background: var(--po-panel);
-  color: var(--po-fg-3);
-  padding: 0 4px;
-  border-radius: 3px;
-  margin: 0 4px 0 2px;
-  vertical-align: 1px;
-  border: 1px solid var(--po-line);
-}
-.claimBad .claimBadge { color: var(--cell-cu); border-color: color-mix(in oklab, var(--cell-cu) 30%, transparent); }
-.claimOk .claimBadge  { color: var(--cell-cg); border-color: color-mix(in oklab, var(--cell-cg) 30%, transparent); }
 
-/* "extra" claim — grounded but not answering any sub-question (Ri with no Qi).
-   Dashed underline distinguishes it from a normal grounded claim + an "extra" tag. */
-.claimExtra { border-bottom-style: dashed; border-bottom-width: 1.5px; }
-.claimExtraTag {
-  font-family: var(--font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.claim { position: relative; }
+
+/* extra — grounded but not answering the question: amber dashed underline. */
+.claimExtra {
+  cursor: help;
+  text-decoration: underline dashed var(--cell-eg);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
+/* unsupported (ungrounded) — red wavy underline, like a spellcheck error.
+   Defined AFTER .claimExtra so red wins when a claim is both extra AND unsupported. */
+.claimBad {
+  cursor: help;
+  text-decoration: underline wavy var(--hl-red-b);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+  color: color-mix(in oklab, var(--po-fg) 80%, var(--cell-cu));
+}
+/* conversational — encouragement/closer with no factual content: just dimmed. */
+.claimConversational { cursor: help; color: var(--po-fg-4); }
+/* a grounded claim lit up because the currently-hovered chunk grounds it. */
+.claimCited {
+  background: var(--hl-green);
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px var(--hl-green-b);
+}
+
+.tipBad { display: block; margin-top: 4px; color: var(--cell-cu); font-weight: 500; }
+.tipExtra { display: block; margin-top: 4px; color: var(--cell-eg); font-weight: 500; }
+.tipConv { display: block; margin-top: 4px; color: var(--po-fg-3); font-weight: 500; }
+
+/* ---------- issues-first list (replaces the per-claim table) ---------- */
+.issuesClean {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 16px; border-radius: var(--po-radius);
+  background: var(--po-panel); border: 1px solid var(--po-line);
+  color: var(--cell-cg); font-size: 13.5px;
+}
+.issues { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.issueRow {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px; border-radius: var(--po-radius);
+  background: var(--po-panel); border: 1px solid var(--po-line);
+}
+.issueTag {
+  flex: 0 0 auto; margin-top: 1px;
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px; border: 1px solid transparent;
+}
+.issueTagBad {
+  color: var(--cell-cu);
+  background: color-mix(in oklab, var(--cell-cu) 12%, transparent);
+  border-color: color-mix(in oklab, var(--cell-cu) 32%, transparent);
+}
+.issueTagExtra {
   color: var(--cell-eg);
   background: color-mix(in oklab, var(--cell-eg) 12%, transparent);
-  border: 1px solid color-mix(in oklab, var(--cell-eg) 32%, transparent);
-  padding: 0 4px;
-  border-radius: 3px;
-  margin-left: 2px;
-  vertical-align: 1px;
+  border-color: color-mix(in oklab, var(--cell-eg) 32%, transparent);
 }
-.tipExtra { display: block; margin-top: 4px; color: var(--cell-eg); font-weight: 500; }
-
-/* "conversational" claim — encouragement/closer/meta with no factual content.
-   Not graded for grounding, so it's neutral and dimmed with a dotted underline
-   (distinct from grounded solid, ungrounded solid, and dashed "extra"). */
-.claimConversational {
-  background: transparent;
-  color: var(--po-fg-4);
-  border-bottom: 1px dotted var(--po-line);
-}
-.claimConversational .claimBadge { color: var(--po-fg-4); }
-.claimConvTag {
-  font-family: var(--font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--po-fg-4);
-  background: var(--po-panel);
-  border: 1px solid var(--po-line);
-  padding: 0 4px;
-  border-radius: 3px;
-  margin-left: 2px;
-  vertical-align: 1px;
-}
-.tipConv { display: block; margin-top: 4px; color: var(--po-fg-3); font-weight: 500; }
+.issueBody { min-width: 0; }
+.issueClaim { font-size: 13.5px; color: var(--po-fg); line-height: 1.5; }
+.issueWhy { font-size: 12px; color: var(--po-fg-3); margin-top: 3px; line-height: 1.5; }
 
 /* tooltip — pure CSS, opens on :hover (revisit in Phase 6 a11y pass) */
 .tip {
@@ -496,6 +495,15 @@
   vertical-align: -1px;
   margin-right: 6px;
 }
+/* legend marks mirror the in-prose underline styles (line, not swatch). */
+.legendMark {
+  display: inline-block; width: 16px; height: 0;
+  vertical-align: middle; margin-right: 6px;
+  border-bottom-width: 2px;
+}
+.legendBad { border-bottom: 2px solid var(--hl-red-b); }
+.legendExtra { border-bottom: 2px dashed var(--cell-eg); }
+.legendConv { border-bottom: 2px dotted var(--po-fg-4); }
 
 /* ---------- chunks ---------- */
 .chunks {
